@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 mod app;
+mod character;
 
 fn create_app() -> eframe::AppCreator {
     Box::new(|creation_context| Ok(Box::new(app::App::new(creation_context))))
@@ -23,7 +24,7 @@ fn main() -> eframe::Result {
         viewport,
         ..Default::default()
     };
-    eframe::run_native("eframe template", native_options, create_app())
+    eframe::run_native("DSA Hybrid Char Editor", native_options, create_app())
 }
 
 // When compiling to web using trunk:

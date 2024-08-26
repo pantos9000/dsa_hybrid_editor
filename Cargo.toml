@@ -19,6 +19,9 @@ serde = { version = "1", features = ["derive"] }
 
 log = "0.4"
 
+strum = "0.26"
+strum_macros = "0.26"
+
 #
 # web
 #

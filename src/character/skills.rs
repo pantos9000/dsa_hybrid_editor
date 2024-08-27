@@ -5,8 +5,8 @@ pub struct Skills {
     kampfen: Skill,
 }
 
-impl Skills {
-    pub fn draw_ui(&mut self, ui: &mut egui::Ui) {
+impl crate::app::Drawable for Skills {
+    fn draw_ui(&mut self, ui: &mut egui::Ui) {
         let grid = egui::Grid::new("Fähigkeiten").striped(true);
 
         ui.heading("Fähigkeiten");
@@ -41,6 +41,16 @@ pub enum Skill {
     W12p2,
 }
 
+impl crate::app::Drawable for Skill {
+    fn draw_ui(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            for val in Self::iter() {
+                ui.selectable_value(self, val, val.as_str());
+            }
+        });
+    }
+}
+
 impl Skill {
     fn as_str(&self) -> &'static str {
         match self {
@@ -53,13 +63,5 @@ impl Skill {
             Skill::W12p1 => "W12+1",
             Skill::W12p2 => "W12+2",
         }
-    }
-
-    pub fn draw_ui(&mut self, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
-            for val in Self::iter() {
-                ui.selectable_value(self, val, val.as_str());
-            }
-        });
     }
 }

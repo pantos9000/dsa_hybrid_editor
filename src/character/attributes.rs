@@ -9,8 +9,8 @@ pub struct Attributes {
     wil: Attribute,
 }
 
-impl Attributes {
-    pub fn draw_ui(&mut self, ui: &mut egui::Ui) {
+impl crate::app::Drawable for Attributes {
+    fn draw_ui(&mut self, ui: &mut egui::Ui) {
         let grid = egui::Grid::new("Attribute").striped(true);
 
         ui.heading("Attribute");
@@ -60,6 +60,16 @@ pub enum Attribute {
     W12p2,
 }
 
+impl crate::app::Drawable for Attribute {
+    fn draw_ui(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            for val in Self::iter() {
+                ui.selectable_value(self, val, val.as_str());
+            }
+        });
+    }
+}
+
 impl Attribute {
     fn as_str(&self) -> &'static str {
         match self {
@@ -71,13 +81,5 @@ impl Attribute {
             Attribute::W12p1 => "W12+1",
             Attribute::W12p2 => "W12+2",
         }
-    }
-
-    pub fn draw_ui(&mut self, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
-            for val in Self::iter() {
-                ui.selectable_value(self, val, val.as_str());
-            }
-        });
     }
 }

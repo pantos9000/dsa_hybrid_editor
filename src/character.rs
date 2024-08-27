@@ -13,8 +13,8 @@ pub struct Character {
     skills: Skills,
 }
 
-impl Character {
-    pub fn draw_ui(&mut self, ui: &mut egui::Ui) {
+impl crate::app::Drawable for Character {
+    fn draw_ui(&mut self, ui: &mut egui::Ui) {
         let frame = egui::Frame::default()
             .stroke(ui.visuals().widgets.noninteractive.bg_stroke)
             .rounding(ui.visuals().widgets.noninteractive.rounding)

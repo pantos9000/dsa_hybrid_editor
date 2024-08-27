@@ -7,8 +7,8 @@ impl Default for Name {
     }
 }
 
-impl Name {
-    pub fn draw_ui(&mut self, ui: &mut egui::Ui) {
+impl crate::app::Drawable for Name {
+    fn draw_ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("Heldenname");
         ui.text_edit_singleline(&mut self.0);
     }

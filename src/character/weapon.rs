@@ -1,20 +1,10 @@
 use strum::IntoEnumIterator;
 
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct Weapon {
-    use_strength: bool,
+    no_strength: bool,
     damage: Damage,
     bonus_damage: BonusDamage,
-}
-
-impl Default for Weapon {
-    fn default() -> Self {
-        Self {
-            use_strength: true,
-            damage: Damage::default(),
-            bonus_damage: BonusDamage::default(),
-        }
-    }
 }
 
 impl crate::app::Drawable for Weapon {
@@ -23,8 +13,11 @@ impl crate::app::Drawable for Weapon {
 
         ui.heading("Waffe");
         grid.show(ui, |ui| {
-            ui.label("Nutzt Stärke");
-            ui.checkbox(&mut self.use_strength, "");
+            ui.label("Keine Stärke");
+            ui.checkbox(
+                &mut self.no_strength,
+                "(Benutze Schadenswürfel statt Stärke)",
+            );
             ui.end_row();
 
             ui.label("Schaden");

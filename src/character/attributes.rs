@@ -1,5 +1,4 @@
 use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
 
 #[derive(Debug, Default, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct Attributes {
@@ -14,7 +13,7 @@ impl Attributes {
     pub fn draw_ui(&mut self, ui: &mut egui::Ui) {
         let grid = egui::Grid::new("Attribute").striped(true);
 
-        ui.label("Attribute");
+        ui.heading("Attribute");
         grid.show(ui, |ui| {
             ui.label("GES");
             self.ges.draw_ui(ui);
@@ -40,7 +39,15 @@ impl Attributes {
 }
 
 #[derive(
-    Debug, Default, Clone, Copy, PartialEq, Eq, EnumIter, serde::Serialize, serde::Deserialize,
+    Debug,
+    Default,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    strum_macros::EnumIter,
+    serde::Serialize,
+    serde::Deserialize,
 )]
 pub enum Attribute {
     #[default]

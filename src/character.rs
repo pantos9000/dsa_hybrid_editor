@@ -1,11 +1,14 @@
 mod attributes;
+mod skills;
 
 use attributes::Attributes;
+use skills::Skills;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Character {
     name: String,
     attributes: Attributes,
+    skills: Skills,
 }
 
 impl Default for Character {
@@ -13,6 +16,7 @@ impl Default for Character {
         Self {
             name: "Hans Dampf".to_owned(),
             attributes: Attributes::default(),
+            skills: Skills::default(),
         }
     }
 }
@@ -26,13 +30,17 @@ impl Character {
             .outer_margin(5.0)
             .fill(egui::Color32::TRANSPARENT);
 
-        ui.horizontal(|ui| {
-            ui.label("Heldenname: ");
+        frame.show(ui, |ui| {
+            ui.heading("Heldenname");
             ui.text_edit_singleline(&mut self.name);
         });
 
         frame.show(ui, |ui| {
             self.attributes.draw_ui(ui);
+        });
+
+        frame.show(ui, |ui| {
+            self.skills.draw_ui(ui);
         });
     }
 }

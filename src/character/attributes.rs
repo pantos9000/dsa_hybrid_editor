@@ -11,7 +11,7 @@ pub struct Attributes {
 
 impl crate::app::Drawable for Attributes {
     fn draw_ui(&mut self, ui: &mut egui::Ui) {
-        let grid = egui::Grid::new("Attribute").striped(true);
+        let grid = crate::app::create_grid("Attribute");
 
         ui.heading("Attribute");
         grid.show(ui, |ui| {

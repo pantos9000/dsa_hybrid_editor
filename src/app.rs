@@ -4,6 +4,23 @@ pub trait Drawable {
     fn draw_ui(&mut self, ui: &mut egui::Ui);
 }
 
+pub fn create_grid(name: &'static str) -> egui::Grid {
+    egui::Grid::new(name)
+        .num_columns(2)
+        .min_col_width(120.0)
+        .spacing([0.0, 4.0])
+        .striped(true)
+}
+
+pub fn create_frame(ui: &egui::Ui) -> egui::Frame {
+    egui::Frame::default()
+        .stroke(ui.visuals().widgets.noninteractive.bg_stroke)
+        .rounding(ui.visuals().widgets.noninteractive.rounding)
+        .inner_margin(10.0)
+        .outer_margin(5.0)
+        .fill(egui::Color32::TRANSPARENT)
+}
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state

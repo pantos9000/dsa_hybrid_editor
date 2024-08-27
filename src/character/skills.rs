@@ -7,12 +7,14 @@ pub struct Skills {
 
 impl crate::app::Drawable for Skills {
     fn draw_ui(&mut self, ui: &mut egui::Ui) {
-        let grid = egui::Grid::new("Fähigkeiten").striped(true);
+        let grid = crate::app::create_grid("Fähigkeiten");
 
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {
             ui.label("Kämpfen");
-            self.kampfen.draw_ui(ui);
+            ui.horizontal(|ui| {
+                self.kampfen.draw_ui(ui);
+            });
             ui.end_row();
         });
     }

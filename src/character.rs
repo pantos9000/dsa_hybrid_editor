@@ -15,23 +15,16 @@ pub struct Character {
 
 impl crate::app::Drawable for Character {
     fn draw_ui(&mut self, ui: &mut egui::Ui) {
-        let frame = egui::Frame::default()
-            .stroke(ui.visuals().widgets.noninteractive.bg_stroke)
-            .rounding(ui.visuals().widgets.noninteractive.rounding)
-            .inner_margin(10.0)
-            .outer_margin(5.0)
-            .fill(egui::Color32::TRANSPARENT);
+        let frame = crate::app::create_frame(ui);
 
-        frame.show(ui, |ui| {
-            self.name.draw_ui(ui);
-        });
-
-        frame.show(ui, |ui| {
-            self.attributes.draw_ui(ui);
-        });
-
-        frame.show(ui, |ui| {
-            self.skills.draw_ui(ui);
-        });
+        draw_in_frame(ui, &frame, &mut self.name);
+        draw_in_frame(ui, &frame, &mut self.attributes);
+        draw_in_frame(ui, &frame, &mut self.skills);
     }
+}
+
+fn draw_in_frame(ui: &mut egui::Ui, frame: &egui::Frame, drawable: &mut impl crate::app::Drawable) {
+    frame.show(ui, |ui| {
+        drawable.draw_ui(ui);
+    });
 }

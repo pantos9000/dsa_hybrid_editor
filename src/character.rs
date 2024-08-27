@@ -1,16 +1,19 @@
 mod attributes;
 mod name;
 mod skills;
+mod weapon;
 
 use attributes::Attributes;
 use name::Name;
 use skills::Skills;
+use weapon::Weapon;
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Character {
     name: Name,
     attributes: Attributes,
     skills: Skills,
+    weapon: Weapon,
 }
 
 impl crate::app::Drawable for Character {
@@ -20,6 +23,7 @@ impl crate::app::Drawable for Character {
         draw_in_frame(ui, &frame, &mut self.name);
         draw_in_frame(ui, &frame, &mut self.attributes);
         draw_in_frame(ui, &frame, &mut self.skills);
+        draw_in_frame(ui, &frame, &mut self.weapon);
     }
 }
 

@@ -1,7 +1,9 @@
 use crate::character::Character;
+use crate::simulator::Simulator;
 
 pub trait Drawable {
     fn draw_ui(&mut self, ui: &mut egui::Ui);
+    fn draw_gradients(&self, ui: &mut egui::Ui, simulator: &Simulator);
 }
 
 pub fn create_grid(name: &'static str) -> egui::Grid {
@@ -27,6 +29,8 @@ pub fn create_frame(ui: &egui::Ui) -> egui::Frame {
 #[derive(Default)]
 pub struct App {
     char: Character,
+    #[serde(skip)] // don't save combat simulator state
+    simulator: Simulator,
 }
 
 impl App {
@@ -57,6 +61,8 @@ impl eframe::App for App {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
 
+        self.simulator.update_character(&self.char);
+
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
 
@@ -71,12 +77,18 @@ impl eframe::App for App {
             ui.heading("DSA Hybrid Char Editor");
             ui.separator();
 
-            self.char.draw_ui(ui);
-
-            ui.separator();
+            ui.horizontal(|ui| {
+                ui.vertical(|ui| {
+                    self.char.draw_ui(ui);
+                });
+                ui.vertical(|ui| {
+                    self.char.draw_gradients(ui, &self.simulator);
+                });
+            });
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                 egui::warn_if_debug_build(ui);
+                ui.separator();
             });
         });
     }

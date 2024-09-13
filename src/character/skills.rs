@@ -12,11 +12,24 @@ impl crate::app::Drawable for Skills {
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {
             ui.label("Kämpfen");
-            ui.horizontal(|ui| {
-                self.kampfen.draw_ui(ui);
-            });
+            self.kampfen.draw_ui(ui);
             ui.end_row();
         });
+    }
+
+    fn draw_gradients(&self, ui: &mut egui::Ui, simulator: &crate::simulator::Simulator) {
+        let gradient_kam_dec = simulator.gradient(|char| char.skills.kampfen.decrement());
+        let gradient_kam_inc = simulator.gradient(|char| char.skills.kampfen.increment());
+
+        let grid = crate::app::create_grid("Fähigkeiten Gradienten");
+
+        ui.heading("Gradienten");
+        grid.show(ui, |ui| {
+            ui.label("Kämpfen");
+            gradient_kam_dec.draw_ui(ui);
+            gradient_kam_inc.draw_ui(ui);
+        });
+        ui.end_row();
     }
 }
 
@@ -51,6 +64,10 @@ impl crate::app::Drawable for Skill {
             }
         });
     }
+
+    fn draw_gradients(&self, _ui: &mut egui::Ui, _simulator: &crate::simulator::Simulator) {
+        unreachable!();
+    }
 }
 
 impl Skill {
@@ -65,5 +82,33 @@ impl Skill {
             Skill::W12p1 => "W12+1",
             Skill::W12p2 => "W12+2",
         }
+    }
+
+    fn increment(&mut self) {
+        let new = match self {
+            Self::W4m2 => Self::W4,
+            Self::W4 => Self::W6,
+            Self::W6 => Self::W8,
+            Self::W8 => Self::W10,
+            Self::W10 => Self::W12,
+            Self::W12 => Self::W12p1,
+            Self::W12p1 => Self::W12p2,
+            Self::W12p2 => Self::W12p2,
+        };
+        *self = new;
+    }
+
+    fn decrement(&mut self) {
+        let new = match self {
+            Self::W4m2 => Self::W4m2,
+            Self::W4 => Self::W4m2,
+            Self::W6 => Self::W4,
+            Self::W8 => Self::W6,
+            Self::W10 => Self::W8,
+            Self::W12 => Self::W10,
+            Self::W12p1 => Self::W12,
+            Self::W12p2 => Self::W12p1,
+        };
+        *self = new;
     }
 }

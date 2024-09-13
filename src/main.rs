@@ -2,6 +2,7 @@
 
 mod app;
 mod character;
+mod simulator;
 
 fn create_app() -> eframe::AppCreator {
     Box::new(|creation_context| Ok(Box::new(app::App::new(creation_context))))

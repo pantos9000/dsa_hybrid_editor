@@ -2,8 +2,7 @@ use crate::character::Character;
 use crate::simulator::Simulator;
 
 pub trait Drawable {
-    fn draw_ui(&mut self, ui: &mut egui::Ui);
-    fn draw_gradients(&self, ui: &mut egui::Ui, simulator: &Simulator);
+    fn draw(&mut self, ui: &mut egui::Ui);
 }
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -60,13 +59,8 @@ impl eframe::App for App {
             ui.heading("DSA Hybrid Char Editor");
             ui.separator();
 
-            ui.horizontal(|ui| {
-                ui.vertical(|ui| {
-                    self.char.draw_ui(ui);
-                });
-                ui.vertical(|ui| {
-                    self.char.draw_gradients(ui, &self.simulator);
-                });
+            ui.vertical(|ui| {
+                self.char.draw(ui);
             });
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {

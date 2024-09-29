@@ -1,33 +1,25 @@
 use strum::IntoEnumIterator;
 
-#[derive(Debug, Default, Clone, Copy, serde::Serialize, serde::Deserialize)]
+use crate::simulator::Gradient;
+
+#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Skills {
     kampfen: Skill,
+    #[serde(skip)]
+    kampfen_gradient: Gradient,
 }
 
 impl crate::app::Drawable for Skills {
-    fn draw_ui(&mut self, ui: &mut egui::Ui) {
+    fn draw(&mut self, ui: &mut egui::Ui) {
         let grid = crate::util::create_grid("Fähigkeiten");
 
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {
             ui.label("Kämpfen");
-            self.kampfen.draw_ui(ui);
+            self.kampfen.draw(ui);
+            self.kampfen_gradient.draw(ui);
             ui.end_row();
         });
-    }
-
-    fn draw_gradients(&self, ui: &mut egui::Ui, simulator: &crate::simulator::Simulator) {
-        let gradient_kam_inc = simulator.gradient(|char| char.skills.kampfen.increment());
-
-        let grid = crate::util::create_grid("Fähigkeiten Gradienten");
-
-        ui.heading("Gradienten");
-        grid.show(ui, |ui| {
-            ui.label("Kämpfen");
-            gradient_kam_inc.draw_ui(ui);
-        });
-        ui.end_row();
     }
 }
 
@@ -55,16 +47,12 @@ pub enum Skill {
 }
 
 impl crate::app::Drawable for Skill {
-    fn draw_ui(&mut self, ui: &mut egui::Ui) {
+    fn draw(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             for val in Self::iter() {
                 ui.selectable_value(self, val, val.as_str());
             }
         });
-    }
-
-    fn draw_gradients(&self, _ui: &mut egui::Ui, _simulator: &crate::simulator::Simulator) {
-        unreachable!();
     }
 }
 
@@ -82,6 +70,7 @@ impl Skill {
         }
     }
 
+    #[allow(dead_code)]
     fn increment(&mut self) {
         let new = match self {
             Self::W4m2 => Self::W4,
@@ -96,6 +85,7 @@ impl Skill {
         *self = new;
     }
 
+    #[allow(dead_code)]
     fn decrement(&mut self) {
         let new = match self {
             Self::W4m2 => Self::W4m2,

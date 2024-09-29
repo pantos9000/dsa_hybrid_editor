@@ -8,15 +8,8 @@ impl Default for Name {
 }
 
 impl crate::app::Drawable for Name {
-    fn draw_ui(&mut self, ui: &mut egui::Ui) {
+    fn draw(&mut self, ui: &mut egui::Ui) {
         ui.heading("Heldenname");
         ui.text_edit_singleline(&mut self.0);
-    }
-
-    fn draw_gradients(&self, ui: &mut egui::Ui, _simulator: &crate::simulator::Simulator) {
-        ui.heading("");
-        ui.label("");
-        // TODO revisit - how to properly make this bigger?
-        // TODO or display overall probabilities?
     }
 }

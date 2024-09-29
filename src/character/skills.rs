@@ -18,7 +18,6 @@ impl crate::app::Drawable for Skills {
     }
 
     fn draw_gradients(&self, ui: &mut egui::Ui, simulator: &crate::simulator::Simulator) {
-        let gradient_kam_dec = simulator.gradient(|char| char.skills.kampfen.decrement());
         let gradient_kam_inc = simulator.gradient(|char| char.skills.kampfen.increment());
 
         let grid = crate::util::create_grid("Fähigkeiten Gradienten");
@@ -26,7 +25,6 @@ impl crate::app::Drawable for Skills {
         ui.heading("Gradienten");
         grid.show(ui, |ui| {
             ui.label("Kämpfen");
-            gradient_kam_dec.draw_ui(ui);
             gradient_kam_inc.draw_ui(ui);
         });
         ui.end_row();

@@ -38,15 +38,10 @@ impl crate::app::Drawable for Attributes {
     }
 
     fn draw_gradients(&self, ui: &mut egui::Ui, simulator: &crate::simulator::Simulator) {
-        let gradient_ges_dec = simulator.gradient(|char| char.attributes.ges.decrement());
         let gradient_ges_inc = simulator.gradient(|char| char.attributes.ges.increment());
-        let gradient_sta_dec = simulator.gradient(|char| char.attributes.sta.decrement());
         let gradient_sta_inc = simulator.gradient(|char| char.attributes.sta.increment());
-        let gradient_kon_dec = simulator.gradient(|char| char.attributes.kon.decrement());
         let gradient_kon_inc = simulator.gradient(|char| char.attributes.kon.increment());
-        let gradient_int_dec = simulator.gradient(|char| char.attributes.int.decrement());
         let gradient_int_inc = simulator.gradient(|char| char.attributes.int.increment());
-        let gradient_wil_dec = simulator.gradient(|char| char.attributes.wil.decrement());
         let gradient_wil_inc = simulator.gradient(|char| char.attributes.wil.increment());
 
         let grid = crate::util::create_grid("Attribute Gradienten");
@@ -54,27 +49,22 @@ impl crate::app::Drawable for Attributes {
         ui.heading("Gradienten");
         grid.show(ui, |ui| {
             ui.label("GES");
-            gradient_ges_dec.draw_ui(ui);
             gradient_ges_inc.draw_ui(ui);
             ui.end_row();
 
             ui.label("STÄ");
-            gradient_sta_dec.draw_ui(ui);
             gradient_sta_inc.draw_ui(ui);
             ui.end_row();
 
             ui.label("KON");
-            gradient_kon_dec.draw_ui(ui);
             gradient_kon_inc.draw_ui(ui);
             ui.end_row();
 
             ui.label("INT");
-            gradient_int_dec.draw_ui(ui);
             gradient_int_inc.draw_ui(ui);
             ui.end_row();
 
             ui.label("WIL");
-            gradient_wil_dec.draw_ui(ui);
             gradient_wil_inc.draw_ui(ui);
             ui.end_row();
         });

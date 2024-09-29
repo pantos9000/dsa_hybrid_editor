@@ -23,9 +23,7 @@ impl crate::app::Drawable for Weapon {
     }
 
     fn draw_gradients(&self, ui: &mut egui::Ui, simulator: &crate::simulator::Simulator) {
-        let gradient_damage_dec = simulator.gradient(|char| char.weapon.damage.decrement());
         let gradient_damage_inc = simulator.gradient(|char| char.weapon.damage.increment());
-        let gradient_bonus_dec = simulator.gradient(|char| char.weapon.bonus_damage.decrement());
         let gradient_bonus_inc = simulator.gradient(|char| char.weapon.bonus_damage.increment());
 
         let grid = crate::util::create_grid("Waffe Gradienten");
@@ -33,12 +31,10 @@ impl crate::app::Drawable for Weapon {
         ui.heading("Gradienten");
         grid.show(ui, |ui| {
             ui.label("Schaden");
-            gradient_damage_dec.draw_ui(ui);
             gradient_damage_inc.draw_ui(ui);
             ui.end_row();
 
             ui.label("Schadensbonus");
-            gradient_bonus_dec.draw_ui(ui);
             gradient_bonus_inc.draw_ui(ui);
             ui.end_row();
         });

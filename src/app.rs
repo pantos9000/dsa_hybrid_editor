@@ -61,6 +61,7 @@ impl eframe::App for App {
 
             ui.vertical(|ui| {
                 self.char.draw(ui);
+                // TODO: show opponent name
             });
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
@@ -82,6 +83,8 @@ fn menu_bar(ui: &mut egui::Ui, ctx: &egui::Context) {
             }
         });
         ui.add_space(16.0);
+        // TODO: export char
+        // TODO: load opponent
     }
 
     egui::widgets::global_dark_light_mode_buttons(ui);

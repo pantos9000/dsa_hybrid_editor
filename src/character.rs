@@ -35,7 +35,7 @@ impl crate::app::Drawable for Character {
 }
 
 fn draw_ui_in_frame(ui: &mut egui::Ui, drawable: &mut impl crate::app::Drawable) {
-    let frame = crate::app::create_frame(ui);
+    let frame = crate::util::create_frame(ui);
     frame.show(ui, |ui| {
         drawable.draw_ui(ui);
     });
@@ -46,7 +46,7 @@ fn draw_gradients_in_frame(
     drawable: &impl crate::app::Drawable,
     simulator: &Simulator,
 ) {
-    let frame = crate::app::create_frame(ui);
+    let frame = crate::util::create_frame(ui);
     frame.show(ui, |ui| {
         drawable.draw_gradients(ui, simulator);
     });

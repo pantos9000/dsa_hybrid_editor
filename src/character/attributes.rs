@@ -11,7 +11,7 @@ pub struct Attributes {
 
 impl crate::app::Drawable for Attributes {
     fn draw_ui(&mut self, ui: &mut egui::Ui) {
-        let grid = crate::app::create_grid("Attribute");
+        let grid = crate::util::create_grid("Attribute");
 
         ui.heading("Attribute");
         grid.show(ui, |ui| {
@@ -49,7 +49,7 @@ impl crate::app::Drawable for Attributes {
         let gradient_wil_dec = simulator.gradient(|char| char.attributes.wil.decrement());
         let gradient_wil_inc = simulator.gradient(|char| char.attributes.wil.increment());
 
-        let grid = crate::app::create_grid("Attribute Gradienten");
+        let grid = crate::util::create_grid("Attribute Gradienten");
 
         ui.heading("Gradienten");
         grid.show(ui, |ui| {

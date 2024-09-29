@@ -7,7 +7,7 @@ pub struct Skills {
 
 impl crate::app::Drawable for Skills {
     fn draw_ui(&mut self, ui: &mut egui::Ui) {
-        let grid = crate::app::create_grid("Fähigkeiten");
+        let grid = crate::util::create_grid("Fähigkeiten");
 
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {
@@ -21,7 +21,7 @@ impl crate::app::Drawable for Skills {
         let gradient_kam_dec = simulator.gradient(|char| char.skills.kampfen.decrement());
         let gradient_kam_inc = simulator.gradient(|char| char.skills.kampfen.increment());
 
-        let grid = crate::app::create_grid("Fähigkeiten Gradienten");
+        let grid = crate::util::create_grid("Fähigkeiten Gradienten");
 
         ui.heading("Gradienten");
         grid.show(ui, |ui| {

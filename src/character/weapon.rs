@@ -8,7 +8,7 @@ pub struct Weapon {
 
 impl crate::app::Drawable for Weapon {
     fn draw_ui(&mut self, ui: &mut egui::Ui) {
-        let grid = crate::app::create_grid("Waffe");
+        let grid = crate::util::create_grid("Waffe");
 
         ui.heading("Waffe");
         grid.show(ui, |ui| {
@@ -28,7 +28,7 @@ impl crate::app::Drawable for Weapon {
         let gradient_bonus_dec = simulator.gradient(|char| char.weapon.bonus_damage.decrement());
         let gradient_bonus_inc = simulator.gradient(|char| char.weapon.bonus_damage.increment());
 
-        let grid = crate::app::create_grid("Waffe Gradienten");
+        let grid = crate::util::create_grid("Waffe Gradienten");
 
         ui.heading("Gradienten");
         grid.show(ui, |ui| {

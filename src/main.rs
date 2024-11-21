@@ -5,7 +5,7 @@ mod character;
 mod simulator;
 mod util;
 
-fn create_app() -> eframe::AppCreator {
+fn create_app() -> eframe::AppCreator<'static> {
     Box::new(|creation_context| Ok(Box::new(app::App::new(creation_context))))
 }
 

@@ -87,5 +87,7 @@ fn menu_bar(ui: &mut egui::Ui, ctx: &egui::Context) {
         // TODO: load opponent
     }
 
-    egui::widgets::global_dark_light_mode_buttons(ui);
+    ui.menu_button("Theme", |ui| {
+        egui::widgets::global_theme_preference_buttons(ui);
+    });
 }

@@ -3,10 +3,10 @@ mod name;
 mod skills;
 mod weapon;
 
-use attributes::Attributes;
-use name::Name;
-use skills::Skills;
-use weapon::Weapon;
+pub use attributes::Attributes;
+pub use name::Name;
+pub use skills::Skills;
+pub use weapon::Weapon;
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Character {

@@ -1,3 +1,5 @@
+use anyhow::{Context, Result};
+
 use crate::character::Character;
 use crate::simulator::Simulator;
 
@@ -49,7 +51,7 @@ impl eframe::App for App {
             // The top panel is often a good place for a menu bar:
 
             egui::menu::bar(ui, |ui| {
-                menu_bar(ui, ctx);
+                self.menu_bar(ui, ctx);
             });
         });
 
@@ -72,22 +74,79 @@ impl eframe::App for App {
     }
 }
 
-fn menu_bar(ui: &mut egui::Ui, ctx: &egui::Context) {
-    // NOTE: no File->Quit on web pages!
-    let is_web = cfg!(target_arch = "wasm32");
-    if !is_web {
+impl App {
+    fn menu_bar(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
+        let is_web = cfg!(target_arch = "wasm32"); // no File->Quit on web pages
+
         ui.menu_button("File", |ui| {
-            if ui.button("Quit").clicked() {
-                log::info!("quit button clicked, exiting...");
-                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            if ui.button("Load char from file...").clicked() {
+                if let Err(err) = self.load_char() {
+                    log::error!("failed to load char: {err}");
+                }
+                ui.close_menu();
+            }
+            if ui.button("Save char to file...").clicked() {
+                if let Err(err) = self.save_char() {
+                    log::error!("failed to save char: {err}");
+                }
+                ui.close_menu();
+            }
+            if !is_web {
+                ui.separator();
+                if ui.button("Quit").clicked() {
+                    log::info!("quit button clicked, exiting...");
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                }
             }
         });
         ui.add_space(16.0);
-        // TODO: export char
         // TODO: load opponent
+
+        ui.menu_button("Theme", |ui| {
+            egui::widgets::global_theme_preference_buttons(ui);
+        });
     }
 
-    ui.menu_button("Theme", |ui| {
-        egui::widgets::global_theme_preference_buttons(ui);
-    });
+    fn load_char(&mut self) -> Result<()> {
+        log::info!("loading char...");
+
+        let future = async {
+            let file = rfd::AsyncFileDialog::new().pick_file().await?;
+            Some(file.read().await)
+        };
+        let Some(data) = async_std::task::block_on(future) else {
+            log::debug!("file pick dialog was canceled");
+            return Ok(());
+        };
+
+        let new_char = serde_json::from_slice(&data)
+            .context("failed to convert character from JSON format")?;
+        self.char = new_char;
+
+        log::info!("successfully loaded char");
+        Ok(())
+    }
+
+    fn save_char(&self) -> Result<()> {
+        log::info!("saving char...");
+
+        async fn save_file(char_serialized: &[u8]) -> Result<()> {
+            let Some(file) = rfd::AsyncFileDialog::new().save_file().await else {
+                log::debug!("save file dialog was canceled");
+                return Ok(());
+            };
+            file.write(char_serialized)
+                .await
+                .context("failed to write to file")?;
+            Ok(())
+        }
+
+        let char_serialized = serde_json::to_vec_pretty(&self.char)
+            .context("failed to convert character to JSON format")?;
+        async_std::task::block_on(save_file(&char_serialized))
+            .context("failed to save char to file")?;
+
+        log::info!("successfully saved char");
+        Ok(())
+    }
 }

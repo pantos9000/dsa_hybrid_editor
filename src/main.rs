@@ -12,7 +12,7 @@ fn create_app() -> eframe::AppCreator<'static> {
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
-    env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
+    egui_logger::builder().init().unwrap();
 
     let viewport = egui::ViewportBuilder::default()
         .with_inner_size([400.0, 300.0])
@@ -33,8 +33,10 @@ fn main() -> eframe::Result {
 // When compiling to web using trunk:
 #[cfg(target_arch = "wasm32")]
 fn main() {
+    egui_logger::builder().init().unwrap();
+
     // Redirect `log` message to `console.log` and friends:
-    eframe::WebLogger::init(log::LevelFilter::Debug).ok();
+    // eframe::WebLogger::init(log::LevelFilter::Debug).ok();
 
     let web_options = eframe::WebOptions::default();
 

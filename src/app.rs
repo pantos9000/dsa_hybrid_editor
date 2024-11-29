@@ -7,13 +7,20 @@ pub trait Drawable {
     fn draw(&mut self, ui: &mut egui::Ui);
 }
 
+#[derive(Debug, Default, Clone)]
+struct UiState {
+    show_logs: bool,
+}
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 #[derive(Default)]
 pub struct App {
     char: Character,
-    #[serde(skip)] // don't save combat simulator state
+    #[serde(skip)]
+    ui_state: UiState,
+    #[serde(skip)]
     simulator: Simulator,
 }
 
@@ -65,18 +72,30 @@ impl eframe::App for App {
                 self.char.draw(ui);
                 // TODO: show opponent name
             });
-
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                egui::warn_if_debug_build(ui);
-                ui.separator();
-            });
         });
+        egui::TopBottomPanel::bottom("bottom_panel")
+            .resizable(true)
+            .max_height(200.0)
+            .show(ctx, |ui| {
+                // ui.separator();
+                // TODO how to limit size
+                // TODO how to have it always on bottom?
+                // ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
+                // egui::ScrollArea::vertical().show(ui, |ui| {
+                // egui_logger::logger_ui().show(ui);
+                // });
+                // });
+                ui.separator();
+                egui::warn_if_debug_build(ui);
+            });
     }
 }
 
 impl App {
     fn menu_bar(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         let is_web = cfg!(target_arch = "wasm32"); // no File->Quit on web pages
+
+        self.log_window(ui, ctx);
 
         ui.menu_button("File", |ui| {
             if ui.button("Load char from file...").clicked() {
@@ -91,6 +110,7 @@ impl App {
                 }
                 ui.close_menu();
             }
+            // TODO: load/save all
             if !is_web {
                 ui.separator();
                 if ui.button("Quit").clicked() {
@@ -99,12 +119,30 @@ impl App {
                 }
             }
         });
-        ui.add_space(16.0);
-        // TODO: load opponent
+        ui.add_space(10.0);
 
-        ui.menu_button("Theme", |ui| {
-            egui::widgets::global_theme_preference_buttons(ui);
+        ui.menu_button("Appearance", |ui| {
+            ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
+                egui::widgets::global_theme_preference_buttons(ui);
+                ui.separator();
+
+                if ui
+                    .checkbox(&mut self.ui_state.show_logs, "Show log window")
+                    .clicked()
+                {
+                    log::info!("toggled log window visibility");
+                }
+            });
         });
+        ui.add_space(10.0);
+    }
+
+    fn log_window(&mut self, _ui: &mut egui::Ui, ctx: &egui::Context) {
+        egui::Window::new("Logs")
+            .open(&mut self.ui_state.show_logs)
+            .show(ctx, |ui| {
+                egui_logger::logger_ui().show(ui);
+            });
     }
 
     fn load_char(&mut self) -> Result<()> {

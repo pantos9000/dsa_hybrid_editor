@@ -69,6 +69,17 @@ impl eframe::App for App {
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                 egui::warn_if_debug_build(ui);
                 ui.separator();
+                // TODO how to limit size
+                // TODO how to have it always on bottom?
+                ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
+                    // egui::ScrollArea::vertical()
+                    //     .max_height(140.0)
+                    //     .show(ui, |ui| {
+                    // egui_logger::logger_ui().show(ui);
+                    // });
+                    egui_logger::logger_ui().show(ui);
+                });
+                ui.separator();
             });
         });
     }

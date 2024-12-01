@@ -18,10 +18,12 @@ pub struct Character {
 
 impl crate::app::Drawable for Character {
     fn draw(&mut self, ui: &mut egui::Ui) {
-        draw_ui_in_frame(ui, &mut self.name);
-        draw_ui_in_frame(ui, &mut self.attributes);
-        draw_ui_in_frame(ui, &mut self.skills);
-        draw_ui_in_frame(ui, &mut self.weapon);
+        crate::util::create_frame(ui).show(ui, |ui| {
+            draw_ui_in_frame(ui, &mut self.name);
+            draw_ui_in_frame(ui, &mut self.attributes);
+            draw_ui_in_frame(ui, &mut self.skills);
+            draw_ui_in_frame(ui, &mut self.weapon);
+        });
     }
 }
 

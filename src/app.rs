@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 
 use crate::character::Character;
+use crate::util::LogError;
 // use crate::simulator::Simulator;
 
 pub trait Drawable {
@@ -10,6 +11,7 @@ pub trait Drawable {
 #[derive(Debug, Default, Clone)]
 struct UiState {
     show_logs: bool,
+    // show_right_character: bool,
     // show_probabilities: bool,
 }
 
@@ -18,7 +20,9 @@ struct UiState {
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 #[derive(Default)]
 pub struct App {
-    char: Character,
+    char_left: Character,
+    char_right: Character,
+
     #[serde(skip)]
     ui_state: UiState,
     // #[serde(skip)]
@@ -67,17 +71,23 @@ impl eframe::App for App {
             ui.heading("DSA Hybrid Char Editor");
             ui.separator();
 
-            ui.vertical(|ui| {
-                self.char.draw(ui);
-                // TODO: show opponent name
-            });
+            egui::containers::Resize::default()
+                .auto_sized()
+                .show(ui, |ui| {
+                    ui.columns(2, |ui_cols| {
+                        ui_cols[0].push_id("left", |ui| {
+                            self.char_left.draw(ui);
+                        });
+                        ui_cols[1].push_id("right", |ui| {
+                            self.char_right.draw(ui);
+                        });
+                    });
+                });
         });
 
-        egui::TopBottomPanel::bottom("bottom_panel")
-            .resizable(true)
-            .show(ctx, |ui| {
-                egui::warn_if_debug_build(ui);
-            });
+        egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+            egui::warn_if_debug_build(ui);
+        });
     }
 }
 
@@ -88,19 +98,33 @@ impl App {
         self.log_window(ui, ctx);
 
         ui.menu_button("File", |ui| {
-            if ui.button("Load char from file...").clicked() {
-                if let Err(err) = self.load_char() {
-                    log::error!("failed to load char: {err}");
-                }
+            if ui.button("Load default for left char").clicked() {
+                self.char_left = Default::default();
                 ui.close_menu();
             }
-            if ui.button("Save char to file...").clicked() {
-                if let Err(err) = self.save_char() {
-                    log::error!("failed to save char: {err}");
-                }
+            if ui.button("Load left char from file...").clicked() {
+                Self::load_char(&mut self.char_left).or_log_err("failed to load left char");
                 ui.close_menu();
             }
-            // TODO: load/save all
+            if ui.button("Save left char to file...").clicked() {
+                Self::save_char(&self.char_left).or_log_err("failed to save leftchar");
+                ui.close_menu();
+            }
+
+            ui.separator();
+            if ui.button("Load default for right char").clicked() {
+                self.char_right = Default::default();
+                ui.close_menu();
+            }
+            if ui.button("Load right char from file...").clicked() {
+                Self::load_char(&mut self.char_right).or_log_err("failed to load right char");
+                ui.close_menu();
+            }
+            if ui.button("Save right char to file...").clicked() {
+                Self::save_char(&self.char_right).or_log_err("failed to save right char");
+                ui.close_menu();
+            }
+
             if !is_web {
                 ui.separator();
                 if ui.button("Quit").clicked() {
@@ -121,6 +145,7 @@ impl App {
                     .clicked()
                 {
                     log::info!("toggled log window visibility");
+                    ui.close_menu();
                 }
             });
         });
@@ -135,7 +160,7 @@ impl App {
             });
     }
 
-    fn load_char(&mut self) -> Result<()> {
+    fn load_char(char: &mut Character) -> Result<()> {
         log::info!("loading char...");
 
         let future = async {
@@ -149,13 +174,13 @@ impl App {
 
         let new_char = serde_json::from_slice(&data)
             .context("failed to convert character from JSON format")?;
-        self.char = new_char;
+        *char = new_char;
 
         log::info!("successfully loaded char");
         Ok(())
     }
 
-    fn save_char(&self) -> Result<()> {
+    fn save_char(char: &Character) -> Result<()> {
         log::info!("saving char...");
 
         async fn save_file(char_serialized: &[u8]) -> Result<()> {
@@ -169,7 +194,7 @@ impl App {
             Ok(())
         }
 
-        let char_serialized = serde_json::to_vec_pretty(&self.char)
+        let char_serialized = serde_json::to_vec_pretty(char)
             .context("failed to convert character to JSON format")?;
         async_std::task::block_on(save_file(&char_serialized))
             .context("failed to save char to file")?;

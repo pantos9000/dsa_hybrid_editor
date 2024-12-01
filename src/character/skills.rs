@@ -1,12 +1,12 @@
 use strum::IntoEnumIterator;
 
-use crate::simulator::Gradient;
+// use crate::simulator::Gradient;
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Skills {
     kampfen: Skill,
-    #[serde(skip)]
-    kampfen_gradient: Gradient,
+    // #[serde(skip)]
+    // kampfen_gradient: Gradient,
 }
 
 impl crate::app::Drawable for Skills {
@@ -17,7 +17,7 @@ impl crate::app::Drawable for Skills {
         grid.show(ui, |ui| {
             ui.label("Kämpfen");
             self.kampfen.draw(ui);
-            self.kampfen_gradient.draw(ui);
+            // self.kampfen_gradient.draw(ui);
             ui.end_row();
         });
     }

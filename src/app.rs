@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 
 use crate::character::Character;
-use crate::simulator::Simulator;
+// use crate::simulator::Simulator;
 
 pub trait Drawable {
     fn draw(&mut self, ui: &mut egui::Ui);
@@ -10,6 +10,7 @@ pub trait Drawable {
 #[derive(Debug, Default, Clone)]
 struct UiState {
     show_logs: bool,
+    // show_probabilities: bool,
 }
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -20,8 +21,8 @@ pub struct App {
     char: Character,
     #[serde(skip)]
     ui_state: UiState,
-    #[serde(skip)]
-    simulator: Simulator,
+    // #[serde(skip)]
+    // simulator: Simulator,
 }
 
 impl App {
@@ -51,8 +52,6 @@ impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
-
-        self.simulator.update_character(&self.char);
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:

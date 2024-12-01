@@ -1,15 +1,15 @@
 use strum::IntoEnumIterator;
 
-use crate::simulator::Gradient;
+// use crate::simulator::Gradient;
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Weapon {
     damage: Damage,
-    #[serde(skip)]
-    damage_gradient: Gradient,
+    // #[serde(skip)]
+    // damage_gradient: Gradient,
     bonus_damage: BonusDamage,
-    #[serde(skip)]
-    bonus_gradient: Gradient,
+    // #[serde(skip)]
+    // bonus_gradient: Gradient,
 }
 
 impl crate::app::Drawable for Weapon {
@@ -20,12 +20,12 @@ impl crate::app::Drawable for Weapon {
         grid.show(ui, |ui| {
             ui.label("Schaden");
             self.damage.draw(ui);
-            self.damage_gradient.draw(ui);
+            // self.damage_gradient.draw(ui);
             ui.end_row();
 
             ui.label("Schadensbonus");
             self.bonus_damage.draw(ui);
-            self.bonus_gradient.draw(ui);
+            // self.bonus_gradient.draw(ui);
             ui.end_row();
         });
     }

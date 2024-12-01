@@ -1,24 +1,24 @@
 use strum::IntoEnumIterator;
 
-use crate::simulator::Gradient;
+// use crate::simulator::Gradient;
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Attributes {
     ges: Attribute,
-    #[serde(skip)]
-    ges_gradient: Gradient,
+    // #[serde(skip)]
+    // ges_gradient: Gradient,
     sta: Attribute,
-    #[serde(skip)]
-    sta_gradient: Gradient,
+    // #[serde(skip)]
+    // sta_gradient: Gradient,
     kon: Attribute,
-    #[serde(skip)]
-    kon_gradient: Gradient,
+    // #[serde(skip)]
+    // kon_gradient: Gradient,
     int: Attribute,
-    #[serde(skip)]
-    int_gradient: Gradient,
+    // #[serde(skip)]
+    // int_gradient: Gradient,
     wil: Attribute,
-    #[serde(skip)]
-    wil_gradient: Gradient,
+    // #[serde(skip)]
+    // wil_gradient: Gradient,
 }
 
 impl crate::app::Drawable for Attributes {
@@ -29,27 +29,27 @@ impl crate::app::Drawable for Attributes {
         grid.show(ui, |ui| {
             ui.label("GES");
             self.ges.draw(ui);
-            self.ges_gradient.draw(ui);
+            // self.ges_gradient.draw(ui);
             ui.end_row();
 
             ui.label("STÄ");
             self.sta.draw(ui);
-            self.sta_gradient.draw(ui);
+            // self.sta_gradient.draw(ui);
             ui.end_row();
 
             ui.label("KON");
             self.kon.draw(ui);
-            self.kon_gradient.draw(ui);
+            // self.kon_gradient.draw(ui);
             ui.end_row();
 
             ui.label("INT");
             self.int.draw(ui);
-            self.int_gradient.draw(ui);
+            // self.int_gradient.draw(ui);
             ui.end_row();
 
             ui.label("WIL");
             self.wil.draw(ui);
-            self.wil_gradient.draw(ui);
+            // self.wil_gradient.draw(ui);
             ui.end_row();
         });
     }

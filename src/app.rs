@@ -73,19 +73,10 @@ impl eframe::App for App {
                 // TODO: show opponent name
             });
         });
+
         egui::TopBottomPanel::bottom("bottom_panel")
             .resizable(true)
-            .max_height(200.0)
             .show(ctx, |ui| {
-                // ui.separator();
-                // TODO how to limit size
-                // TODO how to have it always on bottom?
-                // ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                // egui::ScrollArea::vertical().show(ui, |ui| {
-                // egui_logger::logger_ui().show(ui);
-                // });
-                // });
-                ui.separator();
                 egui::warn_if_debug_build(ui);
             });
     }

@@ -26,8 +26,12 @@ impl crate::app::Drawable for Character {
 }
 
 fn draw_ui_in_frame(ui: &mut egui::Ui, drawable: &mut impl crate::app::Drawable) {
-    let frame = crate::util::create_frame(ui);
-    frame.show(ui, |ui| {
-        drawable.draw(ui);
-    });
+    ui.with_layout(
+        egui::Layout::top_down_justified(egui::Align::Center),
+        |ui| {
+            crate::util::create_frame(ui).show(ui, |ui| {
+                drawable.draw(ui);
+            });
+        },
+    );
 }

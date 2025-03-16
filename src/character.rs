@@ -27,23 +27,20 @@ pub struct Character {
 impl Character {
     pub fn draw(&mut self, ui: &mut egui::Ui) {
         util::create_frame(ui).show(ui, |ui| {
-            ui.with_layout(
-                egui::Layout::top_down_justified(egui::Align::Center),
-                |ui| {
-                    util::create_frame(ui).show(ui, |ui| {
-                        self.name.draw(ui);
-                    });
-                    util::create_frame(ui).show(ui, |ui| {
-                        self.attributes.draw(ui);
-                    });
-                    util::create_frame(ui).show(ui, |ui| {
-                        self.skills.draw(ui);
-                    });
-                    util::create_frame(ui).show(ui, |ui| {
-                        self.weapon.draw(ui);
-                    });
-                },
-            );
+            ui.with_layout(egui::Layout::top_down_justified(egui::Align::Min), |ui| {
+                util::create_frame(ui).show(ui, |ui| {
+                    self.name.draw(ui);
+                });
+                util::create_frame(ui).show(ui, |ui| {
+                    self.attributes.draw(ui);
+                });
+                util::create_frame(ui).show(ui, |ui| {
+                    self.skills.draw(ui);
+                });
+                util::create_frame(ui).show(ui, |ui| {
+                    self.weapon.draw(ui);
+                });
+            });
         });
     }
 }

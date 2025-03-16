@@ -23,6 +23,18 @@ impl Drawable for Skills {
             ui.end_row();
         });
     }
+
+    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+        let grid = crate::util::create_grid("OpponentSkills");
+
+        ui.heading("Fähigkeiten");
+        grid.show(ui, |ui| {
+            ui.label("Kämpfen");
+            self.kampfen.draw_as_opponent(ui);
+            // self.kampfen_gradient.draw(ui);
+            ui.end_row();
+        });
+    }
 }
 
 #[derive(
@@ -55,6 +67,10 @@ impl Drawable for Skill {
                 ui.selectable_value(self, val, val.as_str());
             }
         });
+    }
+
+    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+        let _ = ui.button(self.as_str());
     }
 }
 

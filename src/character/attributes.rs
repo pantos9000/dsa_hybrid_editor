@@ -48,6 +48,19 @@ impl Drawable for Attributes {
             }
         });
     }
+
+    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+        let grid = crate::util::create_grid("OpponentAttributes");
+
+        ui.heading("Attribute");
+        grid.show(ui, |ui| {
+            for aname in AttributeName::iter() {
+                ui.label(aname.as_ref());
+                self[aname].draw_as_opponent(ui);
+                ui.end_row();
+            }
+        });
+    }
 }
 
 #[derive(
@@ -100,6 +113,10 @@ impl Drawable for Attribute {
                 ui.selectable_value(self, val, val.as_str());
             }
         });
+    }
+
+    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+        let _ = ui.button(self.as_str());
     }
 }
 

@@ -76,7 +76,7 @@ impl eframe::App for App {
                         .striped(false)
                         .show(ui, |ui| {
                             self.char_left.draw(ui);
-                            self.char_right.draw(ui);
+                            self.char_right.draw_as_opponent(ui);
                             ui.end_row();
                         });
                 });

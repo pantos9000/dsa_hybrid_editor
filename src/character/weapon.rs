@@ -31,6 +31,23 @@ impl Drawable for Weapon {
             ui.end_row();
         });
     }
+
+    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+        let grid = crate::util::create_grid("OpponentWeapon");
+
+        ui.heading("Waffe");
+        grid.show(ui, |ui| {
+            ui.label("Schaden");
+            self.damage.draw_as_opponent(ui);
+            // self.damage_gradient.draw(ui);
+            ui.end_row();
+
+            ui.label("Schadensbonus");
+            self.bonus_damage.draw_as_opponent(ui);
+            // self.bonus_gradient.draw(ui);
+            ui.end_row();
+        });
+    }
 }
 
 #[derive(
@@ -60,6 +77,11 @@ impl Drawable for Damage {
                 ui.selectable_value(self, val, val.as_str());
             }
         });
+    }
+
+    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+        // TODO small button?
+        let _ = ui.button(self.as_str());
     }
 }
 
@@ -118,6 +140,10 @@ impl Drawable for BonusDamage {
     fn draw(&mut self, ui: &mut egui::Ui) {
         let slider = egui::Slider::new(&mut self.0, Self::MIN..=Self::MAX);
         ui.add(slider);
+    }
+
+    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+        let _ = ui.button(format!("{}", self.0));
     }
 }
 

@@ -14,4 +14,8 @@ impl Drawable for Name {
         ui.heading("Heldenname");
         ui.text_edit_singleline(&mut self.0);
     }
+
+    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+        self.draw(ui);
+    }
 }

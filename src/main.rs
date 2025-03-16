@@ -2,6 +2,7 @@
 
 mod app;
 mod character;
+mod gradients;
 // mod simulator;
 mod util;
 

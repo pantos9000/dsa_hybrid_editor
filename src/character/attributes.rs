@@ -1,24 +1,36 @@
-use strum::IntoEnumIterator;
+use strum::{EnumCount, IntoEnumIterator};
 
-// use crate::simulator::Gradient;
-
-#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Attributes {
-    ges: Attribute,
-    // #[serde(skip)]
-    // ges_gradient: Gradient,
-    sta: Attribute,
-    // #[serde(skip)]
-    // sta_gradient: Gradient,
-    kon: Attribute,
-    // #[serde(skip)]
-    // kon_gradient: Gradient,
-    int: Attribute,
-    // #[serde(skip)]
-    // int_gradient: Gradient,
-    wil: Attribute,
-    // #[serde(skip)]
-    // wil_gradient: Gradient,
+    attributes: [Attribute; AttributeName::COUNT],
+}
+
+impl Attributes {
+    fn name_to_index(name: AttributeName) -> usize {
+        match name {
+            AttributeName::Ges => 0,
+            AttributeName::Stä => 1,
+            AttributeName::Kon => 2,
+            AttributeName::Int => 3,
+            AttributeName::Wil => 4,
+        }
+    }
+}
+
+impl std::ops::Index<AttributeName> for Attributes {
+    type Output = Attribute;
+
+    fn index(&self, name: AttributeName) -> &Self::Output {
+        let index = Self::name_to_index(name);
+        &self.attributes[index]
+    }
+}
+
+impl std::ops::IndexMut<AttributeName> for Attributes {
+    fn index_mut(&mut self, name: AttributeName) -> &mut Self::Output {
+        let index = Self::name_to_index(name);
+        &mut self.attributes[index]
+    }
 }
 
 impl crate::app::Drawable for Attributes {
@@ -27,32 +39,34 @@ impl crate::app::Drawable for Attributes {
 
         ui.heading("Attribute");
         grid.show(ui, |ui| {
-            ui.label("GES");
-            self.ges.draw(ui);
-            // self.ges_gradient.draw(ui);
-            ui.end_row();
-
-            ui.label("STÄ");
-            self.sta.draw(ui);
-            // self.sta_gradient.draw(ui);
-            ui.end_row();
-
-            ui.label("KON");
-            self.kon.draw(ui);
-            // self.kon_gradient.draw(ui);
-            ui.end_row();
-
-            ui.label("INT");
-            self.int.draw(ui);
-            // self.int_gradient.draw(ui);
-            ui.end_row();
-
-            ui.label("WIL");
-            self.wil.draw(ui);
-            // self.wil_gradient.draw(ui);
-            ui.end_row();
+            for aname in AttributeName::iter() {
+                ui.label(aname.as_ref());
+                self[aname].draw(ui);
+                ui.end_row();
+            }
         });
     }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    strum_macros::EnumIter,
+    strum_macros::AsRefStr,
+    strum_macros::EnumCount,
+    serde::Serialize,
+    serde::Deserialize,
+)]
+pub enum AttributeName {
+    Ges,
+    Stä,
+    Kon,
+    Int,
+    Wil,
 }
 
 #[derive(

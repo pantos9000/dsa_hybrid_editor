@@ -3,7 +3,7 @@ mod name;
 mod skills;
 mod weapon;
 
-pub use attributes::Attributes;
+pub use attributes::{AttributeName, Attributes};
 pub use name::Name;
 pub use skills::Skills;
 pub use weapon::Weapon;

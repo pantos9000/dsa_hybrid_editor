@@ -6,6 +6,7 @@ use crate::util::LogError;
 
 pub trait Drawable {
     fn draw(&mut self, ui: &mut egui::Ui);
+    // fn draw_with_gradients(&mut self, ui: &mut egui::Ui, gradients: &Gradients);
 }
 
 #[derive(Debug, Default, Clone)]

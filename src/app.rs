@@ -70,14 +70,15 @@ impl eframe::App for App {
             egui::containers::Resize::default()
                 .auto_sized()
                 .show(ui, |ui| {
-                    ui.columns(2, |ui_cols| {
-                        ui_cols[0].push_id("left", |ui| {
+                    egui::Grid::new("CharCols")
+                        .num_columns(3)
+                        .spacing([10.0, 4.0])
+                        .striped(false)
+                        .show(ui, |ui| {
                             self.char_left.draw(ui);
-                        });
-                        ui_cols[1].push_id("right", |ui| {
                             self.char_right.draw(ui);
+                            ui.end_row();
                         });
-                    });
                 });
         });
 

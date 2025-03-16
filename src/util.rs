@@ -1,8 +1,8 @@
 pub fn create_grid(id_salt: impl std::hash::Hash) -> egui::Grid {
     egui::Grid::new(id_salt)
         .num_columns(2)
-        .min_col_width(120.0)
-        .spacing([0.0, 4.0])
+        .min_col_width(80.0)
+        .spacing([20.0, 4.0])
         .striped(true)
 }
 

@@ -8,6 +8,8 @@ pub use name::Name;
 pub use skills::Skills;
 pub use weapon::Weapon;
 
+use crate::util;
+
 /// Represents a drawable element of a char
 trait Drawable {
     fn draw(&mut self, ui: &mut egui::Ui);
@@ -24,22 +26,24 @@ pub struct Character {
 
 impl Character {
     pub fn draw(&mut self, ui: &mut egui::Ui) {
-        crate::util::create_frame(ui).show(ui, |ui| {
-            draw_ui_in_frame(ui, &mut self.name);
-            draw_ui_in_frame(ui, &mut self.attributes);
-            draw_ui_in_frame(ui, &mut self.skills);
-            draw_ui_in_frame(ui, &mut self.weapon);
+        util::create_frame(ui).show(ui, |ui| {
+            ui.with_layout(
+                egui::Layout::top_down_justified(egui::Align::Center),
+                |ui| {
+                    util::create_frame(ui).show(ui, |ui| {
+                        self.name.draw(ui);
+                    });
+                    util::create_frame(ui).show(ui, |ui| {
+                        self.attributes.draw(ui);
+                    });
+                    util::create_frame(ui).show(ui, |ui| {
+                        self.skills.draw(ui);
+                    });
+                    util::create_frame(ui).show(ui, |ui| {
+                        self.weapon.draw(ui);
+                    });
+                },
+            );
         });
     }
-}
-
-fn draw_ui_in_frame(ui: &mut egui::Ui, drawable: &mut impl Drawable) {
-    ui.with_layout(
-        egui::Layout::top_down_justified(egui::Align::Center),
-        |ui| {
-            crate::util::create_frame(ui).show(ui, |ui| {
-                drawable.draw(ui);
-            });
-        },
-    );
 }

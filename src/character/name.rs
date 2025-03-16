@@ -1,3 +1,5 @@
+use super::Drawable;
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Name(String);
 
@@ -7,7 +9,7 @@ impl Default for Name {
     }
 }
 
-impl crate::app::Drawable for Name {
+impl Drawable for Name {
     fn draw(&mut self, ui: &mut egui::Ui) {
         ui.heading("Heldenname");
         ui.text_edit_singleline(&mut self.0);

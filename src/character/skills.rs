@@ -1,5 +1,7 @@
 use strum::IntoEnumIterator;
 
+use super::Drawable;
+
 // use crate::simulator::Gradient;
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
@@ -9,7 +11,7 @@ pub struct Skills {
     // kampfen_gradient: Gradient,
 }
 
-impl crate::app::Drawable for Skills {
+impl Drawable for Skills {
     fn draw(&mut self, ui: &mut egui::Ui) {
         let grid = crate::util::create_grid("Fähigkeiten");
 
@@ -46,7 +48,7 @@ pub enum Skill {
     W12p2,
 }
 
-impl crate::app::Drawable for Skill {
+impl Drawable for Skill {
     fn draw(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             for val in Self::iter() {

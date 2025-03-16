@@ -1,5 +1,7 @@
 use strum::{EnumCount, IntoEnumIterator};
 
+use super::Drawable;
+
 #[derive(Debug, Default, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Attributes {
     attributes: [Attribute; AttributeName::COUNT],
@@ -33,7 +35,7 @@ impl std::ops::IndexMut<AttributeName> for Attributes {
     }
 }
 
-impl crate::app::Drawable for Attributes {
+impl Drawable for Attributes {
     fn draw(&mut self, ui: &mut egui::Ui) {
         let grid = crate::util::create_grid("Attribute");
 
@@ -91,7 +93,7 @@ pub enum Attribute {
     W12p2,
 }
 
-impl crate::app::Drawable for Attribute {
+impl Drawable for Attribute {
     fn draw(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             for val in Self::iter() {

@@ -1,5 +1,7 @@
 use strum::IntoEnumIterator;
 
+use super::Drawable;
+
 // use crate::simulator::Gradient;
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
@@ -12,7 +14,7 @@ pub struct Weapon {
     // bonus_gradient: Gradient,
 }
 
-impl crate::app::Drawable for Weapon {
+impl Drawable for Weapon {
     fn draw(&mut self, ui: &mut egui::Ui) {
         let grid = crate::util::create_grid("Waffe");
 
@@ -51,7 +53,7 @@ pub enum Damage {
     W12,
 }
 
-impl crate::app::Drawable for Damage {
+impl Drawable for Damage {
     fn draw(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             for val in Self::iter() {
@@ -112,7 +114,7 @@ impl From<BonusDamage> for i32 {
     }
 }
 
-impl crate::app::Drawable for BonusDamage {
+impl Drawable for BonusDamage {
     fn draw(&mut self, ui: &mut egui::Ui) {
         let slider = egui::Slider::new(&mut self.0, Self::MIN..=Self::MAX);
         ui.add(slider);

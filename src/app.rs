@@ -4,11 +4,6 @@ use crate::character::Character;
 use crate::util::LogError;
 // use crate::simulator::Simulator;
 
-pub trait Drawable {
-    fn draw(&mut self, ui: &mut egui::Ui);
-    // fn draw_with_gradients(&mut self, ui: &mut egui::Ui, gradients: &Gradients);
-}
-
 #[derive(Debug, Default, Clone)]
 struct UiState {
     show_logs: bool,

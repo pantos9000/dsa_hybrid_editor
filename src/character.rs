@@ -8,6 +8,12 @@ pub use name::Name;
 pub use skills::Skills;
 pub use weapon::Weapon;
 
+/// Represents a drawable element of a char
+trait Drawable {
+    fn draw(&mut self, ui: &mut egui::Ui);
+    // fn draw_as_opponent(&mut self, ui: &mut egui::Ui);
+}
+
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Character {
     name: Name,
@@ -16,8 +22,8 @@ pub struct Character {
     weapon: Weapon,
 }
 
-impl crate::app::Drawable for Character {
-    fn draw(&mut self, ui: &mut egui::Ui) {
+impl Character {
+    pub fn draw(&mut self, ui: &mut egui::Ui) {
         crate::util::create_frame(ui).show(ui, |ui| {
             draw_ui_in_frame(ui, &mut self.name);
             draw_ui_in_frame(ui, &mut self.attributes);
@@ -27,7 +33,7 @@ impl crate::app::Drawable for Character {
     }
 }
 
-fn draw_ui_in_frame(ui: &mut egui::Ui, drawable: &mut impl crate::app::Drawable) {
+fn draw_ui_in_frame(ui: &mut egui::Ui, drawable: &mut impl Drawable) {
     ui.with_layout(
         egui::Layout::top_down_justified(egui::Align::Center),
         |ui| {

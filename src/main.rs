@@ -2,8 +2,7 @@
 
 mod app;
 mod character;
-mod gradients;
-// mod simulator;
+mod simulator;
 mod util;
 
 fn create_app() -> eframe::AppCreator<'static> {

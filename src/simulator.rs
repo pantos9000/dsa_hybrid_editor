@@ -213,6 +213,7 @@ struct GradientData {
 #[cfg(test)]
 mod tests {
     use crate::character::AttributeName;
+    use crate::character::SkillName;
 
     use super::*;
 
@@ -254,8 +255,9 @@ mod tests {
     #[test]
     fn test_simulator_with_elements_reaches_100_percent() {
         let mut builder = Builder::new();
-        let gradient_1 =
-            builder.add_gradient(Box::new(|c: &mut Character| c.skills.kampfen.increment()));
+        let gradient_1 = builder.add_gradient(Box::new(|c: &mut Character| {
+            c.skills[SkillName::Kämpfen].increment()
+        }));
         let gradient_2 = builder.add_gradient(Box::new(|c: &mut Character| {
             c.attributes[AttributeName::Stä].increment()
         }));

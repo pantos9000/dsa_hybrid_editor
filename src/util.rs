@@ -30,3 +30,34 @@ where
         log::error!("{context}: {err}");
     }
 }
+
+pub trait Named {
+    type Name;
+    const NAME_COUNT: usize;
+    fn name_to_index(name: Self::Name) -> usize;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct Set<T: Named>(Vec<T>);
+
+impl<T: Named + Default> Default for Set<T> {
+    fn default() -> Self {
+        let mut v = Vec::new();
+        v.resize_with(T::NAME_COUNT, T::default);
+        Self(v)
+    }
+}
+
+impl<T: Named> std::ops::Index<T::Name> for Set<T> {
+    type Output = T;
+
+    fn index(&self, name: T::Name) -> &Self::Output {
+        &self.0[T::name_to_index(name)]
+    }
+}
+
+impl<T: Named> std::ops::IndexMut<T::Name> for Set<T> {
+    fn index_mut(&mut self, name: T::Name) -> &mut Self::Output {
+        &mut self.0[T::name_to_index(name)]
+    }
+}

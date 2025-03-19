@@ -5,7 +5,7 @@ mod weapon;
 
 pub use attributes::{AttributeName, Attributes};
 pub use name::Name;
-pub use skills::Skills;
+pub use skills::{SkillName, Skills};
 pub use weapon::Weapon;
 
 use crate::util;

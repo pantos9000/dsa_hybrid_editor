@@ -1,14 +1,17 @@
 use strum::{EnumCount, IntoEnumIterator};
 
+use crate::util::{Named, Set};
+
 use super::Drawable;
 
-#[derive(Debug, Default, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub struct Attributes {
-    pub(crate) attributes: [Attribute; AttributeName::COUNT],
-}
+pub type Attributes = Set<Attribute>;
 
-impl Attributes {
-    fn name_to_index(name: AttributeName) -> usize {
+impl Named for Attribute {
+    type Name = AttributeName;
+
+    const NAME_COUNT: usize = AttributeName::COUNT;
+
+    fn name_to_index(name: Self::Name) -> usize {
         match name {
             AttributeName::Ges => 0,
             AttributeName::Stä => 1,
@@ -16,22 +19,6 @@ impl Attributes {
             AttributeName::Int => 3,
             AttributeName::Wil => 4,
         }
-    }
-}
-
-impl std::ops::Index<AttributeName> for Attributes {
-    type Output = Attribute;
-
-    fn index(&self, name: AttributeName) -> &Self::Output {
-        let index = Self::name_to_index(name);
-        &self.attributes[index]
-    }
-}
-
-impl std::ops::IndexMut<AttributeName> for Attributes {
-    fn index_mut(&mut self, name: AttributeName) -> &mut Self::Output {
-        let index = Self::name_to_index(name);
-        &mut self.attributes[index]
     }
 }
 

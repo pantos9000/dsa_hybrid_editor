@@ -1,14 +1,21 @@
-use strum::IntoEnumIterator;
+use strum::{EnumCount, IntoEnumIterator};
+
+use crate::util::{Named, Set};
 
 use super::Drawable;
 
-// use crate::simulator::Gradient;
+pub type Skills = Set<Skill>;
 
-#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Skills {
-    pub(crate) kampfen: Skill,
-    // #[serde(skip)]
-    // kampfen_gradient: Gradient,
+impl Named for Skill {
+    type Name = SkillName;
+
+    const NAME_COUNT: usize = SkillName::COUNT;
+
+    fn name_to_index(name: Self::Name) -> usize {
+        match name {
+            SkillName::Kämpfen => 0,
+        }
+    }
 }
 
 impl Drawable for Skills {
@@ -17,10 +24,11 @@ impl Drawable for Skills {
 
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {
-            ui.label("Kämpfen");
-            self.kampfen.draw(ui);
-            // self.kampfen_gradient.draw(ui);
-            ui.end_row();
+            for sname in SkillName::iter() {
+                ui.label(sname.as_ref());
+                self[sname].draw(ui);
+                ui.end_row();
+            }
         });
     }
 
@@ -29,12 +37,30 @@ impl Drawable for Skills {
 
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {
-            ui.label("Kämpfen");
-            self.kampfen.draw_as_opponent(ui);
-            // self.kampfen_gradient.draw(ui);
-            ui.end_row();
+            for sname in SkillName::iter() {
+                ui.label(sname.as_ref());
+                self[sname].draw_as_opponent(ui);
+                ui.end_row();
+            }
         });
     }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    strum_macros::EnumIter,
+    strum_macros::AsRefStr,
+    strum_macros::EnumCount,
+    serde::Serialize,
+    serde::Deserialize,
+)]
+pub enum SkillName {
+    Kämpfen,
 }
 
 #[derive(

@@ -7,11 +7,7 @@ use super::Drawable;
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Weapon {
     damage: Damage,
-    // #[serde(skip)]
-    // damage_gradient: Gradient,
     bonus_damage: BonusDamage,
-    // #[serde(skip)]
-    // bonus_gradient: Gradient,
 }
 
 impl Drawable for Weapon {
@@ -22,12 +18,10 @@ impl Drawable for Weapon {
         grid.show(ui, |ui| {
             ui.label("Schaden");
             self.damage.draw(ui);
-            // self.damage_gradient.draw(ui);
             ui.end_row();
 
             ui.label("Schadensbonus");
             self.bonus_damage.draw(ui);
-            // self.bonus_gradient.draw(ui);
             ui.end_row();
         });
     }
@@ -39,12 +33,10 @@ impl Drawable for Weapon {
         grid.show(ui, |ui| {
             ui.label("Schaden");
             self.damage.draw_as_opponent(ui);
-            // self.damage_gradient.draw(ui);
             ui.end_row();
 
             ui.label("Schadensbonus");
             self.bonus_damage.draw_as_opponent(ui);
-            // self.bonus_gradient.draw(ui);
             ui.end_row();
         });
     }

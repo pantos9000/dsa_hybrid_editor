@@ -4,7 +4,7 @@ use super::Drawable;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Attributes {
-    attributes: [Attribute; AttributeName::COUNT],
+    pub(crate) attributes: [Attribute; AttributeName::COUNT],
 }
 
 impl Attributes {
@@ -134,7 +134,7 @@ impl Attribute {
     }
 
     #[allow(dead_code)]
-    fn increment(&mut self) {
+    pub(crate) fn increment(&mut self) {
         let new = match self {
             Self::W4 => Self::W6,
             Self::W6 => Self::W8,
@@ -148,7 +148,7 @@ impl Attribute {
     }
 
     #[allow(dead_code)]
-    fn decrement(&mut self) {
+    pub(crate) fn decrement(&mut self) {
         let new = match self {
             Self::W4 => Self::W4,
             Self::W6 => Self::W4,

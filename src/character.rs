@@ -18,10 +18,10 @@ trait Drawable {
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Character {
-    name: Name,
-    attributes: Attributes,
-    skills: Skills,
-    weapon: Weapon,
+    pub(crate) name: Name,
+    pub(crate) attributes: Attributes,
+    pub(crate) skills: Skills,
+    pub(crate) weapon: Weapon,
 }
 
 impl Character {

@@ -6,7 +6,7 @@ use super::Drawable;
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Skills {
-    kampfen: Skill,
+    pub(crate) kampfen: Skill,
     // #[serde(skip)]
     // kampfen_gradient: Gradient,
 }
@@ -89,7 +89,7 @@ impl Skill {
     }
 
     #[allow(dead_code)]
-    fn increment(&mut self) {
+    pub fn increment(&mut self) {
         let new = match self {
             Self::W4m2 => Self::W4,
             Self::W4 => Self::W6,
@@ -104,7 +104,7 @@ impl Skill {
     }
 
     #[allow(dead_code)]
-    fn decrement(&mut self) {
+    pub fn decrement(&mut self) {
         let new = match self {
             Self::W4m2 => Self::W4m2,
             Self::W4 => Self::W4m2,

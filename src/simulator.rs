@@ -1,16 +1,25 @@
 use std::sync::atomic::{AtomicI8, AtomicU8, Ordering};
-use std::sync::{mpsc, Arc};
+use std::sync::Arc;
 use std::thread;
+
+use crossbeam::channel as mpsc;
+use crossbeam::channel::unbounded as channel;
 
 use crate::character::Character;
 
 pub type CharacterModification = Box<dyn FnMut(&mut Character) + Send>;
 
-pub struct SimulatorBuilder {
+#[derive(Default)]
+pub struct Builder {
     gradient_data: Vec<GradientData>,
 }
 
-impl SimulatorBuilder {
+impl Builder {
+    #[allow(dead_code)] // TODO
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     #[allow(dead_code)] // TODO
     pub fn add_gradient(&mut self, modification: CharacterModification) -> Gradient {
         let (gradient, handle) = create_gradient();
@@ -45,8 +54,8 @@ impl Drop for Simulator {
 
 impl Simulator {
     fn new(gradient_data: Vec<GradientData>) -> Self {
-        let (send, recv) = mpsc::channel();
-        let progress = Arc::new(AtomicU8::new(0));
+        let (send, recv) = channel();
+        let progress = Arc::new(AtomicU8::new(100));
         let thread = Some(Self::spawn_simulator_thread(gradient_data, recv, &progress));
         Self {
             thread,
@@ -76,12 +85,16 @@ impl Simulator {
         recv: mpsc::Receiver<CharData>,
         progress: Arc<AtomicU8>,
     ) {
-        let mut recv = recv.iter().peekable();
         'thread_loop: loop {
-            let Some(char_data) = recv.next() else {
+            let Ok(char_data) = recv.recv() else {
                 log::debug!("channel is closed, exiting thread loop");
                 return;
             };
+
+            // if other updates are available, use those
+            if !recv.is_empty() {
+                continue 'thread_loop;
+            }
 
             // we got a new configuration, so void all current results
             for GradientData {
@@ -104,18 +117,20 @@ impl Simulator {
                 // do calculation and store it
                 let gradient = Self::dummy_calculation(&char_data, modification);
                 handle.store_value(Some(gradient));
+                eprintln!("#### bla");
 
                 // update progress
-                let current_progress = 100 * i / gradient_data.len();
+                let current_progress = 100 * (i + 1) / gradient_data.len();
                 let current_progress = current_progress
                     .try_into()
                     .expect("progress percentage did not fit into a u8");
                 progress.store(current_progress, Ordering::Relaxed);
 
                 // cancel inner loop if new char configuration is available
-                if recv.peek().is_some() {
+                if !recv.is_empty() {
                     continue 'thread_loop;
                 }
+                eprintln!("#### blubb");
             }
         }
     }
@@ -168,6 +183,7 @@ impl Gradient {
     }
 }
 
+#[derive(Debug)]
 struct GradientHandle {
     value: Arc<AtomicI8>,
 }
@@ -194,4 +210,61 @@ struct GradientData {
     modification: CharacterModification,
 }
 
-// TODO tests
+#[cfg(test)]
+mod tests {
+    use crate::character::AttributeName;
+
+    use super::*;
+
+    #[test]
+    #[should_panic]
+    fn test_gradient() {
+        let (gradient, handle) = create_gradient();
+        assert!(gradient.value().is_none());
+
+        handle.store_value(Some(-100));
+        assert_eq!(gradient.value(), Some(-100));
+
+        handle.store_value(Some(0));
+        assert_eq!(gradient.value(), Some(0));
+
+        handle.store_value(Some(100));
+        assert_eq!(gradient.value(), Some(100));
+
+        handle.store_value(Some(100));
+        assert_eq!(gradient.value(), Some(100));
+
+        handle.store_value(None);
+        assert!(gradient.value().is_none());
+    }
+
+    #[test]
+    fn test_bare_simulator_shuts_down_properly() {
+        let simulator = Builder::new().build();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        drop(simulator)
+    }
+
+    #[test]
+    fn test_simulator_starts_with_100_percent() {
+        let simulator = Builder::new().build();
+        assert_eq!(simulator.progress(), 100);
+    }
+
+    #[test]
+    fn test_simulator_with_elements_reaches_100_percent() {
+        let mut builder = Builder::new();
+        let gradient_1 =
+            builder.add_gradient(Box::new(|c: &mut Character| c.skills.kampfen.increment()));
+        let gradient_2 = builder.add_gradient(Box::new(|c: &mut Character| {
+            c.attributes[AttributeName::Stä].increment()
+        }));
+        let simulator = builder.build();
+        simulator.update_characters(Character::default(), Character::default());
+
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        assert!(gradient_1.value().is_some());
+        assert!(gradient_2.value().is_some());
+        assert_eq!(simulator.progress(), 100);
+    }
+}

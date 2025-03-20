@@ -1,6 +1,6 @@
 use super::Drawable;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Name(String);
 
 impl Default for Name {

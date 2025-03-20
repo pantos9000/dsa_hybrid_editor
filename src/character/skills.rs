@@ -70,6 +70,7 @@ pub enum SkillName {
     Copy,
     PartialEq,
     Eq,
+    Hash,
     strum_macros::EnumIter,
     serde::Serialize,
     serde::Deserialize,

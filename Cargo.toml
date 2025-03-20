@@ -29,6 +29,8 @@ strum = "0.26"
 strum_macros = "0.26"
 
 crossbeam = "0.8.4"
+dashmap = "6.1.0"
+fxhash = "0.2.1"
 
 #
 # web

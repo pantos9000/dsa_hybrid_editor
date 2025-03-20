@@ -4,7 +4,7 @@ use super::Drawable;
 
 // use crate::simulator::Gradient;
 
-#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Weapon {
     damage: Damage,
     bonus_damage: BonusDamage,
@@ -49,6 +49,7 @@ impl Drawable for Weapon {
     Copy,
     PartialEq,
     Eq,
+    Hash,
     strum_macros::EnumIter,
     serde::Serialize,
     serde::Deserialize,
@@ -113,7 +114,9 @@ impl Damage {
     }
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct BonusDamage(i32);
 
 impl From<i32> for BonusDamage {

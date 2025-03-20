@@ -2,6 +2,7 @@
 
 mod app;
 mod character;
+mod gradient;
 mod simulator;
 mod util;
 

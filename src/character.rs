@@ -16,7 +16,7 @@ trait Drawable {
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui);
 }
 
-#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Character {
     pub(crate) name: Name,
     pub(crate) attributes: Attributes,

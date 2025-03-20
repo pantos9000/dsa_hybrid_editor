@@ -1,46 +1,27 @@
-use std::sync::atomic::{AtomicI8, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
 use std::thread;
+use std::time::Duration;
 
-use crossbeam::channel as mpsc;
 use crossbeam::channel::unbounded as channel;
+use crossbeam::channel::{self as mpsc, RecvTimeoutError};
+use dashmap::DashMap;
+use fxhash::FxBuildHasher;
 
 use crate::character::Character;
+use crate::gradient::Gradient;
 
-pub type CharacterModification = Box<dyn FnMut(&mut Character) + Send>;
+pub type CharacterModification = Box<dyn FnOnce(&mut Character)>;
 
-#[derive(Default)]
-pub struct Builder {
-    gradient_data: Vec<GradientData>,
-}
-
-impl Builder {
-    #[allow(dead_code)] // TODO
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    #[allow(dead_code)] // TODO
-    pub fn add_gradient(&mut self, modification: CharacterModification) -> Gradient {
-        let (gradient, handle) = create_gradient();
-        let gradient_data = GradientData {
-            handle,
-            modification,
-        };
-        self.gradient_data.push(gradient_data);
-        gradient
-    }
-
-    #[allow(dead_code)] // TODO
-    pub fn build(self) -> Simulator {
-        Simulator::new(self.gradient_data)
-    }
-}
+/// Holds all gradient results
+type GradientMap = DashMap<CharData, Gradient, FxBuildHasher>;
 
 pub struct Simulator {
     thread: Option<thread::JoinHandle<()>>,
+    gradient_map: Arc<GradientMap>,
     send: Option<mpsc::Sender<CharData>>,
     progress: Arc<AtomicU8>,
+    char_data: CharData,
 }
 
 impl Drop for Simulator {
@@ -53,101 +34,86 @@ impl Drop for Simulator {
 }
 
 impl Simulator {
-    fn new(gradient_data: Vec<GradientData>) -> Self {
+    #[allow(dead_code)] // TODO
+    fn new(character: Character, opponent: Character) -> Self {
+        let char_data = CharData {
+            character,
+            opponent,
+        };
         let (send, recv) = channel();
         let progress = Arc::new(AtomicU8::new(100));
-        let thread = Some(Self::spawn_simulator_thread(gradient_data, recv, &progress));
+        let gradient_map = Arc::new(GradientMap::default());
+        let thread = Some(Self::spawn_simulator_thread(&gradient_map, recv, &progress));
         Self {
             thread,
+            gradient_map,
             send: Some(send),
             progress,
+            char_data,
         }
     }
 
     fn spawn_simulator_thread(
-        gradient_data: Vec<GradientData>,
+        gradient_map: &Arc<GradientMap>,
         recv: mpsc::Receiver<CharData>,
         progress: &Arc<AtomicU8>,
     ) -> thread::JoinHandle<()> {
         let progress = Arc::clone(progress);
+        let gradient_map = Arc::clone(gradient_map);
         thread::Builder::new()
             .name("simulator_thread".to_owned())
             .spawn(|| {
                 log::info!("starting simulator thread");
-                Self::simulator_thread(gradient_data, recv, progress);
+                Self::simulator_thread(gradient_map, recv, progress);
                 log::info!("stopping simulator thread");
             })
             .expect("failed to spawn thread")
     }
 
     fn simulator_thread(
-        gradient_data: Vec<GradientData>,
+        gradient_map: Arc<GradientMap>,
         recv: mpsc::Receiver<CharData>,
         progress: Arc<AtomicU8>,
     ) {
+        fn dummy_calculation(_char_data: &CharData) -> Gradient {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            42.try_into().unwrap()
+        }
+
+        let mut count_done = 0;
+
         'thread_loop: loop {
-            let Ok(char_data) = recv.recv() else {
-                log::debug!("channel is closed, exiting thread loop");
-                return;
-            };
-
-            // if other updates are available, use those
-            if !recv.is_empty() {
-                continue 'thread_loop;
-            }
-
-            // we got a new configuration, so void all current results
-            for GradientData {
-                handle,
-                modification: _,
-            } in &gradient_data
-            {
-                handle.store_value(None);
-            }
-
-            // now do the calculations
-            for (
-                i,
-                GradientData {
-                    handle,
-                    modification,
-                },
-            ) in gradient_data.iter().enumerate()
-            {
-                // do calculation and store it
-                let gradient = Self::dummy_calculation(&char_data, modification);
-                handle.store_value(Some(gradient));
-                eprintln!("#### bla");
-
-                // update progress
-                let current_progress = 100 * (i + 1) / gradient_data.len();
-                let current_progress = current_progress
-                    .try_into()
-                    .expect("progress percentage did not fit into a u8");
-                progress.store(current_progress, Ordering::Relaxed);
-
-                // cancel inner loop if new char configuration is available
-                if !recv.is_empty() {
+            // get more work
+            let char_data = match recv.recv_timeout(Duration::from_secs(1)) {
+                Ok(char_data) => char_data,
+                Err(RecvTimeoutError::Disconnected) => break 'thread_loop,
+                Err(RecvTimeoutError::Timeout) => {
+                    count_done = 0;
                     continue 'thread_loop;
                 }
-                eprintln!("#### blubb");
+            };
+
+            // do the calculation and store the result if needed
+            if !gradient_map.contains_key(&char_data) {
+                let gradient = dummy_calculation(&char_data);
+                gradient_map.insert(char_data, gradient);
             }
+
+            // update progress
+            count_done += 1;
+            let all = count_done + recv.len();
+            let new_progress = 100 * count_done / all;
+            let new_progress = new_progress.try_into().unwrap_or(100);
+            progress.store(new_progress, Ordering::Relaxed);
         }
     }
 
-    fn dummy_calculation(_char_data: &CharData, _modification: &CharacterModification) -> i8 {
-        std::thread::sleep(std::time::Duration::from_millis(100));
-        42
-    }
-
     #[allow(dead_code)] // TODO
-    pub fn update_characters(&self, character: Character, enemy: Character) {
-        let char_data = CharData { character, enemy };
-        self.send
-            .as_ref()
-            .expect("sender does not exist")
-            .send(char_data)
-            .expect("worker thread is gone");
+    pub fn update_characters(&mut self, character: Character, opponent: Character) {
+        self.char_data = CharData {
+            character,
+            opponent,
+        };
     }
 
     /// Return the progress of current calculations
@@ -155,59 +121,30 @@ impl Simulator {
     pub fn progress(&self) -> u8 {
         self.progress.load(Ordering::Relaxed)
     }
-}
 
-fn create_gradient() -> (Gradient, GradientHandle) {
-    let value = Arc::new(AtomicI8::new(i8::MIN));
-    let gradient_handle = GradientHandle {
-        value: Arc::clone(&value),
-    };
-    let gradient = Gradient { value };
-    (gradient, gradient_handle)
-}
-
-pub struct Gradient {
-    value: Arc<AtomicI8>,
-}
-
-impl Gradient {
     #[allow(dead_code)] // TODO
-    pub fn value(&self) -> Option<i8> {
-        let loaded = self.value.load(Ordering::Relaxed);
-        match loaded {
-            ..-100 => unreachable!(),
-            101..i8::MAX => unreachable!(),
-            i8::MAX => None,
-            x => Some(x),
+    pub fn gradient(&self, modification: CharacterModification) -> Option<Gradient> {
+        let mut char_data = self.char_data.clone();
+        modification(&mut char_data.character);
+
+        // return early if already in map
+        if let Some(gradient) = self.gradient_map.get(&char_data) {
+            return Some(*gradient);
         }
+
+        self.send
+            .as_ref()
+            .expect("sender is gone")
+            .send(char_data)
+            .expect("simulator thread is gone");
+        None
     }
 }
 
-#[derive(Debug)]
-struct GradientHandle {
-    value: Arc<AtomicI8>,
-}
-
-impl GradientHandle {
-    fn store_value(&self, value: Option<i8>) {
-        let store = match value {
-            None => i8::MAX,
-            Some(..-100) => unreachable!(),
-            Some(101..) => unreachable!(),
-            Some(x) => x,
-        };
-        self.value.store(store, Ordering::Relaxed);
-    }
-}
-
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 struct CharData {
     character: Character,
-    enemy: Character,
-}
-
-struct GradientData {
-    handle: GradientHandle,
-    modification: CharacterModification,
+    opponent: Character,
 }
 
 #[cfg(test)]
@@ -217,56 +154,33 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    #[should_panic]
-    fn test_gradient() {
-        let (gradient, handle) = create_gradient();
-        assert!(gradient.value().is_none());
-
-        handle.store_value(Some(-100));
-        assert_eq!(gradient.value(), Some(-100));
-
-        handle.store_value(Some(0));
-        assert_eq!(gradient.value(), Some(0));
-
-        handle.store_value(Some(100));
-        assert_eq!(gradient.value(), Some(100));
-
-        handle.store_value(Some(100));
-        assert_eq!(gradient.value(), Some(100));
-
-        handle.store_value(None);
-        assert!(gradient.value().is_none());
-    }
-
-    #[test]
-    fn test_bare_simulator_shuts_down_properly() {
-        let simulator = Builder::new().build();
-        std::thread::sleep(std::time::Duration::from_millis(10));
-        drop(simulator)
+    fn create_simulator() -> Simulator {
+        let char = Character::default();
+        Simulator::new(char.clone(), char)
     }
 
     #[test]
     fn test_simulator_starts_with_100_percent() {
-        let simulator = Builder::new().build();
+        let simulator = create_simulator();
         assert_eq!(simulator.progress(), 100);
     }
 
     #[test]
-    fn test_simulator_with_elements_reaches_100_percent() {
-        let mut builder = Builder::new();
-        let gradient_1 = builder.add_gradient(Box::new(|c: &mut Character| {
-            c.skills[SkillName::Kämpfen].increment()
-        }));
-        let gradient_2 = builder.add_gradient(Box::new(|c: &mut Character| {
-            c.attributes[AttributeName::Stä].increment()
-        }));
-        let simulator = builder.build();
-        simulator.update_characters(Character::default(), Character::default());
+    fn test_simulator_progress() {
+        let mod1 = |c: &mut Character| c.skills[SkillName::Kämpfen].increment();
+        let mod2 = |c: &mut Character| c.attributes[AttributeName::Stä].increment();
+        let mod1 = Box::new(mod1);
+        let mod2 = Box::new(mod2);
+        let simulator = create_simulator();
 
-        std::thread::sleep(std::time::Duration::from_millis(300));
-        assert!(gradient_1.value().is_some());
-        assert!(gradient_2.value().is_some());
+        let _ = simulator.gradient(mod1.clone());
+        let _ = simulator.gradient(mod2.clone());
+        std::thread::sleep(std::time::Duration::from_millis(140));
+        assert_eq!(simulator.progress(), 50);
+        std::thread::sleep(std::time::Duration::from_millis(140));
         assert_eq!(simulator.progress(), 100);
+
+        assert!(simulator.gradient(mod1).is_some());
+        assert!(simulator.gradient(mod2).is_some());
     }
 }

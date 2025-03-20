@@ -37,7 +37,7 @@ pub trait Named {
     fn name_to_index(name: Self::Name) -> usize;
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Set<T: Named>(Vec<T>);
 
 impl<T: Named + Default> Default for Set<T> {

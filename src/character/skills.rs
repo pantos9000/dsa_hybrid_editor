@@ -1,48 +1,36 @@
-use strum::{EnumCount, IntoEnumIterator};
-
-use crate::util::{Named, Set};
+use strum::IntoEnumIterator;
 
 use super::Drawable;
 
-pub type Skills = Set<Skill>;
-
-impl Named for Skill {
-    type Name = SkillName;
-
-    const NAME_COUNT: usize = SkillName::COUNT;
-
-    fn name_to_index(name: Self::Name) -> usize {
-        match name {
-            SkillName::Kämpfen => 0,
-        }
-    }
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+pub struct Skills {
+    pub(crate) kämpfen: Skill,
 }
 
 impl Drawable for Skills {
     fn draw(&mut self, ui: &mut egui::Ui) {
+        let draw = |skill: &mut Skill, name, ui: &mut egui::Ui| {
+            ui.label(name);
+            skill.draw(ui);
+            ui.end_row();
+        };
+
         let grid = crate::util::create_grid("Fähigkeiten");
 
         ui.heading("Fähigkeiten");
-        grid.show(ui, |ui| {
-            for sname in SkillName::iter() {
-                ui.label(sname.as_ref());
-                self[sname].draw(ui);
-                ui.end_row();
-            }
-        });
+        grid.show(ui, |ui| draw(&mut self.kämpfen, "Kämpfen", ui));
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+        let draw = |skill: &mut Skill, name, ui: &mut egui::Ui| {
+            ui.label(name);
+            skill.draw_as_opponent(ui);
+            ui.end_row();
+        };
         let grid = crate::util::create_grid("OpponentSkills");
 
         ui.heading("Fähigkeiten");
-        grid.show(ui, |ui| {
-            for sname in SkillName::iter() {
-                ui.label(sname.as_ref());
-                self[sname].draw_as_opponent(ui);
-                ui.end_row();
-            }
-        });
+        grid.show(ui, |ui| draw(&mut self.kämpfen, "Kämpfen", ui));
     }
 }
 

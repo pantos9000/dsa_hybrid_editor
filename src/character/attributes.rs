@@ -1,74 +1,54 @@
-use strum::{EnumCount, IntoEnumIterator};
-
-use crate::util::{Named, Set};
+use strum::IntoEnumIterator;
 
 use super::Drawable;
 
-pub type Attributes = Set<Attribute>;
-
-impl Named for Attribute {
-    type Name = AttributeName;
-
-    const NAME_COUNT: usize = AttributeName::COUNT;
-
-    fn name_to_index(name: Self::Name) -> usize {
-        match name {
-            AttributeName::Ges => 0,
-            AttributeName::Stä => 1,
-            AttributeName::Kon => 2,
-            AttributeName::Int => 3,
-            AttributeName::Wil => 4,
-        }
-    }
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+pub struct Attributes {
+    pub(crate) ges: Attribute,
+    pub(crate) stä: Attribute,
+    pub(crate) kon: Attribute,
+    pub(crate) int: Attribute,
+    pub(crate) wil: Attribute,
 }
 
 impl Drawable for Attributes {
     fn draw(&mut self, ui: &mut egui::Ui) {
+        let draw = |attr: &mut Attribute, name, ui: &mut egui::Ui| {
+            ui.label(name);
+            attr.draw(ui);
+            ui.end_row();
+        };
+
         let grid = crate::util::create_grid("Attribute");
 
         ui.heading("Attribute");
         grid.show(ui, |ui| {
-            for aname in AttributeName::iter() {
-                ui.label(aname.as_ref());
-                self[aname].draw(ui);
-                ui.end_row();
-            }
+            draw(&mut self.ges, "Ges", ui);
+            draw(&mut self.stä, "Stä", ui);
+            draw(&mut self.kon, "Kon", ui);
+            draw(&mut self.int, "Int", ui);
+            draw(&mut self.wil, "Wil", ui);
         });
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+        let draw = |attr: &mut Attribute, name, ui: &mut egui::Ui| {
+            ui.label(name);
+            attr.draw_as_opponent(ui);
+            ui.end_row();
+        };
+
         let grid = crate::util::create_grid("OpponentAttributes");
 
         ui.heading("Attribute");
         grid.show(ui, |ui| {
-            for aname in AttributeName::iter() {
-                ui.label(aname.as_ref());
-                self[aname].draw_as_opponent(ui);
-                ui.end_row();
-            }
+            draw(&mut self.ges, "Ges", ui);
+            draw(&mut self.stä, "Stä", ui);
+            draw(&mut self.kon, "Kon", ui);
+            draw(&mut self.int, "Int", ui);
+            draw(&mut self.wil, "Wil", ui);
         });
     }
-}
-
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Hash,
-    strum_macros::EnumIter,
-    strum_macros::AsRefStr,
-    strum_macros::EnumCount,
-    serde::Serialize,
-    serde::Deserialize,
-)]
-pub enum AttributeName {
-    Ges,
-    Stä,
-    Kon,
-    Int,
-    Wil,
 }
 
 #[derive(

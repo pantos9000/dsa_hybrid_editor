@@ -101,10 +101,8 @@ impl Simulator {
             };
 
             // do the calculation and store the result if needed
-            if !gradient_map.contains_key(&char_data) {
-                let gradient = dummy_calculation(&char_data);
-                gradient_map.insert(char_data, gradient);
-            }
+            let gradient = dummy_calculation(&char_data);
+            gradient_map.insert(char_data, gradient);
 
             // update progress
             count_done += 1;
@@ -135,6 +133,9 @@ impl Simulator {
         if let Some(gradient) = self.gradient_map.get(&char_data) {
             return *gradient;
         }
+
+        self.gradient_map
+            .insert(char_data.clone(), Gradient::default());
 
         self.send
             .as_ref()

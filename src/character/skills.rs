@@ -18,9 +18,7 @@ impl Drawable for Skills {
             let mut draw = |skill: &mut Skill, name, modification: CharacterModification| {
                 ui.label(name);
                 skill.draw(ui);
-                if let Some(gradient) = sim.gradient(modification) {
-                    gradient.draw(ui);
-                }
+                sim.gradient(modification).draw(ui);
                 ui.end_row();
             };
 

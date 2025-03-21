@@ -22,9 +22,7 @@ impl Drawable for Attributes {
             let mut draw = |attr: &mut Attribute, name, modification: CharacterModification| {
                 ui.label(name);
                 attr.draw(ui);
-                if let Some(gradient) = sim.gradient(modification) {
-                    gradient.draw(ui);
-                }
+                sim.gradient(modification).draw(ui);
                 ui.end_row();
             };
 

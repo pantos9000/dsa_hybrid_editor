@@ -127,13 +127,13 @@ impl Simulator {
         self.progress.load(Ordering::Relaxed)
     }
 
-    pub fn gradient(&self, modification: CharacterModification) -> Option<Gradient> {
+    pub fn gradient(&self, modification: CharacterModification) -> Gradient {
         let mut char_data = self.char_data.clone();
         modification(&mut char_data.character);
 
         // return early if already in map
         if let Some(gradient) = self.gradient_map.get(&char_data) {
-            return Some(*gradient);
+            return *gradient;
         }
 
         self.send
@@ -141,7 +141,7 @@ impl Simulator {
             .expect("sender is gone")
             .send(char_data)
             .expect("simulator thread is gone");
-        None
+        Gradient::NONE
     }
 }
 
@@ -181,7 +181,7 @@ mod tests {
         std::thread::sleep(std::time::Duration::from_millis(140));
         assert_eq!(simulator.progress(), 100);
 
-        assert!(simulator.gradient(mod1).is_some());
-        assert!(simulator.gradient(mod2).is_some());
+        assert_ne!(simulator.gradient(mod1), Gradient::NONE);
+        assert_ne!(simulator.gradient(mod2), Gradient::NONE);
     }
 }

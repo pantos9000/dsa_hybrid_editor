@@ -23,16 +23,12 @@ impl Drawable for Weapon {
 
             ui.label("Schaden");
             self.damage.draw(ui);
-            if let Some(gradient) = sim.gradient(Box::new(mod_schaden)) {
-                gradient.draw(ui);
-            }
+            sim.gradient(Box::new(mod_schaden)).draw(ui);
             ui.end_row();
 
             ui.label("Schadensbonus");
             self.bonus_damage.draw(ui);
-            if let Some(gradient) = sim.gradient(Box::new(mod_bonus)) {
-                gradient.draw(ui);
-            }
+            sim.gradient(Box::new(mod_bonus)).draw(ui);
             ui.end_row();
         });
     }

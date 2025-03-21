@@ -87,12 +87,24 @@ impl eframe::App for App {
         });
 
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+            self.progress_bar(ui);
             egui::warn_if_debug_build(ui);
         });
     }
 }
 
 impl App {
+    fn progress_bar(&mut self, ui: &mut egui::Ui) {
+        let progress = self.simulator.progress();
+        if progress >= 100 {
+            return;
+        }
+
+        let progress: f32 = f32::from(progress) / 100_f32;
+        let progress_bar = egui::widgets::ProgressBar::new(progress).show_percentage();
+        ui.add(progress_bar);
+    }
+
     fn menu_bar(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         let is_web = cfg!(target_arch = "wasm32"); // no File->Quit on web pages
 

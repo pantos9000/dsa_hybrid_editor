@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
@@ -20,12 +20,14 @@ pub struct Simulator {
     thread: Option<thread::JoinHandle<()>>,
     gradient_map: Arc<GradientMap>,
     send: Option<mpsc::Sender<CharData>>,
+    stop: Arc<AtomicBool>,
     progress: Arc<AtomicU8>,
     char_data: CharData,
 }
 
 impl Drop for Simulator {
     fn drop(&mut self) {
+        self.stop.store(true, Ordering::Relaxed);
         drop(self.send.take());
         if let Some(thread) = self.thread.take() {
             thread.join().expect("worker thread panicked");
@@ -48,13 +50,20 @@ impl Simulator {
             opponent,
         };
         let (send, recv) = channel();
+        let stop = Arc::new(AtomicBool::new(false));
         let progress = Arc::new(AtomicU8::new(100));
         let gradient_map = Arc::new(GradientMap::default());
-        let thread = Some(Self::spawn_simulator_thread(&gradient_map, recv, &progress));
+        let thread = Some(Self::spawn_simulator_thread(
+            &gradient_map,
+            recv,
+            &stop,
+            &progress,
+        ));
         Self {
             thread,
             gradient_map,
             send: Some(send),
+            stop,
             progress,
             char_data,
         }
@@ -63,15 +72,17 @@ impl Simulator {
     fn spawn_simulator_thread(
         gradient_map: &Arc<GradientMap>,
         recv: mpsc::Receiver<CharData>,
+        stop: &Arc<AtomicBool>,
         progress: &Arc<AtomicU8>,
     ) -> thread::JoinHandle<()> {
         let progress = Arc::clone(progress);
+        let stop = Arc::clone(stop);
         let gradient_map = Arc::clone(gradient_map);
         thread::Builder::new()
             .name("simulator_thread".to_owned())
             .spawn(|| {
                 log::info!("starting simulator thread");
-                Self::simulator_thread(gradient_map, recv, progress);
+                Self::simulator_thread(gradient_map, recv, stop, progress);
                 log::info!("stopping simulator thread");
             })
             .expect("failed to spawn thread")
@@ -80,6 +91,7 @@ impl Simulator {
     fn simulator_thread(
         gradient_map: Arc<GradientMap>,
         recv: mpsc::Receiver<CharData>,
+        stop: Arc<AtomicBool>,
         progress: Arc<AtomicU8>,
     ) {
         fn dummy_calculation(_char_data: &CharData) -> Gradient {
@@ -90,6 +102,11 @@ impl Simulator {
         let mut count_done = 0;
 
         'thread_loop: loop {
+            // stop if we are dropped
+            if stop.load(Ordering::Relaxed) {
+                break 'thread_loop;
+            }
+
             // get more work
             let char_data = match recv.recv_timeout(Duration::from_secs(1)) {
                 Ok(char_data) => char_data,

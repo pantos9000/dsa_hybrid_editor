@@ -1,6 +1,8 @@
 use strum::IntoEnumIterator;
 
-use super::Drawable;
+use crate::simulator::Simulator;
+
+use super::{Character, Drawable};
 
 // use crate::simulator::Gradient;
 
@@ -11,17 +13,26 @@ pub struct Weapon {
 }
 
 impl Drawable for Weapon {
-    fn draw(&mut self, ui: &mut egui::Ui) {
+    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
         let grid = crate::util::create_grid("Waffe");
 
         ui.heading("Waffe");
         grid.show(ui, |ui| {
+            let mod_schaden = |c: &mut Character| c.weapon.damage.increment();
+            let mod_bonus = |c: &mut Character| c.weapon.bonus_damage.increment();
+
             ui.label("Schaden");
             self.damage.draw(ui);
+            if let Some(gradient) = sim.gradient(Box::new(mod_schaden)) {
+                gradient.draw(ui);
+            }
             ui.end_row();
 
             ui.label("Schadensbonus");
             self.bonus_damage.draw(ui);
+            if let Some(gradient) = sim.gradient(Box::new(mod_bonus)) {
+                gradient.draw(ui);
+            }
             ui.end_row();
         });
     }
@@ -63,7 +74,7 @@ pub enum Damage {
     W12,
 }
 
-impl Drawable for Damage {
+impl Damage {
     fn draw(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             for val in Self::iter() {
@@ -76,9 +87,7 @@ impl Drawable for Damage {
         // TODO small button?
         let _ = ui.button(self.as_str());
     }
-}
 
-impl Damage {
     fn as_str(&self) -> &'static str {
         match self {
             Damage::W4 => "W4",
@@ -131,7 +140,10 @@ impl From<BonusDamage> for i32 {
     }
 }
 
-impl Drawable for BonusDamage {
+impl BonusDamage {
+    const MIN: i32 = -3;
+    const MAX: i32 = 3;
+
     fn draw(&mut self, ui: &mut egui::Ui) {
         let slider = egui::Slider::new(&mut self.0, Self::MIN..=Self::MAX);
         ui.add(slider);
@@ -140,11 +152,6 @@ impl Drawable for BonusDamage {
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
         let _ = ui.button(format!("{}", self.0));
     }
-}
-
-impl BonusDamage {
-    const MIN: i32 = -3;
-    const MAX: i32 = 3;
 
     #[allow(dead_code)]
     fn decrement(&mut self) {

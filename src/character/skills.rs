@@ -1,6 +1,8 @@
 use strum::IntoEnumIterator;
 
-use super::Drawable;
+use crate::simulator::{CharacterModification, Simulator};
+
+use super::{Character, Drawable};
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Skills {
@@ -8,17 +10,24 @@ pub struct Skills {
 }
 
 impl Drawable for Skills {
-    fn draw(&mut self, ui: &mut egui::Ui) {
-        let draw = |skill: &mut Skill, name, ui: &mut egui::Ui| {
-            ui.label(name);
-            skill.draw(ui);
-            ui.end_row();
-        };
-
+    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
         let grid = crate::util::create_grid("Fähigkeiten");
 
         ui.heading("Fähigkeiten");
-        grid.show(ui, |ui| draw(&mut self.kämpfen, "Kämpfen", ui));
+        grid.show(ui, |ui| {
+            let mut draw = |skill: &mut Skill, name, modification: CharacterModification| {
+                ui.label(name);
+                skill.draw(ui);
+                if let Some(gradient) = sim.gradient(modification) {
+                    gradient.draw(ui);
+                }
+                ui.end_row();
+            };
+
+            let mod_kä = |c: &mut Character| c.skills.kämpfen.increment();
+
+            draw(&mut self.kämpfen, "Kämpfen", Box::new(mod_kä));
+        });
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
@@ -32,23 +41,6 @@ impl Drawable for Skills {
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| draw(&mut self.kämpfen, "Kämpfen", ui));
     }
-}
-
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Hash,
-    strum_macros::EnumIter,
-    strum_macros::AsRefStr,
-    strum_macros::EnumCount,
-    serde::Serialize,
-    serde::Deserialize,
-)]
-pub enum SkillName {
-    Kämpfen,
 }
 
 #[derive(
@@ -75,7 +67,7 @@ pub enum Skill {
     W12p2,
 }
 
-impl Drawable for Skill {
+impl Skill {
     fn draw(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             for val in Self::iter() {
@@ -87,9 +79,7 @@ impl Drawable for Skill {
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
         let _ = ui.button(self.as_str());
     }
-}
 
-impl Skill {
     fn as_str(&self) -> &'static str {
         match self {
             Skill::W4m2 => "W4-2",

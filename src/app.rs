@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 
 use crate::character::Character;
+use crate::simulator::Simulator;
 use crate::util::LogError;
 // use crate::simulator::Simulator;
 
@@ -16,13 +17,13 @@ struct UiState {
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 #[derive(Default)]
 pub struct App {
-    char_left: Character,
-    char_right: Character,
+    char: Character,
+    opponent: Character,
 
     #[serde(skip)]
     ui_state: UiState,
-    // #[serde(skip)]
-    // simulator: Simulator,
+    #[serde(skip)]
+    simulator: Simulator,
 }
 
 impl App {
@@ -53,6 +54,9 @@ impl eframe::App for App {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
 
+        self.simulator
+            .update_characters(self.char.clone(), self.opponent.clone());
+
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
 
@@ -75,8 +79,8 @@ impl eframe::App for App {
                         .spacing([10.0, 4.0])
                         .striped(false)
                         .show(ui, |ui| {
-                            self.char_left.draw(ui);
-                            self.char_right.draw_as_opponent(ui);
+                            self.char.draw(&self.simulator, ui);
+                            self.opponent.draw_as_opponent(ui);
                             ui.end_row();
                         });
                 });
@@ -96,29 +100,29 @@ impl App {
 
         ui.menu_button("File", |ui| {
             if ui.button("Load default for left char").clicked() {
-                self.char_left = Default::default();
+                self.char = Default::default();
                 ui.close_menu();
             }
             if ui.button("Load left char from file...").clicked() {
-                Self::load_char(&mut self.char_left).or_log_err("failed to load left char");
+                Self::load_char(&mut self.char).or_log_err("failed to load left char");
                 ui.close_menu();
             }
             if ui.button("Save left char to file...").clicked() {
-                Self::save_char(&self.char_left).or_log_err("failed to save leftchar");
+                Self::save_char(&self.char).or_log_err("failed to save leftchar");
                 ui.close_menu();
             }
 
             ui.separator();
             if ui.button("Load default for right char").clicked() {
-                self.char_right = Default::default();
+                self.opponent = Default::default();
                 ui.close_menu();
             }
             if ui.button("Load right char from file...").clicked() {
-                Self::load_char(&mut self.char_right).or_log_err("failed to load right char");
+                Self::load_char(&mut self.opponent).or_log_err("failed to load right char");
                 ui.close_menu();
             }
             if ui.button("Save right char to file...").clicked() {
-                Self::save_char(&self.char_right).or_log_err("failed to save right char");
+                Self::save_char(&self.opponent).or_log_err("failed to save right char");
                 ui.close_menu();
             }
 

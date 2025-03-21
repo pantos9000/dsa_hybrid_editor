@@ -33,8 +33,15 @@ impl Drop for Simulator {
     }
 }
 
+impl Default for Simulator {
+    fn default() -> Self {
+        let character = Character::default();
+        let opponent = Character::default();
+        Self::new(character, opponent)
+    }
+}
+
 impl Simulator {
-    #[allow(dead_code)] // TODO
     fn new(character: Character, opponent: Character) -> Self {
         let char_data = CharData {
             character,
@@ -108,7 +115,6 @@ impl Simulator {
         }
     }
 
-    #[allow(dead_code)] // TODO
     pub fn update_characters(&mut self, character: Character, opponent: Character) {
         self.char_data = CharData {
             character,
@@ -117,12 +123,10 @@ impl Simulator {
     }
 
     /// Return the progress of current calculations
-    #[allow(dead_code)] // TODO
     pub fn progress(&self) -> u8 {
         self.progress.load(Ordering::Relaxed)
     }
 
-    #[allow(dead_code)] // TODO
     pub fn gradient(&self, modification: CharacterModification) -> Option<Gradient> {
         let mut char_data = self.char_data.clone();
         modification(&mut char_data.character);

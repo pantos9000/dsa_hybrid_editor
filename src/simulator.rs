@@ -11,7 +11,7 @@ use fxhash::FxBuildHasher;
 use crate::character::Character;
 use crate::gradient::Gradient;
 
-pub type CharacterModification = Box<dyn FnOnce(&mut Character)>;
+pub type CharModification = Box<dyn FnOnce(&mut Character)>;
 
 /// Holds all gradient results
 type GradientMap = DashMap<CharData, Gradient, FxBuildHasher>;
@@ -142,7 +142,7 @@ impl Simulator {
         self.progress.load(Ordering::Relaxed)
     }
 
-    pub fn gradient(&self, modification: CharacterModification) -> Gradient {
+    pub fn gradient(&self, modification: CharModification) -> Gradient {
         let mut char_data = self.char_data.clone();
         modification(&mut char_data.character);
 

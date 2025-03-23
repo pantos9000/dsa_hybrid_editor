@@ -18,17 +18,25 @@ impl Drawable for Weapon {
 
         ui.heading("Waffe");
         grid.show(ui, |ui| {
-            let mod_schaden = |c: &mut Character| c.weapon.damage.increment();
-            let mod_bonus = |c: &mut Character| c.weapon.bonus_damage.increment();
+            let mod_schaden_dec = Box::new(|c: &mut Character| c.weapon.damage.decrement());
+            let mod_schaden_inc = Box::new(|c: &mut Character| c.weapon.damage.increment());
+            let mod_bonus_dec = Box::new(|c: &mut Character| c.weapon.bonus_damage.decrement());
+            let mod_bonus_inc = Box::new(|c: &mut Character| c.weapon.bonus_damage.increment());
 
             ui.label("Schaden");
             self.damage.draw(ui);
-            sim.gradient(Box::new(mod_schaden)).draw(ui);
+            ui.horizontal(|ui| {
+                sim.gradient(mod_schaden_dec).draw(ui);
+                sim.gradient(mod_schaden_inc).draw(ui);
+            });
             ui.end_row();
 
             ui.label("Schadensbonus");
             self.bonus_damage.draw(ui);
-            sim.gradient(Box::new(mod_bonus)).draw(ui);
+            ui.horizontal(|ui| {
+                sim.gradient(mod_bonus_dec).draw(ui);
+                sim.gradient(mod_bonus_inc).draw(ui);
+            });
             ui.end_row();
         });
     }

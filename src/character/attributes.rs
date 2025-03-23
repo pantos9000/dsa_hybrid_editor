@@ -1,6 +1,6 @@
 use strum::IntoEnumIterator;
 
-use crate::simulator::{CharacterModification, Simulator};
+use crate::simulator::{CharModification, Simulator};
 
 use super::{Character, Drawable};
 
@@ -19,24 +19,33 @@ impl Drawable for Attributes {
 
         ui.heading("Attribute");
         grid.show(ui, |ui| {
-            let mut draw = |attr: &mut Attribute, name, modification: CharacterModification| {
-                ui.label(name);
-                attr.draw(ui);
-                sim.gradient(modification).draw(ui);
-                ui.end_row();
-            };
+            let mut draw =
+                |attr: &mut Attribute, name, mod1: CharModification, mod2: CharModification| {
+                    ui.label(name);
+                    attr.draw(ui);
+                    ui.horizontal(|ui| {
+                        sim.gradient(mod1).draw(ui);
+                        sim.gradient(mod2).draw(ui);
+                    });
+                    ui.end_row();
+                };
 
-            let mod_ges = |c: &mut Character| c.attributes.ges.increment();
-            let mod_stä = |c: &mut Character| c.attributes.stä.increment();
-            let mod_kon = |c: &mut Character| c.attributes.kon.increment();
-            let mod_int = |c: &mut Character| c.attributes.int.increment();
-            let mod_wil = |c: &mut Character| c.attributes.wil.increment();
+            let mod_ges_dec = Box::new(|c: &mut Character| c.attributes.ges.decrement());
+            let mod_stä_dec = Box::new(|c: &mut Character| c.attributes.stä.decrement());
+            let mod_kon_dec = Box::new(|c: &mut Character| c.attributes.kon.decrement());
+            let mod_int_dec = Box::new(|c: &mut Character| c.attributes.int.decrement());
+            let mod_wil_dec = Box::new(|c: &mut Character| c.attributes.wil.decrement());
+            let mod_ges_inc = Box::new(|c: &mut Character| c.attributes.ges.increment());
+            let mod_stä_inc = Box::new(|c: &mut Character| c.attributes.stä.increment());
+            let mod_kon_inc = Box::new(|c: &mut Character| c.attributes.kon.increment());
+            let mod_int_inc = Box::new(|c: &mut Character| c.attributes.int.increment());
+            let mod_wil_inc = Box::new(|c: &mut Character| c.attributes.wil.increment());
 
-            draw(&mut self.ges, "Ges", Box::new(mod_ges));
-            draw(&mut self.stä, "Stä", Box::new(mod_stä));
-            draw(&mut self.kon, "Kon", Box::new(mod_kon));
-            draw(&mut self.int, "Int", Box::new(mod_int));
-            draw(&mut self.wil, "Wil", Box::new(mod_wil));
+            draw(&mut self.ges, "Ges", mod_ges_dec, mod_ges_inc);
+            draw(&mut self.stä, "Stä", mod_stä_dec, mod_stä_inc);
+            draw(&mut self.kon, "Kon", mod_kon_dec, mod_kon_inc);
+            draw(&mut self.int, "Int", mod_int_dec, mod_int_inc);
+            draw(&mut self.wil, "Wil", mod_wil_dec, mod_wil_inc);
         });
     }
 

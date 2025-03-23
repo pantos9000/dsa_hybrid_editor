@@ -1,6 +1,6 @@
 use strum::IntoEnumIterator;
 
-use crate::simulator::{CharacterModification, Simulator};
+use crate::simulator::{CharModification, Simulator};
 
 use super::{Character, Drawable};
 
@@ -15,16 +15,21 @@ impl Drawable for Skills {
 
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {
-            let mut draw = |skill: &mut Skill, name, modification: CharacterModification| {
-                ui.label(name);
-                skill.draw(ui);
-                sim.gradient(modification).draw(ui);
-                ui.end_row();
-            };
+            let mut draw =
+                |skill: &mut Skill, name, mod1: CharModification, mod2: CharModification| {
+                    ui.label(name);
+                    skill.draw(ui);
+                    ui.horizontal(|ui| {
+                        sim.gradient(mod1).draw(ui);
+                        sim.gradient(mod2).draw(ui);
+                    });
+                    ui.end_row();
+                };
 
-            let mod_kä = |c: &mut Character| c.skills.kämpfen.increment();
+            let mod_kä_dec = Box::new(|c: &mut Character| c.skills.kämpfen.decrement());
+            let mod_kä_inc = Box::new(|c: &mut Character| c.skills.kämpfen.increment());
 
-            draw(&mut self.kämpfen, "Kämpfen", Box::new(mod_kä));
+            draw(&mut self.kämpfen, "Kämpfen", mod_kä_dec, mod_kä_inc);
         });
     }
 

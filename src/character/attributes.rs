@@ -80,6 +80,16 @@ impl AttrName {
             AttrName::Wil => Box::new(|c| c.attributes.wil.increment()),
         }
     }
+
+    fn modification_set(&self, value: Attribute) -> CharModification {
+        match self {
+            AttrName::Ges => Box::new(move |c| c.attributes.ges = value),
+            AttrName::Stä => Box::new(move |c| c.attributes.stä = value),
+            AttrName::Kon => Box::new(move |c| c.attributes.kon = value),
+            AttrName::Int => Box::new(move |c| c.attributes.int = value),
+            AttrName::Wil => Box::new(move |c| c.attributes.wil = value),
+        }
+    }
 }
 
 #[derive(
@@ -111,7 +121,12 @@ impl Attribute {
 
         ui.horizontal(|ui| {
             for val in Self::iter() {
-                ui.selectable_value(self, val, val.as_str());
+                ui.selectable_value(self, val, val.as_str())
+                    .on_hover_ui(|ui| {
+                        ui.horizontal(|ui| {
+                            sim.gradient(name.modification_set(val)).draw(ui);
+                        });
+                    });
             }
         });
 

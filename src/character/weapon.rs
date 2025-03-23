@@ -62,7 +62,13 @@ impl Damage {
         ui.label("Schaden");
         ui.horizontal(|ui| {
             for val in Self::iter() {
-                ui.selectable_value(self, val, val.as_str());
+                ui.selectable_value(self, val, val.as_str())
+                    .on_hover_ui(|ui| {
+                        ui.horizontal(|ui| {
+                            let mod_set = Box::new(move |c: &mut Character| c.weapon.damage = val);
+                            sim.gradient(mod_set).draw(ui);
+                        });
+                    });
             }
         });
         let mod_dec = Box::new(|c: &mut Character| c.weapon.damage.decrement());

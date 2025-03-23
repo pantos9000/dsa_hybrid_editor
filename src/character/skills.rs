@@ -48,6 +48,12 @@ impl SkillName {
             SkillName::Kämpfen => Box::new(|c| c.skills.kämpfen.increment()),
         }
     }
+
+    fn modification_set(&self, value: Skill) -> CharModification {
+        match self {
+            SkillName::Kämpfen => Box::new(move |c| c.skills.kämpfen = value),
+        }
+    }
 }
 
 #[derive(
@@ -79,7 +85,12 @@ impl Skill {
         ui.label(format!("{name}"));
         ui.horizontal(|ui| {
             for val in Self::iter() {
-                ui.selectable_value(self, val, val.as_str());
+                ui.selectable_value(self, val, val.as_str())
+                    .on_hover_ui(|ui| {
+                        ui.horizontal(|ui| {
+                            sim.gradient(name.modification_set(val)).draw(ui);
+                        });
+                    });
             }
         });
 

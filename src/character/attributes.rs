@@ -2,7 +2,7 @@ use strum::IntoEnumIterator;
 
 use crate::simulator::{CharModification, Simulator};
 
-use super::{Character, Drawable};
+use super::Drawable;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Attributes {
@@ -19,53 +19,66 @@ impl Drawable for Attributes {
 
         ui.heading("Attribute");
         grid.show(ui, |ui| {
-            let mut draw =
-                |attr: &mut Attribute, name, mod1: CharModification, mod2: CharModification| {
-                    ui.label(name);
-                    attr.draw(ui);
-                    ui.horizontal(|ui| {
-                        sim.gradient(mod1).draw(ui);
-                        sim.gradient(mod2).draw(ui);
-                    });
-                    ui.end_row();
-                };
-
-            let mod_ges_dec = Box::new(|c: &mut Character| c.attributes.ges.decrement());
-            let mod_stä_dec = Box::new(|c: &mut Character| c.attributes.stä.decrement());
-            let mod_kon_dec = Box::new(|c: &mut Character| c.attributes.kon.decrement());
-            let mod_int_dec = Box::new(|c: &mut Character| c.attributes.int.decrement());
-            let mod_wil_dec = Box::new(|c: &mut Character| c.attributes.wil.decrement());
-            let mod_ges_inc = Box::new(|c: &mut Character| c.attributes.ges.increment());
-            let mod_stä_inc = Box::new(|c: &mut Character| c.attributes.stä.increment());
-            let mod_kon_inc = Box::new(|c: &mut Character| c.attributes.kon.increment());
-            let mod_int_inc = Box::new(|c: &mut Character| c.attributes.int.increment());
-            let mod_wil_inc = Box::new(|c: &mut Character| c.attributes.wil.increment());
-
-            draw(&mut self.ges, "Ges", mod_ges_dec, mod_ges_inc);
-            draw(&mut self.stä, "Stä", mod_stä_dec, mod_stä_inc);
-            draw(&mut self.kon, "Kon", mod_kon_dec, mod_kon_inc);
-            draw(&mut self.int, "Int", mod_int_dec, mod_int_inc);
-            draw(&mut self.wil, "Wil", mod_wil_dec, mod_wil_inc);
+            self.ges.draw(AttrName::Ges, sim, ui);
+            ui.end_row();
+            self.stä.draw(AttrName::Stä, sim, ui);
+            ui.end_row();
+            self.kon.draw(AttrName::Kon, sim, ui);
+            ui.end_row();
+            self.int.draw(AttrName::Int, sim, ui);
+            ui.end_row();
+            self.wil.draw(AttrName::Wil, sim, ui);
+            ui.end_row();
         });
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let draw = |attr: &mut Attribute, name, ui: &mut egui::Ui| {
-            ui.label(name);
-            attr.draw_as_opponent(ui);
-            ui.end_row();
-        };
-
-        let grid = crate::util::create_grid("OpponentAttributes");
+        let grid = crate::util::create_grid("GegnerAttribute");
 
         ui.heading("Attribute");
         grid.show(ui, |ui| {
-            draw(&mut self.ges, "Ges", ui);
-            draw(&mut self.stä, "Stä", ui);
-            draw(&mut self.kon, "Kon", ui);
-            draw(&mut self.int, "Int", ui);
-            draw(&mut self.wil, "Wil", ui);
+            self.ges.draw_as_opponent(AttrName::Ges, ui);
+            ui.end_row();
+            self.stä.draw_as_opponent(AttrName::Stä, ui);
+            ui.end_row();
+            self.kon.draw_as_opponent(AttrName::Kon, ui);
+            ui.end_row();
+            self.int.draw_as_opponent(AttrName::Int, ui);
+            ui.end_row();
+            self.wil.draw_as_opponent(AttrName::Wil, ui);
+            ui.end_row();
         });
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, strum_macros::Display)]
+enum AttrName {
+    Ges,
+    Stä,
+    Kon,
+    Int,
+    Wil,
+}
+
+impl AttrName {
+    fn modification_dec(&self) -> CharModification {
+        match self {
+            AttrName::Ges => Box::new(|c| c.attributes.ges.decrement()),
+            AttrName::Stä => Box::new(|c| c.attributes.stä.decrement()),
+            AttrName::Kon => Box::new(|c| c.attributes.kon.decrement()),
+            AttrName::Int => Box::new(|c| c.attributes.int.decrement()),
+            AttrName::Wil => Box::new(|c| c.attributes.wil.decrement()),
+        }
+    }
+
+    fn modification_inc(&self) -> CharModification {
+        match self {
+            AttrName::Ges => Box::new(|c| c.attributes.ges.increment()),
+            AttrName::Stä => Box::new(|c| c.attributes.stä.increment()),
+            AttrName::Kon => Box::new(|c| c.attributes.kon.increment()),
+            AttrName::Int => Box::new(|c| c.attributes.int.increment()),
+            AttrName::Wil => Box::new(|c| c.attributes.wil.increment()),
+        }
     }
 }
 
@@ -93,15 +106,23 @@ pub enum Attribute {
 }
 
 impl Attribute {
-    fn draw(&mut self, ui: &mut egui::Ui) {
+    fn draw(&mut self, name: AttrName, sim: &Simulator, ui: &mut egui::Ui) {
+        ui.label(format!("{name}"));
+
         ui.horizontal(|ui| {
             for val in Self::iter() {
                 ui.selectable_value(self, val, val.as_str());
             }
         });
+
+        ui.horizontal(|ui| {
+            sim.gradient(name.modification_dec()).draw(ui);
+            sim.gradient(name.modification_inc()).draw(ui);
+        });
     }
 
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+    fn draw_as_opponent(&mut self, name: AttrName, ui: &mut egui::Ui) {
+        ui.label(format!("{name}"));
         let _ = ui.button(self.as_str());
     }
 

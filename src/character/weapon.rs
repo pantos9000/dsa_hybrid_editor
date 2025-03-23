@@ -4,8 +4,6 @@ use crate::simulator::Simulator;
 
 use super::{Character, Drawable};
 
-// use crate::simulator::Gradient;
-
 #[derive(Debug, Default, Clone, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Weapon {
     damage: Damage,
@@ -18,25 +16,9 @@ impl Drawable for Weapon {
 
         ui.heading("Waffe");
         grid.show(ui, |ui| {
-            let mod_schaden_dec = Box::new(|c: &mut Character| c.weapon.damage.decrement());
-            let mod_schaden_inc = Box::new(|c: &mut Character| c.weapon.damage.increment());
-            let mod_bonus_dec = Box::new(|c: &mut Character| c.weapon.bonus_damage.decrement());
-            let mod_bonus_inc = Box::new(|c: &mut Character| c.weapon.bonus_damage.increment());
-
-            ui.label("Schaden");
-            self.damage.draw(ui);
-            ui.horizontal(|ui| {
-                sim.gradient(mod_schaden_dec).draw(ui);
-                sim.gradient(mod_schaden_inc).draw(ui);
-            });
+            self.damage.draw(sim, ui);
             ui.end_row();
-
-            ui.label("Schadensbonus");
-            self.bonus_damage.draw(ui);
-            ui.horizontal(|ui| {
-                sim.gradient(mod_bonus_dec).draw(ui);
-                sim.gradient(mod_bonus_inc).draw(ui);
-            });
+            self.bonus_damage.draw(sim, ui);
             ui.end_row();
         });
     }
@@ -46,11 +28,8 @@ impl Drawable for Weapon {
 
         ui.heading("Waffe");
         grid.show(ui, |ui| {
-            ui.label("Schaden");
             self.damage.draw_as_opponent(ui);
             ui.end_row();
-
-            ui.label("Schadensbonus");
             self.bonus_damage.draw_as_opponent(ui);
             ui.end_row();
         });
@@ -79,16 +58,23 @@ pub enum Damage {
 }
 
 impl Damage {
-    fn draw(&mut self, ui: &mut egui::Ui) {
+    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+        ui.label("Schaden");
         ui.horizontal(|ui| {
             for val in Self::iter() {
                 ui.selectable_value(self, val, val.as_str());
             }
         });
+        let mod_dec = Box::new(|c: &mut Character| c.weapon.damage.decrement());
+        let mod_inc = Box::new(|c: &mut Character| c.weapon.damage.increment());
+        ui.horizontal(|ui| {
+            sim.gradient(mod_dec).draw(ui);
+            sim.gradient(mod_inc).draw(ui);
+        });
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        // TODO small button?
+        ui.label("Schaden");
         let _ = ui.button(self.as_str());
     }
 
@@ -148,12 +134,20 @@ impl BonusDamage {
     const MIN: i32 = -3;
     const MAX: i32 = 3;
 
-    fn draw(&mut self, ui: &mut egui::Ui) {
+    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+        ui.label("Schadensbonus");
         let slider = egui::Slider::new(&mut self.0, Self::MIN..=Self::MAX);
         ui.add(slider);
+        let mod_dec = Box::new(|c: &mut Character| c.weapon.bonus_damage.decrement());
+        let mod_inc = Box::new(|c: &mut Character| c.weapon.bonus_damage.increment());
+        ui.horizontal(|ui| {
+            sim.gradient(mod_dec).draw(ui);
+            sim.gradient(mod_inc).draw(ui);
+        });
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+        ui.label("Schadensbonus");
         let _ = ui.button(format!("{}", self.0));
     }
 

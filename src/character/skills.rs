@@ -2,7 +2,7 @@ use strum::IntoEnumIterator;
 
 use crate::simulator::{CharModification, Simulator};
 
-use super::{Character, Drawable};
+use super::Drawable;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Skills {
@@ -15,34 +15,38 @@ impl Drawable for Skills {
 
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {
-            let mut draw =
-                |skill: &mut Skill, name, mod1: CharModification, mod2: CharModification| {
-                    ui.label(name);
-                    skill.draw(ui);
-                    ui.horizontal(|ui| {
-                        sim.gradient(mod1).draw(ui);
-                        sim.gradient(mod2).draw(ui);
-                    });
-                    ui.end_row();
-                };
-
-            let mod_kä_dec = Box::new(|c: &mut Character| c.skills.kämpfen.decrement());
-            let mod_kä_inc = Box::new(|c: &mut Character| c.skills.kämpfen.increment());
-
-            draw(&mut self.kämpfen, "Kämpfen", mod_kä_dec, mod_kä_inc);
+            self.kämpfen.draw(SkillName::Kämpfen, sim, ui);
+            ui.end_row();
         });
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let draw = |skill: &mut Skill, name, ui: &mut egui::Ui| {
-            ui.label(name);
-            skill.draw_as_opponent(ui);
-            ui.end_row();
-        };
-        let grid = crate::util::create_grid("OpponentSkills");
+        let grid = crate::util::create_grid("GegnerFähigkeiten");
 
         ui.heading("Fähigkeiten");
-        grid.show(ui, |ui| draw(&mut self.kämpfen, "Kämpfen", ui));
+        grid.show(ui, |ui| {
+            self.kämpfen.draw_as_opponent(SkillName::Kämpfen, ui);
+            ui.end_row();
+        });
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, strum_macros::Display)]
+enum SkillName {
+    Kämpfen,
+}
+
+impl SkillName {
+    fn modification_dec(&self) -> CharModification {
+        match self {
+            SkillName::Kämpfen => Box::new(|c| c.skills.kämpfen.decrement()),
+        }
+    }
+
+    fn modification_inc(&self) -> CharModification {
+        match self {
+            SkillName::Kämpfen => Box::new(|c| c.skills.kämpfen.increment()),
+        }
     }
 }
 
@@ -71,15 +75,22 @@ pub enum Skill {
 }
 
 impl Skill {
-    fn draw(&mut self, ui: &mut egui::Ui) {
+    fn draw(&mut self, name: SkillName, sim: &Simulator, ui: &mut egui::Ui) {
+        ui.label(format!("{name}"));
         ui.horizontal(|ui| {
             for val in Self::iter() {
                 ui.selectable_value(self, val, val.as_str());
             }
         });
+
+        ui.horizontal(|ui| {
+            sim.gradient(name.modification_dec()).draw(ui);
+            sim.gradient(name.modification_inc()).draw(ui);
+        });
     }
 
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
+    fn draw_as_opponent(&mut self, name: SkillName, ui: &mut egui::Ui) {
+        ui.label(format!("{name}"));
         let _ = ui.button(self.as_str());
     }
 

@@ -8,7 +8,10 @@ pub use name::Name;
 pub use skills::Skills;
 pub use weapon::Weapon;
 
+use crate::util::LogError;
 use crate::{simulator::Simulator, util};
+
+use anyhow::{Context, Result};
 
 /// Represents a drawable element of a char
 trait Drawable {
@@ -28,6 +31,7 @@ impl Character {
     pub fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
         util::create_frame(ui).show(ui, |ui| {
             ui.with_layout(egui::Layout::top_down_justified(egui::Align::Min), |ui| {
+                self.draw_buttons(ui);
                 util::create_frame(ui).show(ui, |ui| {
                     self.name.draw(sim, ui);
                 });
@@ -47,6 +51,7 @@ impl Character {
     pub fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
         util::create_frame(ui).show(ui, |ui| {
             ui.with_layout(egui::Layout::top_down_justified(egui::Align::Min), |ui| {
+                self.draw_buttons(ui);
                 util::create_frame(ui).show(ui, |ui| {
                     self.name.draw_as_opponent(ui);
                 });
@@ -61,5 +66,71 @@ impl Character {
                 });
             });
         });
+    }
+
+    fn draw_buttons(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            fn add_button(text: &str, ui: &mut egui::Ui) -> egui::Response {
+                let text = egui::RichText::new(text).size(24.0);
+                let button = egui::Button::new(text).rounding(10.0);
+                ui.add_sized([40.0, 40.0], button)
+            }
+
+            let reset = "❌";
+            let save = "💾";
+            let open = "🗁";
+            if add_button(save, ui).clicked() {
+                self.save().or_log_err("failed to save character");
+            }
+            if add_button(open, ui).clicked() {
+                self.load().or_log_err("failed to load character");
+            }
+            if add_button(reset, ui).clicked() {
+                *self = Default::default();
+            }
+        });
+    }
+
+    fn load(&mut self) -> Result<()> {
+        log::info!("loading char...");
+
+        let future = async {
+            let file = rfd::AsyncFileDialog::new().pick_file().await?;
+            Some(file.read().await)
+        };
+        let Some(data) = async_std::task::block_on(future) else {
+            log::debug!("file pick dialog was canceled");
+            return Ok(());
+        };
+
+        let new_char = serde_json::from_slice(&data)
+            .context("failed to convert character from JSON format")?;
+        *self = new_char;
+
+        log::info!("successfully loaded char");
+        Ok(())
+    }
+
+    fn save(&self) -> Result<()> {
+        log::info!("saving char...");
+
+        async fn save_file(char_serialized: &[u8]) -> Result<()> {
+            let Some(file) = rfd::AsyncFileDialog::new().save_file().await else {
+                log::debug!("save file dialog was canceled");
+                return Ok(());
+            };
+            file.write(char_serialized)
+                .await
+                .context("failed to write to file")?;
+            Ok(())
+        }
+
+        let char_serialized = serde_json::to_vec_pretty(self)
+            .context("failed to convert character to JSON format")?;
+        async_std::task::block_on(save_file(&char_serialized))
+            .context("failed to save char to file")?;
+
+        log::info!("successfully saved char");
+        Ok(())
     }
 }

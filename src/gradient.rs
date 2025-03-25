@@ -53,15 +53,15 @@ impl Gradient {
         let text = format!("{}", value);
         let color = if dark {
             match value {
-                ..0 => Color32::DARK_RED,
-                0 => dark_gray,
-                1.. => Color32::DARK_GREEN,
+                ..-1 => Color32::DARK_RED,
+                -1..2 => dark_gray,
+                2.. => Color32::DARK_GREEN,
             }
         } else {
             match value {
-                ..0 => Color32::LIGHT_RED,
-                0 => Color32::LIGHT_GRAY,
-                1.. => Color32::LIGHT_GREEN,
+                ..-1 => Color32::LIGHT_RED,
+                -1..2 => Color32::LIGHT_GRAY,
+                2.. => Color32::LIGHT_GREEN,
             }
         };
         Button::new(text).frame(false).fill(color)

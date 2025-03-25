@@ -21,3 +21,9 @@ impl Drawable for Name {
         ui.text_edit_singleline(&mut self.0);
     }
 }
+
+impl Name {
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
+}

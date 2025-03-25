@@ -36,11 +36,21 @@ impl Gradient {
     }
 
     fn draw_value(value: i8, ui: &mut egui::Ui) {
+        let dark = ui.visuals().dark_mode;
+        let dark_gray = Color32::from_rgb(64, 64, 64);
         let text = format!("{}", value);
-        let color = match value {
-            ..0 => Color32::DARK_RED,
-            0 => Color32::LIGHT_GRAY,
-            1.. => Color32::DARK_GREEN,
+        let color = if dark {
+            match value {
+                ..0 => Color32::DARK_RED,
+                0 => dark_gray,
+                1.. => Color32::DARK_GREEN,
+            }
+        } else {
+            match value {
+                ..0 => Color32::LIGHT_RED,
+                0 => Color32::LIGHT_GRAY,
+                1.. => Color32::LIGHT_GREEN,
+            }
         };
         let button = Button::new(text).frame(false).fill(color);
         let _ = ui.add(button);

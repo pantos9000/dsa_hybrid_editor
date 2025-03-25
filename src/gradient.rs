@@ -23,19 +23,31 @@ impl TryFrom<i8> for Gradient {
 impl Gradient {
     pub const NONE: Self = Gradient { value: None };
 
-    pub fn draw(&self, ui: &mut egui::Ui) {
+    pub fn draw_sized(&self, max_size: impl Into<egui::Vec2>, ui: &mut egui::Ui) {
         match self.value {
-            None => Self::draw_spinner(ui),
-            Some(value) => Self::draw_value(value, ui),
+            None => {
+                ui.add_sized(max_size, egui::widgets::Spinner::new());
+            }
+            Some(value) => {
+                let drawable = Self::draw_value(value, ui);
+                ui.add_sized(max_size, drawable);
+            }
         }
     }
 
-    fn draw_spinner(ui: &mut egui::Ui) {
-        let spinner = egui::widgets::Spinner::new();
-        ui.add(spinner);
+    pub fn draw(&self, ui: &mut egui::Ui) {
+        match self.value {
+            None => {
+                ui.spinner();
+            }
+            Some(value) => {
+                let drawable = Self::draw_value(value, ui);
+                ui.add(drawable);
+            }
+        }
     }
 
-    fn draw_value(value: i8, ui: &mut egui::Ui) {
+    fn draw_value(value: i8, ui: &mut egui::Ui) -> impl egui::Widget {
         let dark = ui.visuals().dark_mode;
         let dark_gray = Color32::from_rgb(64, 64, 64);
         let text = format!("{}", value);
@@ -52,7 +64,6 @@ impl Gradient {
                 1.. => Color32::LIGHT_GREEN,
             }
         };
-        let button = Button::new(text).frame(false).fill(color);
-        let _ = ui.add(button);
+        Button::new(text).frame(false).fill(color)
     }
 }

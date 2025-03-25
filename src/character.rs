@@ -4,6 +4,7 @@ mod skills;
 mod weapon;
 
 pub use attributes::Attributes;
+use egui::Layout;
 pub use name::Name;
 pub use skills::Skills;
 pub use weapon::Weapon;
@@ -28,10 +29,18 @@ pub struct Character {
 }
 
 impl Character {
+    const BUTTON_SIZE: [f32; 2] = [40.0, 40.0];
+
     pub fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
         util::create_frame(ui).show(ui, |ui| {
             ui.with_layout(egui::Layout::top_down_justified(egui::Align::Min), |ui| {
-                self.draw_buttons(ui);
+                ui.horizontal(|ui| {
+                    self.draw_buttons(ui);
+                    ui.with_layout(Layout::right_to_left(egui::Align::TOP), |ui| {
+                        let no_mod = Box::new(|_: &mut Character| ());
+                        sim.gradient(no_mod).draw_sized(Self::BUTTON_SIZE, ui);
+                    });
+                });
                 util::create_frame(ui).show(ui, |ui| {
                     self.name.draw(sim, ui);
                 });
@@ -51,7 +60,9 @@ impl Character {
     pub fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
         util::create_frame(ui).show(ui, |ui| {
             ui.with_layout(egui::Layout::top_down_justified(egui::Align::Min), |ui| {
-                self.draw_buttons(ui);
+                ui.horizontal(|ui| {
+                    self.draw_buttons(ui);
+                });
                 util::create_frame(ui).show(ui, |ui| {
                     self.name.draw_as_opponent(ui);
                 });
@@ -69,26 +80,24 @@ impl Character {
     }
 
     fn draw_buttons(&mut self, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
-            fn add_button(text: &str, ui: &mut egui::Ui) -> egui::Response {
-                let text = egui::RichText::new(text).size(24.0);
-                let button = egui::Button::new(text).rounding(10.0);
-                ui.add_sized([40.0, 40.0], button)
-            }
+        let mut add_button = |text| -> egui::Response {
+            let text = egui::RichText::new(text).size(24.0);
+            let button = egui::Button::new(text).rounding(10.0);
+            ui.add_sized(Self::BUTTON_SIZE, button)
+        };
 
-            let reset = "❌";
-            let save = "💾";
-            let open = "🗁";
-            if add_button(save, ui).clicked() {
-                self.save().or_log_err("failed to save character");
-            }
-            if add_button(open, ui).clicked() {
-                self.load().or_log_err("failed to load character");
-            }
-            if add_button(reset, ui).clicked() {
-                *self = Default::default();
-            }
-        });
+        let reset = "❌";
+        let save = "💾";
+        let open = "🗁";
+        if add_button(save).clicked() {
+            self.save().or_log_err("failed to save character");
+        }
+        if add_button(open).clicked() {
+            self.load().or_log_err("failed to load character");
+        }
+        if add_button(reset).clicked() {
+            *self = Default::default();
+        }
     }
 
     fn load(&mut self) -> Result<()> {

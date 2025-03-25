@@ -44,7 +44,9 @@ impl Default for Simulator {
 }
 
 impl Simulator {
-    fn new(character: Character, opponent: Character) -> Self {
+    fn new(mut character: Character, mut opponent: Character) -> Self {
+        character.name.clear();
+        opponent.name.clear();
         let char_data = CharData {
             character,
             opponent,
@@ -130,7 +132,9 @@ impl Simulator {
         }
     }
 
-    pub fn update_characters(&mut self, character: Character, opponent: Character) {
+    pub fn update_characters(&mut self, mut character: Character, mut opponent: Character) {
+        character.name.clear();
+        opponent.name.clear();
         self.char_data = CharData {
             character,
             opponent,

@@ -3,6 +3,7 @@ use egui::{Align, Layout};
 use crate::character::Character;
 use crate::io::IoThread;
 use crate::simulator::Simulator;
+use crate::util;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -85,6 +86,14 @@ impl eframe::App for App {
                         .spacing([10.0, 4.0])
                         .striped(false)
                         .show(ui, |ui| {
+                            ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
+                                let button =
+                                    util::create_menu_button("↔", "Switch chars", 40.0, ui);
+                                if button.clicked() {
+                                    std::mem::swap(&mut self.char, &mut self.opponent);
+                                }
+                            });
+                            ui.end_row();
                             self.char.draw(&self.simulator, &self.io, ui);
                             self.opponent.draw_as_opponent(&self.io, ui);
                             ui.end_row();

@@ -1,3 +1,5 @@
+use egui::{Align, Layout};
+
 use crate::character::Character;
 use crate::simulator::Simulator;
 // use crate::simulator::Simulator;
@@ -46,18 +48,18 @@ impl eframe::App for App {
             .update_characters(self.char.clone(), self.opponent.clone());
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
-
-            egui::menu::bar(ui, |ui| {
-                self.menu_bar(ui, ctx);
+            ui.horizontal(|ui| {
+                ui.heading("DSA Hybrid Char Editor");
+                Self::quit_button(ui, ctx);
+                // egui::widgets::global_theme_preference_buttons(ui);
+                ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
+                    egui::widgets::global_theme_preference_buttons(ui);
+                });
             });
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-
-            ui.heading("DSA Hybrid Char Editor");
-            ui.separator();
 
             egui::containers::Resize::default()
                 .auto_sized()
@@ -76,6 +78,7 @@ impl eframe::App for App {
 
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
             self.progress_bar(ui);
+            egui::widgets::global_theme_preference_buttons(ui);
             egui::warn_if_debug_build(ui);
         });
     }
@@ -93,22 +96,24 @@ impl App {
         ui.add(progress_bar);
     }
 
-    fn menu_bar(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
+    fn quit_button(ui: &mut egui::Ui, ctx: &egui::Context) {
         let is_web = cfg!(target_arch = "wasm32"); // no File->Quit on web pages
+        if is_web {
+            return;
+        }
 
-        ui.menu_button("File", |ui| {
-            if !is_web && ui.button("Quit").clicked() {
+        ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
+            let text = egui::RichText::new("❌").size(24.0);
+            let button = egui::Button::new(text).rounding(5.0);
+            let response = ui.add_sized([32.0, 32.0], button).on_hover_ui(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Quit");
+                });
+            });
+            if response.clicked() {
                 log::info!("quit button clicked, exiting...");
                 ctx.send_viewport_cmd(egui::ViewportCommand::Close);
             }
         });
-        ui.add_space(10.0);
-
-        ui.menu_button("Appearance", |ui| {
-            ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                egui::widgets::global_theme_preference_buttons(ui);
-            });
-        });
-        ui.add_space(10.0);
     }
 }

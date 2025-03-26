@@ -80,22 +80,28 @@ impl Character {
     }
 
     fn draw_buttons(&mut self, ui: &mut egui::Ui) {
-        let mut add_button = |text| -> egui::Response {
+        let mut add_button = |text, help| -> egui::Response {
             let text = egui::RichText::new(text).size(24.0);
             let button = egui::Button::new(text).rounding(10.0);
-            ui.add_sized(Self::BUTTON_SIZE, button)
+            ui.add_sized(Self::BUTTON_SIZE, button).on_hover_ui(|ui| {
+                egui::show_tooltip(ui.ctx(), ui.layer_id(), egui::Id::new("my_tooltip"), |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(help);
+                    });
+                });
+            })
         };
 
-        let reset = "❌";
-        let save = "💾";
-        let open = "🗁";
-        if add_button(save).clicked() {
+        let save = add_button("💾", "Save");
+        let open = add_button("🗁", "Open");
+        let reset = add_button("❌", "Reset");
+        if save.clicked() {
             self.save().or_log_err("failed to save character");
         }
-        if add_button(open).clicked() {
+        if open.clicked() {
             self.load().or_log_err("failed to load character");
         }
-        if add_button(reset).clicked() {
+        if reset.clicked() {
             *self = Default::default();
         }
     }

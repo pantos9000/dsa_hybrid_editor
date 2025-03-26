@@ -111,39 +111,9 @@ impl App {
         self.log_window(ui, ctx);
 
         ui.menu_button("File", |ui| {
-            if ui.button("Load default for left char").clicked() {
-                self.char = Default::default();
-                ui.close_menu();
-            }
-            if ui.button("Load left char from file...").clicked() {
-                Self::load_char(&mut self.char).or_log_err("failed to load left char");
-                ui.close_menu();
-            }
-            if ui.button("Save left char to file...").clicked() {
-                Self::save_char(&self.char).or_log_err("failed to save leftchar");
-                ui.close_menu();
-            }
-
-            ui.separator();
-            if ui.button("Load default for right char").clicked() {
-                self.opponent = Default::default();
-                ui.close_menu();
-            }
-            if ui.button("Load right char from file...").clicked() {
-                Self::load_char(&mut self.opponent).or_log_err("failed to load right char");
-                ui.close_menu();
-            }
-            if ui.button("Save right char to file...").clicked() {
-                Self::save_char(&self.opponent).or_log_err("failed to save right char");
-                ui.close_menu();
-            }
-
-            if !is_web {
-                ui.separator();
-                if ui.button("Quit").clicked() {
-                    log::info!("quit button clicked, exiting...");
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                }
+            if !is_web && ui.button("Quit").clicked() {
+                log::info!("quit button clicked, exiting...");
+                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
             }
         });
         ui.add_space(10.0);
@@ -171,48 +141,5 @@ impl App {
             .show(ctx, |ui| {
                 egui_logger::logger_ui().show(ui);
             });
-    }
-
-    fn load_char(char: &mut Character) -> Result<()> {
-        log::info!("loading char...");
-
-        let future = async {
-            let file = rfd::AsyncFileDialog::new().pick_file().await?;
-            Some(file.read().await)
-        };
-        let Some(data) = async_std::task::block_on(future) else {
-            log::debug!("file pick dialog was canceled");
-            return Ok(());
-        };
-
-        let new_char = serde_json::from_slice(&data)
-            .context("failed to convert character from JSON format")?;
-        *char = new_char;
-
-        log::info!("successfully loaded char");
-        Ok(())
-    }
-
-    fn save_char(char: &Character) -> Result<()> {
-        log::info!("saving char...");
-
-        async fn save_file(char_serialized: &[u8]) -> Result<()> {
-            let Some(file) = rfd::AsyncFileDialog::new().save_file().await else {
-                log::debug!("save file dialog was canceled");
-                return Ok(());
-            };
-            file.write(char_serialized)
-                .await
-                .context("failed to write to file")?;
-            Ok(())
-        }
-
-        let char_serialized = serde_json::to_vec_pretty(char)
-            .context("failed to convert character to JSON format")?;
-        async_std::task::block_on(save_file(&char_serialized))
-            .context("failed to save char to file")?;
-
-        log::info!("successfully saved char");
-        Ok(())
     }
 }

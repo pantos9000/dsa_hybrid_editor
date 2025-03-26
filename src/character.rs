@@ -29,7 +29,7 @@ pub struct Character {
 }
 
 impl Character {
-    const BUTTON_SIZE: [f32; 2] = [40.0, 40.0];
+    const BUTTON_SIZE: f32 = 40.0;
 
     pub fn draw(&mut self, sim: &Simulator, io: &IoThread, ui: &mut egui::Ui) {
         util::create_frame(ui).show(ui, |ui| {
@@ -38,7 +38,8 @@ impl Character {
                     self.draw_buttons(io, ui, false);
                     ui.with_layout(Layout::right_to_left(egui::Align::TOP), |ui| {
                         let no_mod = Box::new(|_: &mut Character| ());
-                        sim.gradient(no_mod).draw_sized(Self::BUTTON_SIZE, ui);
+                        sim.gradient(no_mod)
+                            .draw_sized([Self::BUTTON_SIZE, Self::BUTTON_SIZE], ui);
                     });
                 });
                 util::create_frame(ui).show(ui, |ui| {
@@ -80,21 +81,9 @@ impl Character {
     }
 
     fn draw_buttons(&mut self, io: &IoThread, ui: &mut egui::Ui, is_opponent: bool) {
-        let mut add_button = |text, help| -> egui::Response {
-            let text = egui::RichText::new(text).size(24.0);
-            let button = egui::Button::new(text).corner_radius(10.0);
-            ui.add_sized(Self::BUTTON_SIZE, button).on_hover_ui(|ui| {
-                egui::show_tooltip(ui.ctx(), ui.layer_id(), egui::Id::new("my_tooltip"), |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label(help);
-                    });
-                });
-            })
-        };
-
-        let save = add_button("💾", "Save");
-        let open = add_button("🗁", "Open");
-        let reset = add_button("❌", "Reset");
+        let save = util::create_menu_button("💾", "Save", Self::BUTTON_SIZE, ui);
+        let open = util::create_menu_button("🗁", "Open", Self::BUTTON_SIZE, ui);
+        let reset = util::create_menu_button("❌", "Reset", Self::BUTTON_SIZE, ui);
         if save.clicked() {
             io.request(crate::io::IoRequest::Save(self.clone()));
         }

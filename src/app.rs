@@ -104,7 +104,7 @@ impl App {
 
         ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
             let text = egui::RichText::new("❌").size(24.0);
-            let button = egui::Button::new(text).rounding(5.0);
+            let button = egui::Button::new(text).corner_radius(5.0);
             let response = ui.add_sized([32.0, 32.0], button).on_hover_ui(|ui| {
                 ui.horizontal(|ui| {
                     ui.label("Quit");

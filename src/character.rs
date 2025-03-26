@@ -82,7 +82,7 @@ impl Character {
     fn draw_buttons(&mut self, ui: &mut egui::Ui) {
         let mut add_button = |text, help| -> egui::Response {
             let text = egui::RichText::new(text).size(24.0);
-            let button = egui::Button::new(text).rounding(10.0);
+            let button = egui::Button::new(text).corner_radius(10.0);
             ui.add_sized(Self::BUTTON_SIZE, button).on_hover_ui(|ui| {
                 egui::show_tooltip(ui.ctx(), ui.layer_id(), egui::Id::new("my_tooltip"), |ui| {
                     ui.horizontal(|ui| {

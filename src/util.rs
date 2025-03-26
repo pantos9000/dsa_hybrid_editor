@@ -9,7 +9,7 @@ pub fn create_grid(id_salt: impl std::hash::Hash) -> egui::Grid {
 pub fn create_frame(ui: &egui::Ui) -> egui::Frame {
     egui::Frame::default()
         .stroke(ui.visuals().widgets.noninteractive.bg_stroke)
-        .rounding(ui.visuals().widgets.noninteractive.rounding)
+        .corner_radius(ui.visuals().widgets.noninteractive.corner_radius)
         .inner_margin(10.0)
         .outer_margin(5.0)
         .fill(egui::Color32::TRANSPARENT)

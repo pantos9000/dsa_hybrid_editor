@@ -25,8 +25,8 @@ anyhow = "1.0"
 rfd = "0.15"
 async-std = "1.13.0"
 
-strum = "0.26"
-strum_macros = "0.26"
+strum = "0.27"
+strum_macros = "0.27"
 
 crossbeam = "0.8.4"
 dashmap = "6.1.0"

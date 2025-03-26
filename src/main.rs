@@ -26,6 +26,7 @@ fn create_app() -> eframe::AppCreator<'static> {
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
+    better_panic::install();
     init_logging();
 
     let viewport = egui::ViewportBuilder::default()
@@ -47,6 +48,7 @@ fn main() -> eframe::Result {
 // When compiling to web using trunk:
 #[cfg(target_arch = "wasm32")]
 fn main() {
+    better_panic::install();
     init_logging();
 
     // Redirect `log` message to `console.log` and friends:

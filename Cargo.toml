@@ -17,15 +17,13 @@ eframe = { version = "0.31", default-features = false, features = [
     "x11",           # workaround to update to 0.31, should be default
     "wayland",       # workaround to update to 0.31, should be default
 ] }
+rfd = "0.15"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
 
 env_logger = "0.11"
 log = "0.4"
 anyhow = "1.0"
-
-rfd = "0.15"
-async-std = "1.13.0"
 
 strum = "0.27"
 strum_macros = "0.27"

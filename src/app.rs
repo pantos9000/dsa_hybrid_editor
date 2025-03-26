@@ -1,8 +1,8 @@
 use egui::{Align, Layout};
 
 use crate::character::Character;
+use crate::io::IoThread;
 use crate::simulator::Simulator;
-// use crate::simulator::Simulator;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -14,6 +14,9 @@ pub struct App {
 
     #[serde(skip)]
     simulator: Simulator,
+
+    #[serde(skip)]
+    io: IoThread,
 }
 
 impl App {
@@ -44,6 +47,19 @@ impl eframe::App for App {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
 
+        for response in self.io.poll_iter() {
+            match response {
+                crate::io::IoResponse::CharLoaded(character) => {
+                    self.char = character;
+                    log::info!("character successfully loaded")
+                }
+                crate::io::IoResponse::OpponentLoaded(character) => {
+                    self.opponent = character;
+                    log::info!("opponent successfully loaded");
+                }
+            }
+        }
+
         self.simulator
             .update_characters(self.char.clone(), self.opponent.clone());
 
@@ -69,8 +85,8 @@ impl eframe::App for App {
                         .spacing([10.0, 4.0])
                         .striped(false)
                         .show(ui, |ui| {
-                            self.char.draw(&self.simulator, ui);
-                            self.opponent.draw_as_opponent(ui);
+                            self.char.draw(&self.simulator, &self.io, ui);
+                            self.opponent.draw_as_opponent(&self.io, ui);
                             ui.end_row();
                         });
                 });

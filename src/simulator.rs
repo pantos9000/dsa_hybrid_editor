@@ -9,16 +9,16 @@ use dashmap::DashMap;
 use fxhash::FxBuildHasher;
 
 use crate::character::Character;
-use crate::gradient::Gradient;
+use crate::gradient::{Gradient, Total};
 
 pub type CharModification = Box<dyn FnOnce(&mut Character)>;
 
-/// Holds all gradient results
-type GradientMap = DashMap<CharData, Gradient, FxBuildHasher>;
+/// Holds all total results
+type DataMap = DashMap<CharData, Total, FxBuildHasher>;
 
 pub struct Simulator {
     thread: Option<thread::JoinHandle<()>>,
-    gradient_map: Arc<GradientMap>,
+    total_map: Arc<DataMap>,
     send: Option<mpsc::Sender<CharData>>,
     stop: Arc<AtomicBool>,
     progress: Arc<AtomicU8>,
@@ -54,7 +54,7 @@ impl Simulator {
         let (send, recv) = channel();
         let stop = Arc::new(AtomicBool::new(false));
         let progress = Arc::new(AtomicU8::new(100));
-        let gradient_map = Arc::new(GradientMap::default());
+        let gradient_map = Arc::new(DataMap::default());
         let thread = Some(Self::spawn_simulator_thread(
             &gradient_map,
             recv,
@@ -63,7 +63,7 @@ impl Simulator {
         ));
         Self {
             thread,
-            gradient_map,
+            total_map: gradient_map,
             send: Some(send),
             stop,
             progress,
@@ -72,7 +72,7 @@ impl Simulator {
     }
 
     fn spawn_simulator_thread(
-        gradient_map: &Arc<GradientMap>,
+        gradient_map: &Arc<DataMap>,
         recv: mpsc::Receiver<CharData>,
         stop: &Arc<AtomicBool>,
         progress: &Arc<AtomicU8>,
@@ -91,12 +91,12 @@ impl Simulator {
     }
 
     fn simulator_thread(
-        gradient_map: Arc<GradientMap>,
+        gradient_map: Arc<DataMap>,
         recv: mpsc::Receiver<CharData>,
         stop: Arc<AtomicBool>,
         progress: Arc<AtomicU8>,
     ) {
-        fn dummy_calculation(_char_data: &CharData) -> Gradient {
+        fn dummy_calculation(_char_data: &CharData) -> Total {
             std::thread::sleep(std::time::Duration::from_millis(100));
             42.try_into().unwrap()
         }
@@ -120,8 +120,8 @@ impl Simulator {
             };
 
             // do the calculation and store the result if needed
-            let gradient = dummy_calculation(&char_data);
-            gradient_map.insert(char_data, gradient);
+            let total = dummy_calculation(&char_data);
+            gradient_map.insert(char_data, total);
 
             // update progress
             count_done += 1;
@@ -146,24 +146,37 @@ impl Simulator {
         self.progress.load(Ordering::Relaxed)
     }
 
+    pub fn total(&self) -> Total {
+        self.modified_total(self.char_data.clone())
+    }
+
     pub fn gradient(&self, modification: CharModification) -> Gradient {
         let mut char_data = self.char_data.clone();
         modification(&mut char_data.character);
 
+        let old_total = self.total();
+        let new_total = self.modified_total(char_data);
+
+        new_total - old_total
+    }
+
+    fn modified_total(&self, char_data: CharData) -> Total {
         // return early if already in map
-        if let Some(gradient) = self.gradient_map.get(&char_data) {
-            return *gradient;
+        if let Some(total) = self.total_map.get(&char_data) {
+            return *total;
         }
 
-        self.gradient_map
-            .insert(char_data.clone(), Gradient::default());
+        // otherwise insert a placeholder...
+        self.total_map.insert(char_data.clone(), Total::default());
 
+        // ... and request that a result is calculated
         self.send
             .as_ref()
             .expect("sender is gone")
             .send(char_data)
             .expect("simulator thread is gone");
-        Gradient::NONE
+
+        Total::NONE
     }
 }
 

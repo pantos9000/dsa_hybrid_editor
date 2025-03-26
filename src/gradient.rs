@@ -3,6 +3,59 @@ use egui::{Button, Color32};
 #[derive(Debug, Default, Copy, Clone)]
 pub struct InvalidGradientValue;
 
+#[derive(Debug, Default, Copy, Clone)]
+pub struct InvalidTotalValue;
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct Total {
+    value: Option<i8>,
+}
+
+impl TryFrom<i8> for Total {
+    type Error = InvalidTotalValue;
+
+    fn try_from(value: i8) -> Result<Self, Self::Error> {
+        match value {
+            ..0 => Err(InvalidTotalValue),
+            101.. => Err(InvalidTotalValue),
+            value => Ok(Self { value: Some(value) }),
+        }
+    }
+}
+
+impl std::ops::Sub for Total {
+    type Output = Gradient;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let Some(lhs) = self.value else {
+            return Gradient::NONE;
+        };
+        let Some(rhs) = rhs.value else {
+            return Gradient::NONE;
+        };
+
+        Gradient {
+            value: Some(lhs - rhs),
+        }
+    }
+}
+
+impl Total {
+    pub const NONE: Self = Total { value: None };
+
+    pub fn draw(&self, max_size: impl Into<egui::Vec2>, ui: &mut egui::Ui) {
+        match self.value {
+            None => {
+                ui.add_sized(max_size, egui::widgets::Spinner::new());
+            }
+            Some(value) => {
+                let drawable = draw_value(value, ui, false);
+                ui.add_sized(max_size, drawable);
+            }
+        }
+    }
+}
+
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Gradient {
     value: Option<i8>,
@@ -23,47 +76,36 @@ impl TryFrom<i8> for Gradient {
 impl Gradient {
     pub const NONE: Self = Gradient { value: None };
 
-    pub fn draw_sized(&self, max_size: impl Into<egui::Vec2>, ui: &mut egui::Ui) {
-        match self.value {
-            None => {
-                ui.add_sized(max_size, egui::widgets::Spinner::new());
-            }
-            Some(value) => {
-                let drawable = Self::draw_value(value, ui);
-                ui.add_sized(max_size, drawable);
-            }
-        }
-    }
-
     pub fn draw(&self, ui: &mut egui::Ui) {
         match self.value {
             None => {
                 ui.spinner();
             }
             Some(value) => {
-                let drawable = Self::draw_value(value, ui);
+                let drawable = draw_value(value, ui, true);
                 ui.add(drawable);
             }
         }
     }
+}
 
-    fn draw_value(value: i8, ui: &mut egui::Ui) -> impl egui::Widget {
-        let dark = ui.visuals().dark_mode;
-        let dark_gray = Color32::from_rgb(64, 64, 64);
-        let text = format!("{}", value);
-        let color = if dark {
-            match value {
-                ..-1 => Color32::DARK_RED,
-                -1..2 => dark_gray,
-                2.. => Color32::DARK_GREEN,
-            }
-        } else {
-            match value {
-                ..-1 => Color32::LIGHT_RED,
-                -1..2 => Color32::LIGHT_GRAY,
-                2.. => Color32::LIGHT_GREEN,
-            }
-        };
-        Button::new(text).frame(false).fill(color)
-    }
+fn draw_value(value: i8, ui: &mut egui::Ui, draw_sign: bool) -> impl egui::Widget {
+    let dark = ui.visuals().dark_mode;
+    let dark_gray = Color32::from_rgb(64, 64, 64);
+    let sign = if draw_sign && value > 0 { "+" } else { "" };
+    let text = format!("{sign}{value}");
+    let color = if dark {
+        match value {
+            ..-1 => Color32::DARK_RED,
+            -1..2 => dark_gray,
+            2.. => Color32::DARK_GREEN,
+        }
+    } else {
+        match value {
+            ..-1 => Color32::LIGHT_RED,
+            -1..2 => Color32::LIGHT_GRAY,
+            2.. => Color32::LIGHT_GREEN,
+        }
+    };
+    Button::new(text).frame(false).fill(color)
 }

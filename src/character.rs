@@ -37,9 +37,7 @@ impl Character {
                 ui.horizontal(|ui| {
                     self.draw_buttons(io, ui, false);
                     ui.with_layout(Layout::right_to_left(egui::Align::TOP), |ui| {
-                        let no_mod = Box::new(|_: &mut Character| ());
-                        sim.gradient(no_mod)
-                            .draw_sized([Self::BUTTON_SIZE, Self::BUTTON_SIZE], ui);
+                        sim.total().draw([Self::BUTTON_SIZE, Self::BUTTON_SIZE], ui);
                     });
                 });
                 util::create_frame(ui).show(ui, |ui| {

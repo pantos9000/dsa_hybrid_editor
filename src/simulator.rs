@@ -190,8 +190,8 @@ mod tests {
 
     #[test]
     fn test_simulator_progress() {
-        let mod1 = |c: &mut Character| c.skills.kämpfen.increment();
-        let mod2 = |c: &mut Character| c.attributes.stä.increment();
+        let mod1 = |c: &mut Character| c.skills.kampfen.increment();
+        let mod2 = |c: &mut Character| c.attributes.sta.increment();
         let mod1 = Box::new(mod1);
         let mod2 = Box::new(mod2);
         let simulator = create_simulator();

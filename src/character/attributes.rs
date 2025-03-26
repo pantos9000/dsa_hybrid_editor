@@ -7,7 +7,7 @@ use super::Drawable;
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Attributes {
     pub(crate) ges: Attribute,
-    pub(crate) stä: Attribute,
+    pub(crate) sta: Attribute,
     pub(crate) kon: Attribute,
     pub(crate) int: Attribute,
     pub(crate) wil: Attribute,
@@ -21,7 +21,7 @@ impl Drawable for Attributes {
         grid.show(ui, |ui| {
             self.ges.draw(AttrName::Ges, sim, ui);
             ui.end_row();
-            self.stä.draw(AttrName::Stä, sim, ui);
+            self.sta.draw(AttrName::Stä, sim, ui);
             ui.end_row();
             self.kon.draw(AttrName::Kon, sim, ui);
             ui.end_row();
@@ -39,7 +39,7 @@ impl Drawable for Attributes {
         grid.show(ui, |ui| {
             self.ges.draw_as_opponent(AttrName::Ges, ui);
             ui.end_row();
-            self.stä.draw_as_opponent(AttrName::Stä, ui);
+            self.sta.draw_as_opponent(AttrName::Stä, ui);
             ui.end_row();
             self.kon.draw_as_opponent(AttrName::Kon, ui);
             ui.end_row();
@@ -64,7 +64,7 @@ impl AttrName {
     fn modification_dec(&self) -> CharModification {
         match self {
             AttrName::Ges => Box::new(|c| c.attributes.ges.decrement()),
-            AttrName::Stä => Box::new(|c| c.attributes.stä.decrement()),
+            AttrName::Stä => Box::new(|c| c.attributes.sta.decrement()),
             AttrName::Kon => Box::new(|c| c.attributes.kon.decrement()),
             AttrName::Int => Box::new(|c| c.attributes.int.decrement()),
             AttrName::Wil => Box::new(|c| c.attributes.wil.decrement()),
@@ -74,7 +74,7 @@ impl AttrName {
     fn modification_inc(&self) -> CharModification {
         match self {
             AttrName::Ges => Box::new(|c| c.attributes.ges.increment()),
-            AttrName::Stä => Box::new(|c| c.attributes.stä.increment()),
+            AttrName::Stä => Box::new(|c| c.attributes.sta.increment()),
             AttrName::Kon => Box::new(|c| c.attributes.kon.increment()),
             AttrName::Int => Box::new(|c| c.attributes.int.increment()),
             AttrName::Wil => Box::new(|c| c.attributes.wil.increment()),
@@ -84,7 +84,7 @@ impl AttrName {
     fn modification_set(&self, value: Attribute) -> CharModification {
         match self {
             AttrName::Ges => Box::new(move |c| c.attributes.ges = value),
-            AttrName::Stä => Box::new(move |c| c.attributes.stä = value),
+            AttrName::Stä => Box::new(move |c| c.attributes.sta = value),
             AttrName::Kon => Box::new(move |c| c.attributes.kon = value),
             AttrName::Int => Box::new(move |c| c.attributes.int = value),
             AttrName::Wil => Box::new(move |c| c.attributes.wil = value),

@@ -6,7 +6,7 @@ use super::Drawable;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Skills {
-    pub(crate) kämpfen: Skill,
+    pub(crate) kampfen: Skill,
 }
 
 impl Drawable for Skills {
@@ -15,7 +15,7 @@ impl Drawable for Skills {
 
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {
-            self.kämpfen.draw(SkillName::Kämpfen, sim, ui);
+            self.kampfen.draw(SkillName::Kämpfen, sim, ui);
             ui.end_row();
         });
     }
@@ -25,7 +25,7 @@ impl Drawable for Skills {
 
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {
-            self.kämpfen.draw_as_opponent(SkillName::Kämpfen, ui);
+            self.kampfen.draw_as_opponent(SkillName::Kämpfen, ui);
             ui.end_row();
         });
     }
@@ -39,19 +39,19 @@ enum SkillName {
 impl SkillName {
     fn modification_dec(&self) -> CharModification {
         match self {
-            SkillName::Kämpfen => Box::new(|c| c.skills.kämpfen.decrement()),
+            SkillName::Kämpfen => Box::new(|c| c.skills.kampfen.decrement()),
         }
     }
 
     fn modification_inc(&self) -> CharModification {
         match self {
-            SkillName::Kämpfen => Box::new(|c| c.skills.kämpfen.increment()),
+            SkillName::Kämpfen => Box::new(|c| c.skills.kampfen.increment()),
         }
     }
 
     fn modification_set(&self, value: Skill) -> CharModification {
         match self {
-            SkillName::Kämpfen => Box::new(move |c| c.skills.kämpfen = value),
+            SkillName::Kämpfen => Box::new(move |c| c.skills.kampfen = value),
         }
     }
 }

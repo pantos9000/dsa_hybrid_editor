@@ -6,6 +6,18 @@ mod gradient;
 mod simulator;
 mod util;
 
+fn init_logging() {
+    let default_level = if cfg!(debug_assertions) {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Info
+    };
+    env_logger::Builder::new()
+        .filter_level(default_level)
+        .parse_env("LOG_DSA")
+        .init();
+}
+
 fn create_app() -> eframe::AppCreator<'static> {
     Box::new(|creation_context| Ok(Box::new(app::App::new(creation_context))))
 }
@@ -13,7 +25,7 @@ fn create_app() -> eframe::AppCreator<'static> {
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
-    egui_logger::builder().init().unwrap();
+    init_logging();
 
     let viewport = egui::ViewportBuilder::default()
         .with_inner_size([400.0, 300.0])
@@ -34,7 +46,7 @@ fn main() -> eframe::Result {
 // When compiling to web using trunk:
 #[cfg(target_arch = "wasm32")]
 fn main() {
-    egui_logger::builder().init().unwrap();
+    init_logging();
 
     // Redirect `log` message to `console.log` and friends:
     // eframe::WebLogger::init(log::LevelFilter::Debug).ok();

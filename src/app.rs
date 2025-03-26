@@ -1,16 +1,6 @@
-use anyhow::{Context, Result};
-
 use crate::character::Character;
 use crate::simulator::Simulator;
-use crate::util::LogError;
 // use crate::simulator::Simulator;
-
-#[derive(Debug, Default, Clone)]
-struct UiState {
-    show_logs: bool,
-    // show_right_character: bool,
-    // show_probabilities: bool,
-}
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -20,8 +10,6 @@ pub struct App {
     char: Character,
     opponent: Character,
 
-    #[serde(skip)]
-    ui_state: UiState,
     #[serde(skip)]
     simulator: Simulator,
 }
@@ -108,8 +96,6 @@ impl App {
     fn menu_bar(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         let is_web = cfg!(target_arch = "wasm32"); // no File->Quit on web pages
 
-        self.log_window(ui, ctx);
-
         ui.menu_button("File", |ui| {
             if !is_web && ui.button("Quit").clicked() {
                 log::info!("quit button clicked, exiting...");
@@ -121,25 +107,8 @@ impl App {
         ui.menu_button("Appearance", |ui| {
             ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
                 egui::widgets::global_theme_preference_buttons(ui);
-                ui.separator();
-
-                if ui
-                    .checkbox(&mut self.ui_state.show_logs, "Show log window")
-                    .clicked()
-                {
-                    log::info!("toggled log window visibility");
-                    ui.close_menu();
-                }
             });
         });
         ui.add_space(10.0);
-    }
-
-    fn log_window(&mut self, _ui: &mut egui::Ui, ctx: &egui::Context) {
-        egui::Window::new("Logs")
-            .open(&mut self.ui_state.show_logs)
-            .show(ctx, |ui| {
-                egui_logger::logger_ui().show(ui);
-            });
     }
 }

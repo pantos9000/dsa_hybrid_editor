@@ -115,6 +115,20 @@ pub enum Attribute {
     W12p2,
 }
 
+impl From<Attribute> for u8 {
+    fn from(attribute: Attribute) -> Self {
+        match attribute {
+            Attribute::W4 => 4,
+            Attribute::W6 => 6,
+            Attribute::W8 => 8,
+            Attribute::W10 => 10,
+            Attribute::W12 => 12,
+            Attribute::W12p1 => 13,
+            Attribute::W12p2 => 14,
+        }
+    }
+}
+
 impl Attribute {
     fn draw(&mut self, name: AttrName, sim: &Simulator, ui: &mut egui::Ui) {
         ui.label(format!("{name}"));

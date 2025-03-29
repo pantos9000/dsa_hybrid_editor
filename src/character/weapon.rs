@@ -6,8 +6,8 @@ use super::{Character, Drawable};
 
 #[derive(Debug, Default, Clone, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Weapon {
-    damage: Damage,
-    bonus_damage: BonusDamage,
+    pub(crate) damage: Damage,
+    pub(crate) bonus_damage: BonusDamage,
 }
 
 impl Drawable for Weapon {
@@ -122,23 +122,23 @@ impl Damage {
 #[derive(
     Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
 )]
-pub struct BonusDamage(i32);
+pub struct BonusDamage(i8);
 
-impl From<i32> for BonusDamage {
-    fn from(value: i32) -> Self {
+impl From<i8> for BonusDamage {
+    fn from(value: i8) -> Self {
         Self(value)
     }
 }
 
-impl From<BonusDamage> for i32 {
+impl From<BonusDamage> for i8 {
     fn from(value: BonusDamage) -> Self {
         value.0
     }
 }
 
 impl BonusDamage {
-    const MIN: i32 = -3;
-    const MAX: i32 = 3;
+    const MIN: i8 = -3;
+    const MAX: i8 = 3;
 
     fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
         ui.label("Schadensbonus");

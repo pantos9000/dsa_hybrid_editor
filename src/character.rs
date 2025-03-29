@@ -3,10 +3,10 @@ mod name;
 mod skills;
 mod weapon;
 
-pub use attributes::Attributes;
+pub use attributes::{Attribute, Attributes};
 pub use name::Name;
-pub use skills::Skills;
-pub use weapon::Weapon;
+pub use skills::{Skill, Skills};
+pub use weapon::{Damage, Weapon};
 
 use crate::io::{IoRequest, IoThread};
 use crate::simulator::Simulator;

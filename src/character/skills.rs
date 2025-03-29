@@ -80,6 +80,21 @@ pub enum Skill {
     W12p2,
 }
 
+impl From<Skill> for u8 {
+    fn from(skill: Skill) -> Self {
+        match skill {
+            Skill::W4m2 => 2,
+            Skill::W4 => 4,
+            Skill::W6 => 6,
+            Skill::W8 => 8,
+            Skill::W10 => 10,
+            Skill::W12 => 12,
+            Skill::W12p1 => 13,
+            Skill::W12p2 => 14,
+        }
+    }
+}
+
 impl Skill {
     fn draw(&mut self, name: SkillName, sim: &Simulator, ui: &mut egui::Ui) {
         ui.label(format!("{name}"));

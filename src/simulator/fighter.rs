@@ -1,13 +1,11 @@
-use crate::character::Character;
+use crate::character::{Character, PassiveStats};
 
 use super::roller::{roller, Roll, RollResult};
 
 #[derive(Debug, Clone)]
 pub struct Fighter {
     pub(super) character: Character,
-    life: u8,
-    parry: u8,
-    robustness: u8,
+    passive_stats: PassiveStats,
     shaken: bool,
     interrupted: bool,
     fell: bool,
@@ -23,14 +21,10 @@ impl Default for Fighter {
 
 impl Fighter {
     pub fn new(character: Character) -> Self {
-        let life = 24 + u8::from(character.attributes.kon) + u8::from(character.attributes.wil);
-        let parry = 2 + u8::from(character.skills.kampfen) / 2;
-        let robustness = 2 + u8::from(character.attributes.kon) / 2;
+        let passive_stats = PassiveStats::new(&character);
         Self {
             character,
-            life,
-            parry,
-            robustness,
+            passive_stats,
             shaken: false,
             interrupted: false,
             fell: false,
@@ -44,7 +38,7 @@ impl Fighter {
     }
 
     pub fn is_dead(&self) -> bool {
-        self.life <= 5
+        self.passive_stats.life <= 5
     }
 
     pub fn action(&mut self, opponent: &mut Fighter) {
@@ -75,7 +69,7 @@ impl Fighter {
     }
 
     fn apply_wound_penalty(&self, roll: &mut Roll) {
-        let wound_penalty = match self.life {
+        let wound_penalty = match self.passive_stats.life {
             0..=10 => 3,
             11..=20 => 1,
             21.. => 0,
@@ -135,7 +129,7 @@ impl Fighter {
         self.apply_joker(&mut roll);
         opponent.apply_fell_state(&mut roll);
         roll += 1_u8; // add 1 to be able to check against 0
-        roll -= opponent.parry;
+        roll -= opponent.passive_stats.parry;
         match roll.as_u8() {
             0 => AttackResult::Miss,
             1..=4 => AttackResult::Hit,
@@ -150,12 +144,12 @@ impl Fighter {
             damage += roller().roll_raise();
         }
         self.apply_joker(&mut damage);
-        if u8::from(damage) < opponent.robustness {
+        if u8::from(damage) < opponent.passive_stats.robustness {
             return;
         }
 
-        damage -= opponent.robustness;
-        opponent.life -= damage;
+        damage -= opponent.passive_stats.robustness;
+        opponent.passive_stats.life -= damage;
         opponent.shaken = true;
 
         // instead of implementing interrupting logic, we can just assume that
@@ -171,7 +165,7 @@ impl Fighter {
         match fail_result {
             CriticalFailResult::WeaponDestroyed => {
                 // handle this as defeat for now
-                self.life = 0;
+                self.passive_stats.life = 0;
             }
             CriticalFailResult::Fell => {
                 // actually also requires 2 pace, but treat it the same for now

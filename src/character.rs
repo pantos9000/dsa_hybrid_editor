@@ -1,10 +1,12 @@
 mod attributes;
 mod name;
+mod passive_stats;
 mod skills;
 mod weapon;
 
 pub use attributes::{Attribute, Attributes};
 pub use name::Name;
+pub use passive_stats::PassiveStats;
 pub use skills::{Skill, Skills};
 pub use weapon::{Damage, Weapon};
 
@@ -44,6 +46,9 @@ impl Character {
                     self.name.draw(sim, ui);
                 });
                 util::create_frame(ui).show(ui, |ui| {
+                    PassiveStats::new(self).draw(sim, ui);
+                });
+                util::create_frame(ui).show(ui, |ui| {
                     self.attributes.draw(sim, ui);
                 });
                 util::create_frame(ui).show(ui, |ui| {
@@ -64,6 +69,9 @@ impl Character {
                 });
                 util::create_frame(ui).show(ui, |ui| {
                     self.name.draw_as_opponent(ui);
+                });
+                util::create_frame(ui).show(ui, |ui| {
+                    PassiveStats::new(self).draw_as_opponent(ui);
                 });
                 util::create_frame(ui).show(ui, |ui| {
                     self.attributes.draw_as_opponent(ui);

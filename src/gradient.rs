@@ -96,15 +96,15 @@ fn draw_value(value: i8, ui: &mut egui::Ui, draw_sign: bool) -> impl egui::Widge
     let text = format!("{sign}{value}");
     let color = if dark {
         match value {
-            ..-1 => Color32::DARK_RED,
-            -1..2 => dark_gray,
-            2.. => Color32::DARK_GREEN,
+            ..-2 => Color32::DARK_RED,
+            -2..=2 => dark_gray,
+            3.. => Color32::DARK_GREEN,
         }
     } else {
         match value {
-            ..-1 => Color32::LIGHT_RED,
-            -1..2 => Color32::LIGHT_GRAY,
-            2.. => Color32::LIGHT_GREEN,
+            ..-2 => Color32::LIGHT_RED,
+            -2..=2 => Color32::LIGHT_GRAY,
+            3.. => Color32::LIGHT_GREEN,
         }
     };
     Button::new(text).frame(false).fill(color)

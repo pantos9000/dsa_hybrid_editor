@@ -42,6 +42,7 @@ fn calc_fight(char_data: &CharData) -> FightIsOver {
     FightIsOver::Draw
 }
 
+#[derive(Debug, Default)]
 struct Arena {
     cards: CardDeck,
     fighter: Fighter,
@@ -115,12 +116,14 @@ impl Arena {
 
 type FightResult = Result<(), FightIsOver>;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum FightIsOver {
     FighterWon,
     OpponentWon,
     Draw,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Initiative {
     FighterFirst,
     OpponentFirst,

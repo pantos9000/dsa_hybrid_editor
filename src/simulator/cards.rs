@@ -1,5 +1,6 @@
 use rand_xoshiro::Xoshiro256PlusPlus;
 
+#[derive(Debug)]
 pub struct CardDeck {
     cards: Vec<Card>,
     last_drawn: Vec<Card>,

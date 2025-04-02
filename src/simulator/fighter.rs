@@ -15,6 +15,12 @@ pub struct Fighter {
     weapon_lost: bool,
 }
 
+impl Default for Fighter {
+    fn default() -> Self {
+        Self::new(Character::default())
+    }
+}
+
 impl Fighter {
     pub fn new(character: Character) -> Self {
         let life = 24 + u8::from(character.attributes.kon) + u8::from(character.attributes.wil);

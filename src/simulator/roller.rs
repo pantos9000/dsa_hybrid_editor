@@ -25,7 +25,7 @@ impl Default for Roller {
 impl Roller {
     pub fn new() -> Self {
         use rand::SeedableRng as _;
-        let rng = Xoshiro256PlusPlus::seed_from_u64(0);
+        let rng = Xoshiro256PlusPlus::seed_from_u64(rand::random());
         Self {
             rng: RefCell::new(rng),
         }

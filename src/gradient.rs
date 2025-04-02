@@ -109,3 +109,14 @@ fn draw_value(value: i8, ui: &mut egui::Ui, draw_sign: bool) -> impl egui::Widge
     };
     Button::new(text).frame(false).fill(color)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    impl From<Total> for Option<i8> {
+        fn from(value: Total) -> Self {
+            value.value
+        }
+    }
+}

@@ -19,7 +19,7 @@ impl CardDeck {
         use rand::SeedableRng as _; // for seed_from_u64()
 
         let last_drawn = Vec::new();
-        let mut rng = Xoshiro256PlusPlus::seed_from_u64(0xBADCA9D5);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(rand::random());
         let mut cards: Vec<_> = Card::deck_iter().collect();
         cards.shuffle(&mut rng);
         Self {

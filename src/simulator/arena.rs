@@ -4,7 +4,7 @@ use super::cards::{Card, CardDeck};
 use super::fighter::Fighter;
 use super::CharData;
 
-const COUNT_FIGHTS: u32 = 1000;
+const COUNT_FIGHTS: u32 = 5000;
 const MAX_ROUNDS: u32 = 100;
 
 pub fn calculate_probability(char_data: &CharData) -> Total {
@@ -128,4 +128,43 @@ enum FightIsOver {
 enum Initiative {
     FighterFirst,
     OpponentFirst,
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::character::Character;
+
+    use super::*;
+
+    #[test]
+    fn test_probability_for_same_chars_is_around_50() {
+        for _ in 0..20 {
+            let char1 = Character::default();
+            let char2 = Character::default();
+            let data1 = CharData {
+                character: char1.clone(),
+                opponent: char2.clone(),
+            };
+            let data2 = CharData {
+                character: char2,
+                opponent: char1,
+            };
+
+            let prob1: Option<i8> = calculate_probability(&data1).into();
+            let prob2: Option<i8> = calculate_probability(&data2).into();
+            let prob1 = prob1.unwrap();
+            let prob2 = prob2.unwrap();
+
+            eprintln!("prob1 = {prob1}");
+            eprintln!("prob2 = {prob1}");
+            assert!(
+                (48..=52).contains(&prob1),
+                "{prob1} is too far away from 50"
+            );
+            assert!(
+                (48..=52).contains(&prob2),
+                "{prob2} is too far away from 50"
+            );
+        }
+    }
 }

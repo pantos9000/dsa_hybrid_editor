@@ -25,9 +25,10 @@ pub fn calculate_probability(char_data: &CharData) -> Total {
     }
     let probability_win = calc_prob(count_character_wins);
     let _probability_loss = calc_prob(count_opponent_wins);
-    let _probability_draw = calc_prob(count_draws);
+    let probability_draw = calc_prob(count_draws);
 
-    let total: i8 = probability_win.try_into().unwrap();
+    let total = probability_win + probability_draw / 2;
+    let total: i8 = total.try_into().unwrap();
     Total::try_from(total).unwrap()
 }
 

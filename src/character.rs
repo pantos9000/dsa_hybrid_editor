@@ -95,6 +95,9 @@ impl Character {
                     self.weapon.draw_as_opponent(ui);
                 });
                 util::create_frame(ui).show(ui, |ui| {
+                    self.armor.draw_as_opponent(ui);
+                });
+                util::create_frame(ui).show(ui, |ui| {
                     self.edges.draw_as_opponent(ui);
                 });
             });

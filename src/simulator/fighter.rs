@@ -167,6 +167,9 @@ impl Fighter {
             damage += roller().roll_raise();
         }
         self.apply_joker(&mut damage);
+        if self.character.edges.ubertolpeln.is_set() && opponent.shaken {
+            damage += 4_u8;
+        }
         if u8::from(damage) < opponent.passive_stats.robustness {
             return;
         }

@@ -5,6 +5,7 @@ use super::{Character, Drawable};
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Edges {
     pub(crate) blitzhieb: Blitzhieb,
+    pub(crate) ubertolpeln: Ubertolpeln,
 }
 
 impl Drawable for Edges {
@@ -14,6 +15,9 @@ impl Drawable for Edges {
         ui.heading("Edges");
         grid.show(ui, |ui| {
             self.blitzhieb.draw(sim, ui);
+            ui.end_row();
+            self.ubertolpeln.draw(sim, ui);
+            ui.end_row();
         });
     }
 
@@ -23,6 +27,7 @@ impl Drawable for Edges {
         ui.heading("Edges");
         grid.show(ui, |ui| {
             self.blitzhieb.draw_as_opponent(ui);
+            self.ubertolpeln.draw_as_opponent(ui);
         });
     }
 }
@@ -95,6 +100,59 @@ impl Blitzhieb {
 
     fn draw_as_opponent(&self, ui: &mut egui::Ui) {
         ui.label("Blitzhieb");
+        let _ = ui.button(self.as_str());
+    }
+}
+
+#[derive(
+    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
+pub struct Ubertolpeln(bool);
+
+impl Ubertolpeln {
+    pub fn is_set(&self) -> bool {
+        self.0
+    }
+
+    fn as_str(&self) -> &'static str {
+        match self.0 {
+            true => "Ja",
+            false => "Nein",
+        }
+    }
+
+    fn decrement(&mut self) {
+        self.0 = false;
+    }
+
+    fn increment(&mut self) {
+        self.0 = true;
+    }
+
+    fn toggle(&mut self) {
+        self.0 = !self.0;
+    }
+
+    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+        ui.label("Übertölpeln");
+
+        ui.checkbox(&mut self.0, "Übertölpeln").on_hover_ui(|ui| {
+            ui.horizontal(|ui| {
+                let mod_toggle = Box::new(|c: &mut Character| c.edges.ubertolpeln.toggle());
+                sim.gradient(mod_toggle).draw(ui);
+            });
+        });
+
+        let mod_dec = Box::new(|c: &mut Character| c.edges.ubertolpeln.decrement());
+        let mod_inc = Box::new(|c: &mut Character| c.edges.ubertolpeln.increment());
+        ui.horizontal(|ui| {
+            sim.gradient(mod_dec).draw(ui);
+            sim.gradient(mod_inc).draw(ui);
+        });
+    }
+
+    fn draw_as_opponent(&self, ui: &mut egui::Ui) {
+        ui.label("Übertölpeln");
         let _ = ui.button(self.as_str());
     }
 }

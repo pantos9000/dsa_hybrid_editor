@@ -51,7 +51,7 @@ impl Drawable for Attributes {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, strum_macros::Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AttrName {
     Ges,
     Stä,
@@ -61,6 +61,16 @@ enum AttrName {
 }
 
 impl AttrName {
+    fn as_str(&self) -> &'static str {
+        match self {
+            AttrName::Ges => "Ges",
+            AttrName::Stä => "Stä",
+            AttrName::Kon => "Kon",
+            AttrName::Int => "Int",
+            AttrName::Wil => "Wil",
+        }
+    }
+
     fn modification_dec(&self) -> CharModification {
         match self {
             AttrName::Ges => Box::new(|c| c.attributes.ges.decrement()),
@@ -131,7 +141,7 @@ impl From<Attribute> for u8 {
 
 impl Attribute {
     fn draw(&mut self, name: AttrName, sim: &Simulator, ui: &mut egui::Ui) {
-        ui.label(format!("{name}"));
+        ui.label(name.as_str());
 
         ui.horizontal(|ui| {
             for val in Self::iter() {
@@ -151,7 +161,7 @@ impl Attribute {
     }
 
     fn draw_as_opponent(&mut self, name: AttrName, ui: &mut egui::Ui) {
-        ui.label(format!("{name}"));
+        ui.label(name.as_str());
         let _ = ui.button(self.as_str());
     }
 

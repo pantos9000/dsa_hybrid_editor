@@ -5,6 +5,7 @@ use super::{Character, Drawable};
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Edges {
     pub(crate) blitzhieb: Blitzhieb,
+    pub(crate) berserker: Berserker,
     pub(crate) ubertolpeln: Ubertolpeln,
 }
 
@@ -15,6 +16,8 @@ impl Drawable for Edges {
         ui.heading("Edges");
         grid.show(ui, |ui| {
             self.blitzhieb.draw(sim, ui);
+            ui.end_row();
+            self.berserker.draw(sim, ui);
             ui.end_row();
             self.ubertolpeln.draw(sim, ui);
             ui.end_row();
@@ -27,7 +30,11 @@ impl Drawable for Edges {
         ui.heading("Edges");
         grid.show(ui, |ui| {
             self.blitzhieb.draw_as_opponent(ui);
+            ui.end_row();
+            self.berserker.draw_as_opponent(ui);
+            ui.end_row();
             self.ubertolpeln.draw_as_opponent(ui);
+            ui.end_row();
         });
     }
 }
@@ -45,7 +52,7 @@ pub enum Blitzhieb {
 impl Blitzhieb {
     fn as_str(&self) -> &'static str {
         match self {
-            Blitzhieb::None => "Kein",
+            Blitzhieb::None => "Nein",
             Blitzhieb::Normal => "Blitzhieb",
             Blitzhieb::Improved => "Verb. Blitzhieb",
         }
@@ -153,6 +160,78 @@ impl Ubertolpeln {
 
     fn draw_as_opponent(&self, ui: &mut egui::Ui) {
         ui.label("Übertölpeln");
+        let _ = ui.button(self.as_str());
+    }
+}
+
+#[derive(
+    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
+pub enum Berserker {
+    #[default]
+    None,
+    Normal,
+    Immediate,
+}
+
+impl Berserker {
+    fn as_str(&self) -> &'static str {
+        match self {
+            Berserker::None => "Nein",
+            Berserker::Normal => "Berserker",
+            Berserker::Immediate => "SofortBerserker",
+        }
+    }
+
+    fn decrement(&mut self) {
+        let new = match self {
+            Berserker::None => Self::None,
+            Berserker::Normal => Self::None,
+            Berserker::Immediate => Self::Normal,
+        };
+        *self = new;
+    }
+
+    fn increment(&mut self) {
+        let new = match self {
+            Berserker::None => Self::Normal,
+            Berserker::Normal => Self::Immediate,
+            Berserker::Immediate => Self::Immediate,
+        };
+        *self = new;
+    }
+
+    fn draw_selectable(&mut self, val: Self, sim: &Simulator, ui: &mut egui::Ui) {
+        ui.selectable_value(self, val, val.as_str())
+            .on_hover_ui(|ui| {
+                ui.horizontal(|ui| {
+                    let modification = Box::new(move |c: &mut Character| {
+                        c.edges.berserker = val;
+                    });
+                    sim.gradient(modification).draw(ui);
+                });
+            });
+    }
+
+    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+        ui.label("Berserker");
+
+        ui.horizontal(|ui| {
+            self.draw_selectable(Berserker::None, sim, ui);
+            self.draw_selectable(Berserker::Normal, sim, ui);
+            self.draw_selectable(Berserker::Immediate, sim, ui);
+        });
+
+        let mod_dec = Box::new(|c: &mut Character| c.edges.berserker.decrement());
+        let mod_inc = Box::new(|c: &mut Character| c.edges.berserker.increment());
+        ui.horizontal(|ui| {
+            sim.gradient(mod_dec).draw(ui);
+            sim.gradient(mod_inc).draw(ui);
+        });
+    }
+
+    fn draw_as_opponent(&self, ui: &mut egui::Ui) {
+        ui.label("Berserker");
         let _ = ui.button(self.as_str());
     }
 }

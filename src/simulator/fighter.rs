@@ -1,4 +1,4 @@
-use crate::character::{Blitzhieb, Character, PassiveStats};
+use crate::character::{Berserker, Blitzhieb, Character, PassiveStats};
 
 use super::roller::{roller, Roll, RollResult};
 
@@ -11,6 +11,7 @@ pub struct Fighter {
     fell: bool,
     joker: bool,
     weapon_lost: bool,
+    berserker: bool,
 }
 
 impl Default for Fighter {
@@ -22,6 +23,7 @@ impl Default for Fighter {
 impl Fighter {
     pub fn new(character: Character) -> Self {
         let passive_stats = PassiveStats::new(&character);
+        let berserker = character.edges.berserker == Berserker::Immediate;
         Self {
             character,
             passive_stats,
@@ -30,6 +32,7 @@ impl Fighter {
             fell: false,
             joker: false,
             weapon_lost: false,
+            berserker,
         }
     }
 
@@ -38,7 +41,11 @@ impl Fighter {
     }
 
     pub fn is_dead(&self) -> bool {
-        self.passive_stats.life <= 5
+        let threshold = match self.berserker {
+            true => 0,
+            false => 5,
+        };
+        self.passive_stats.life <= threshold
     }
 
     pub fn action(&mut self, opponent: &mut Fighter) {
@@ -67,6 +74,9 @@ impl Fighter {
     }
 
     fn apply_wound_penalty(&self, roll: &mut Roll) {
+        if self.berserker {
+            return;
+        }
         let wound_penalty = match self.passive_stats.life {
             0..=10 => 3,
             11..=20 => 1,
@@ -77,6 +87,24 @@ impl Fighter {
 
     fn apply_joker(&self, roll: &mut Roll) {
         if self.joker {
+            *roll += 2_u8;
+        }
+    }
+
+    fn enable_berserker(&mut self) {
+        if self.character.edges.berserker == Berserker::Normal {
+            self.berserker = true;
+        }
+    }
+
+    fn apply_berserker_attack(&self, roll: &mut Roll) {
+        if self.berserker {
+            *roll += 2_u8;
+        }
+    }
+
+    fn apply_berserker_damage(&self, roll: &mut Roll) {
+        if self.berserker {
             *roll += 2_u8;
         }
     }
@@ -122,7 +150,13 @@ impl Fighter {
             true => 2,
             false => 0,
         };
-        let opponent_parry = opponent.passive_stats.parry;
+        let berserker_state_modifier: u8 = match opponent.berserker {
+            true => 2,
+            false => 0,
+        };
+        let mut opponent_parry = opponent.passive_stats.parry;
+        opponent_parry = opponent_parry.saturating_sub(fell_state_modifier);
+        opponent_parry = opponent_parry.saturating_sub(berserker_state_modifier);
 
         let apply_modifier = move |roll| roll + modifier;
         let apply_wound_penalty = move |mut roll| {
@@ -133,7 +167,10 @@ impl Fighter {
             self.apply_joker(&mut roll);
             roll
         };
-        let apply_fell_state = move |roll| roll + fell_state_modifier;
+        let apply_berserker_attack = move |mut roll| {
+            self.apply_berserker_attack(&mut roll);
+            roll
+        };
         let check_hit = move |mut roll: Roll| -> AttackResult {
             roll += 1_u8; // add 1 to be able to check against 0 later
             roll -= opponent_parry;
@@ -150,7 +187,7 @@ impl Fighter {
             .map(apply_modifier)
             .map(apply_wound_penalty)
             .map(apply_joker)
-            .map(apply_fell_state)
+            .map(apply_berserker_attack)
             .map(check_hit);
         Some(hit_iter)
     }
@@ -167,6 +204,7 @@ impl Fighter {
             damage += roller().roll_raise();
         }
         self.apply_joker(&mut damage);
+        self.apply_berserker_damage(&mut damage);
         if self.character.edges.ubertolpeln.is_set() && opponent.shaken {
             damage += 4_u8;
         }
@@ -177,6 +215,7 @@ impl Fighter {
         damage -= opponent.passive_stats.robustness;
         opponent.passive_stats.life -= damage;
         opponent.shaken = true;
+        opponent.enable_berserker();
 
         // instead of implementing interrupting logic, we can just assume that
         // damage done while holding a joker just interrupts the opponent.

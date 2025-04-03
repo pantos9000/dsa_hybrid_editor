@@ -1,4 +1,4 @@
-use crate::character::{Character, PassiveStats};
+use crate::character::{Blitzhieb, Character, PassiveStats};
 
 use super::roller::{roller, Roll, RollResult};
 
@@ -52,20 +52,18 @@ impl Fighter {
             return;
         }
 
-        let (hit, raise) = match self.try_to_hit(opponent) {
-            AttackResult::CriticalFail => {
-                self.critical_fail();
-                (false, false)
-            }
-            AttackResult::Miss => (false, false),
-            AttackResult::Hit => (true, false),
-            AttackResult::Raise => (true, true),
+        let (num_rolls, modifier) = match self.character.edges.blitzhieb {
+            Blitzhieb::None => (1, 0),
+            Blitzhieb::Normal => (2, -2),
+            Blitzhieb::Improved => (2, 0),
         };
-        if !hit {
+        let Some(attacks) = self.try_to_hit(opponent, num_rolls, modifier) else {
+            self.critical_fail();
             return;
+        };
+        for attack in attacks {
+            self.do_damage(opponent, attack);
         }
-
-        self.do_damage(opponent, raise);
     }
 
     fn apply_wound_penalty(&self, roll: &mut Roll) {
@@ -79,13 +77,6 @@ impl Fighter {
 
     fn apply_joker(&self, roll: &mut Roll) {
         if self.joker {
-            *roll += 2_u8;
-        }
-    }
-
-    /// call from the other fighter!
-    fn apply_fell_state(&self, roll: &mut Roll) {
-        if self.fell {
             *roll += 2_u8;
         }
     }
@@ -121,23 +112,55 @@ impl Fighter {
         }
     }
 
-    fn try_to_hit(&self, opponent: &Fighter) -> AttackResult {
-        let Some(mut roll) = roller().roll_skill(&self.character.skills.kampfen) else {
-            return AttackResult::CriticalFail;
+    fn try_to_hit(
+        &self,
+        opponent: &Fighter,
+        num_skill_dice: usize,
+        modifier: i8,
+    ) -> Option<impl Iterator<Item = AttackResult> + use<'_>> {
+        let fell_state_modifier: u8 = match opponent.fell {
+            true => 2,
+            false => 0,
         };
-        self.apply_wound_penalty(&mut roll);
-        self.apply_joker(&mut roll);
-        opponent.apply_fell_state(&mut roll);
-        roll += 1_u8; // add 1 to be able to check against 0
-        roll -= opponent.passive_stats.parry;
-        match roll.as_u8() {
-            0 => AttackResult::Miss,
-            1..=4 => AttackResult::Hit,
-            5.. => AttackResult::Raise,
-        }
+        let opponent_parry = opponent.passive_stats.parry;
+
+        let apply_modifier = move |roll| roll + modifier;
+        let apply_wound_penalty = move |mut roll| {
+            self.apply_wound_penalty(&mut roll);
+            roll
+        };
+        let apply_joker = move |mut roll| {
+            self.apply_joker(&mut roll);
+            roll
+        };
+        let apply_fell_state = move |roll| roll + fell_state_modifier;
+        let check_hit = move |mut roll: Roll| -> AttackResult {
+            roll += 1_u8; // add 1 to be able to check against 0 later
+            roll -= opponent_parry;
+            match roll.as_u8() {
+                0 => AttackResult::Miss,
+                1..=4 => AttackResult::Hit,
+                5.. => AttackResult::Raise,
+            }
+        };
+        let rolls =
+            roller().roll_skill_with_n_dice(&self.character.skills.kampfen, num_skill_dice)?;
+        let hit_iter = rolls
+            .into_iter()
+            .map(apply_modifier)
+            .map(apply_wound_penalty)
+            .map(apply_joker)
+            .map(apply_fell_state)
+            .map(check_hit);
+        Some(hit_iter)
     }
 
-    fn do_damage(&self, opponent: &mut Fighter, raise: bool) {
+    fn do_damage(&self, opponent: &mut Self, attack_result: AttackResult) {
+        let raise = match attack_result {
+            AttackResult::Miss => return,
+            AttackResult::Hit => false,
+            AttackResult::Raise => true,
+        };
         let mut damage = roller().roll_attribute_without_wild_die(&self.character.attributes.sta);
         damage += roller().roll_weapon_damage(&self.character.weapon);
         if raise {
@@ -179,12 +202,12 @@ impl Fighter {
             CriticalFailResult::WeaponLost => self.weapon_lost = true,
             CriticalFailResult::Injured => {
                 let mut tmp = self.clone();
-                self.do_damage(&mut tmp, false);
+                self.do_damage(&mut tmp, AttackResult::Hit);
                 *self = tmp;
             }
             CriticalFailResult::HeavilyInjured => {
                 let mut tmp = self.clone();
-                self.do_damage(&mut tmp, true);
+                self.do_damage(&mut tmp, AttackResult::Raise);
                 *self = tmp;
             }
         }
@@ -192,7 +215,6 @@ impl Fighter {
 }
 
 enum AttackResult {
-    CriticalFail,
     Miss,
     Hit,
     Raise,

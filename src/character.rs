@@ -1,10 +1,12 @@
 mod attributes;
+mod edges;
 mod name;
 mod passive_stats;
 mod skills;
 mod weapon;
 
 pub use attributes::{Attribute, Attributes};
+pub use edges::{Blitzhieb, Edges};
 pub use name::Name;
 pub use passive_stats::PassiveStats;
 pub use skills::{Skill, Skills};
@@ -28,6 +30,7 @@ pub struct Character {
     pub(crate) attributes: Attributes,
     pub(crate) skills: Skills,
     pub(crate) weapon: Weapon,
+    pub(crate) edges: Edges,
 }
 
 impl Character {
@@ -57,6 +60,9 @@ impl Character {
                 util::create_frame(ui).show(ui, |ui| {
                     self.weapon.draw(sim, ui);
                 });
+                util::create_frame(ui).show(ui, |ui| {
+                    self.edges.draw(sim, ui);
+                });
             });
         });
     }
@@ -81,6 +87,9 @@ impl Character {
                 });
                 util::create_frame(ui).show(ui, |ui| {
                     self.weapon.draw_as_opponent(ui);
+                });
+                util::create_frame(ui).show(ui, |ui| {
+                    self.edges.draw_as_opponent(ui);
                 });
             });
         });

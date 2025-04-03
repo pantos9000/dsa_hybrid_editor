@@ -88,6 +88,7 @@ impl Roller {
         Some(roll)
     }
 
+    #[allow(dead_code)]
     pub fn roll_skill(&self, skill: &Skill) -> Option<Roll> {
         let (sides, modifier) = match skill {
             Skill::W4m2 => (4, -2),
@@ -101,6 +102,57 @@ impl Roller {
         };
         let roll = self.roll_die(sides, modifier);
         self.roll_additional_wild_die(roll)
+    }
+
+    #[allow(dead_code)]
+    pub fn roll_skill_twice(&self, skill: &Skill) -> Option<(Roll, Roll)> {
+        let (sides, modifier) = match skill {
+            Skill::W4m2 => (4, -2),
+            Skill::W4 => (4, 0),
+            Skill::W6 => (6, 0),
+            Skill::W8 => (8, 0),
+            Skill::W10 => (10, 0),
+            Skill::W12 => (12, 0),
+            Skill::W12p1 => (12, 1),
+            Skill::W12p2 => (12, 2),
+        };
+        let mut roll1 = self.roll_die(sides, modifier);
+        let mut roll2 = self.roll_die(sides, modifier);
+        let smaller: &mut Roll = if roll1 < roll2 {
+            &mut roll2
+        } else {
+            &mut roll1
+        };
+        *smaller = self.roll_additional_wild_die(*smaller)?;
+        Some((roll1, roll2))
+    }
+
+    #[allow(dead_code)]
+    pub fn roll_skill_with_n_dice(&self, skill: &Skill, n: usize) -> Option<Vec<Roll>> {
+        let (sides, modifier) = match skill {
+            Skill::W4m2 => (4, -2),
+            Skill::W4 => (4, 0),
+            Skill::W6 => (6, 0),
+            Skill::W8 => (8, 0),
+            Skill::W10 => (10, 0),
+            Skill::W12 => (12, 0),
+            Skill::W12p1 => (12, 1),
+            Skill::W12p2 => (12, 2),
+        };
+        let mut ret = Vec::with_capacity(n);
+        let mut index_minimum = 0;
+        let mut minimum = Roll(i8::MAX);
+        for i in 0..n {
+            let roll = self.roll_die(sides, modifier);
+            if roll < minimum {
+                minimum = roll;
+                index_minimum = i;
+            }
+            ret.push(roll);
+        }
+        let minimum = &mut ret[index_minimum];
+        *minimum = self.roll_additional_wild_die(*minimum)?;
+        Some(ret)
     }
 
     pub fn roll_weapon_damage(&self, weapon: &Weapon) -> Roll {

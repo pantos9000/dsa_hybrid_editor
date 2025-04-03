@@ -140,10 +140,26 @@ impl BonusDamage {
     const MIN: i8 = -3;
     const MAX: i8 = 3;
 
+    fn as_str(&self) -> &'static str {
+        match self.0 {
+            ..-3 => unreachable!(),
+            4.. => unreachable!(),
+            -3 => "-3",
+            -2 => "-2",
+            -1 => "-1",
+            0 => "0",
+            1 => "1",
+            2 => "2",
+            3 => "3",
+        }
+    }
+
     fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
         ui.label("Schadensbonus");
+
         let slider = egui::Slider::new(&mut self.0, Self::MIN..=Self::MAX);
         ui.add(slider);
+
         let mod_dec = Box::new(|c: &mut Character| c.weapon.bonus_damage.decrement());
         let mod_inc = Box::new(|c: &mut Character| c.weapon.bonus_damage.increment());
         ui.horizontal(|ui| {
@@ -154,7 +170,7 @@ impl BonusDamage {
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
         ui.label("Schadensbonus");
-        let _ = ui.button(format!("{}", self.0));
+        let _ = ui.button(self.as_str());
     }
 
     #[allow(dead_code)]

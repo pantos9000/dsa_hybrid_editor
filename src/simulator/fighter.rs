@@ -12,6 +12,7 @@ pub struct Fighter {
     joker: bool,
     weapon_lost: bool,
     berserker: bool,
+    riposte_done: bool,
 }
 
 impl Default for Fighter {
@@ -33,11 +34,13 @@ impl Fighter {
             joker: false,
             weapon_lost: false,
             berserker,
+            riposte_done: false,
         }
     }
 
     pub fn new_round(&mut self, joker: bool) {
         self.joker = joker;
+        self.riposte_done = false;
     }
 
     pub fn is_dead(&self) -> bool {
@@ -68,6 +71,7 @@ impl Fighter {
             self.critical_fail();
             return;
         };
+        let attacks: Vec<_> = attacks.collect();
         for attack in attacks {
             self.do_damage(opponent, attack);
         }
@@ -106,6 +110,26 @@ impl Fighter {
     fn apply_berserker_damage(&self, roll: &mut Roll) {
         if self.berserker {
             *roll += 2_u8;
+        }
+    }
+
+    fn trigger_riposte(&mut self, opponent: &mut Self) {
+        if self.shaken || self.riposte_done {
+            return;
+        }
+        match self.character.edges.riposte {
+            Edge3::None => return,
+            Edge3::Normal => self.riposte_done = true,
+            Edge3::Improved => (),
+        }
+
+        let Some(attacks) = self.try_to_hit(opponent, 1, 0) else {
+            self.critical_fail();
+            return;
+        };
+        let attacks: Vec<_> = attacks.collect();
+        for attack in attacks {
+            self.do_damage(opponent, attack);
         }
     }
 
@@ -192,12 +216,21 @@ impl Fighter {
         Some(hit_iter)
     }
 
-    fn do_damage(&self, opponent: &mut Self, attack_result: AttackResult) {
+    fn do_damage(&mut self, opponent: &mut Self, attack_result: AttackResult) {
+        // might have gone shaken in between due to riposte
+        if self.shaken {
+            return;
+        }
+
         let raise = match attack_result {
-            AttackResult::Miss => return,
+            AttackResult::Miss => {
+                opponent.trigger_riposte(self);
+                return;
+            }
             AttackResult::Hit => false,
             AttackResult::Raise => true,
         };
+
         let mut damage = roller().roll_attribute_without_wild_die(&self.character.attributes.sta);
         damage += roller().roll_weapon_damage(&self.character.weapon);
         if raise {

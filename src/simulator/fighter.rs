@@ -1,4 +1,4 @@
-use crate::character::{Berserker, Blitzhieb, Character, PassiveStats};
+use crate::character::{Character, Edge3, PassiveStats};
 
 use super::roller::{roller, Roll, RollResult};
 
@@ -23,7 +23,7 @@ impl Default for Fighter {
 impl Fighter {
     pub fn new(character: Character) -> Self {
         let passive_stats = PassiveStats::new(&character);
-        let berserker = character.edges.berserker == Berserker::Immediate;
+        let berserker = character.edges.berserker == Edge3::Improved;
         Self {
             character,
             passive_stats,
@@ -60,9 +60,9 @@ impl Fighter {
         }
 
         let (num_rolls, modifier) = match self.character.edges.blitzhieb {
-            Blitzhieb::None => (1, 0),
-            Blitzhieb::Normal => (2, -2),
-            Blitzhieb::Improved => (2, 0),
+            Edge3::None => (1, 0),
+            Edge3::Normal => (2, -2),
+            Edge3::Improved => (2, 0),
         };
         let Some(attacks) = self.try_to_hit(opponent, num_rolls, modifier) else {
             self.critical_fail();
@@ -92,7 +92,7 @@ impl Fighter {
     }
 
     fn enable_berserker(&mut self) {
-        if self.character.edges.berserker == Berserker::Normal {
+        if self.character.edges.berserker == Edge3::Normal {
             self.berserker = true;
         }
     }

@@ -8,7 +8,7 @@ mod weapon;
 
 pub use armor::Armor;
 pub use attributes::{Attribute, Attributes};
-pub use edges::{Berserker, Blitzhieb, Edges};
+pub use edges::{Edge3, Edges};
 pub use name::Name;
 pub use passive_stats::PassiveStats;
 pub use skills::{Skill, Skills};

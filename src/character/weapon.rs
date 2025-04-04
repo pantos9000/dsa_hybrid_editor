@@ -1,13 +1,14 @@
 use strum::IntoEnumIterator;
 
-use crate::simulator::Simulator;
+use crate::simulator::{CharModification, Simulator};
 
 use super::{Character, Drawable};
 
 #[derive(Debug, Default, Clone, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Weapon {
     pub(crate) damage: Damage,
-    pub(crate) bonus_damage: BonusDamage,
+    pub(crate) bonus_damage: Modifier,
+    pub(crate) bonus_parry: Modifier,
 }
 
 impl Drawable for Weapon {
@@ -18,7 +19,9 @@ impl Drawable for Weapon {
         grid.show(ui, |ui| {
             self.damage.draw(sim, ui);
             ui.end_row();
-            self.bonus_damage.draw(sim, ui);
+            self.bonus_damage.draw(ModifierName::BonusDamage, sim, ui);
+            ui.end_row();
+            self.bonus_parry.draw(ModifierName::BonusParry, sim, ui);
             ui.end_row();
         });
     }
@@ -30,7 +33,11 @@ impl Drawable for Weapon {
         grid.show(ui, |ui| {
             self.damage.draw_as_opponent(ui);
             ui.end_row();
-            self.bonus_damage.draw_as_opponent(ui);
+            self.bonus_damage
+                .draw_as_opponent(ModifierName::BonusDamage, ui);
+            ui.end_row();
+            self.bonus_parry
+                .draw_as_opponent(ModifierName::BonusParry, ui);
             ui.end_row();
         });
     }
@@ -119,24 +126,61 @@ impl Damage {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ModifierName {
+    BonusDamage,
+    BonusParry,
+}
+
+impl ModifierName {
+    fn as_str(&self) -> &'static str {
+        match self {
+            ModifierName::BonusDamage => "Schadensbonus",
+            ModifierName::BonusParry => "Paradebonus",
+        }
+    }
+
+    fn modification_dec(&self) -> CharModification {
+        match self {
+            ModifierName::BonusDamage => Box::new(|c| c.weapon.bonus_damage.decrement()),
+            ModifierName::BonusParry => Box::new(|c| c.weapon.bonus_parry.decrement()),
+        }
+    }
+
+    fn modification_inc(&self) -> CharModification {
+        match self {
+            ModifierName::BonusDamage => Box::new(|c| c.weapon.bonus_damage.increment()),
+            ModifierName::BonusParry => Box::new(|c| c.weapon.bonus_parry.increment()),
+        }
+    }
+
+    #[allow(dead_code)]
+    fn modification_set(&self, value: Modifier) -> CharModification {
+        match self {
+            ModifierName::BonusDamage => Box::new(move |c| c.weapon.bonus_damage = value),
+            ModifierName::BonusParry => Box::new(move |c| c.weapon.bonus_parry = value),
+        }
+    }
+}
+
 #[derive(
     Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
 )]
-pub struct BonusDamage(i8);
+pub struct Modifier(i8);
 
-impl From<i8> for BonusDamage {
+impl From<i8> for Modifier {
     fn from(value: i8) -> Self {
         Self(value)
     }
 }
 
-impl From<BonusDamage> for i8 {
-    fn from(value: BonusDamage) -> Self {
+impl From<Modifier> for i8 {
+    fn from(value: Modifier) -> Self {
         value.0
     }
 }
 
-impl BonusDamage {
+impl Modifier {
     const MIN: i8 = -3;
     const MAX: i8 = 3;
 
@@ -154,26 +198,23 @@ impl BonusDamage {
         }
     }
 
-    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
-        ui.label("Schadensbonus");
+    fn draw(&mut self, name: ModifierName, sim: &Simulator, ui: &mut egui::Ui) {
+        ui.label(name.as_str());
 
         let slider = egui::Slider::new(&mut self.0, Self::MIN..=Self::MAX);
         ui.add(slider);
 
-        let mod_dec = Box::new(|c: &mut Character| c.weapon.bonus_damage.decrement());
-        let mod_inc = Box::new(|c: &mut Character| c.weapon.bonus_damage.increment());
         ui.horizontal(|ui| {
-            sim.gradient(mod_dec).draw(ui);
-            sim.gradient(mod_inc).draw(ui);
+            sim.gradient(name.modification_dec()).draw(ui);
+            sim.gradient(name.modification_inc()).draw(ui);
         });
     }
 
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        ui.label("Schadensbonus");
+    fn draw_as_opponent(&mut self, name: ModifierName, ui: &mut egui::Ui) {
+        ui.label(name.as_str());
         let _ = ui.button(self.as_str());
     }
 
-    #[allow(dead_code)]
     fn decrement(&mut self) {
         let new = match self.0 {
             val if val < Self::MIN => unreachable!(),
@@ -184,7 +225,6 @@ impl BonusDamage {
         self.0 = new;
     }
 
-    #[allow(dead_code)]
     fn increment(&mut self) {
         let new = match self.0 {
             val if val < Self::MIN => unreachable!(),

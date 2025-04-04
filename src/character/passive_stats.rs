@@ -11,7 +11,8 @@ pub struct PassiveStats {
 impl PassiveStats {
     pub fn new(character: &Character) -> Self {
         let life = 24 + u8::from(character.attributes.kon) + u8::from(character.attributes.wil);
-        let parry = 2 + u8::from(character.skills.kampfen) / 2;
+        let mut parry = 2 + u8::from(character.skills.kampfen) / 2;
+        parry = parry.saturating_add_signed(character.weapon.bonus_parry.into());
         let robustness =
             2 + u8::from(character.attributes.kon) / 2 + u8::from(character.armor.torso);
 

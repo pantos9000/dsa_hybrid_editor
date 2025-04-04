@@ -13,6 +13,7 @@ pub struct Fighter {
     weapon_lost: bool,
     berserker: bool,
     riposte_done: bool,
+    erstschlag_done: bool,
 }
 
 impl Default for Fighter {
@@ -35,6 +36,7 @@ impl Fighter {
             weapon_lost: false,
             berserker,
             riposte_done: false,
+            erstschlag_done: false,
         }
     }
 
@@ -59,6 +61,12 @@ impl Fighter {
 
         if self.weapon_lost {
             self.weapon_lost = false;
+            return;
+        }
+
+        opponent.trigger_erstschlag(self);
+        if self.shaken {
+            // we were interrupted by first strike, return without doing anything
             return;
         }
 
@@ -123,14 +131,33 @@ impl Fighter {
             Edge3::Improved => (),
         }
 
-        let Some(attacks) = self.try_to_hit(opponent, 1, 0) else {
+        let Some(mut attacks) = self.try_to_hit(opponent, 1, 0) else {
             self.critical_fail();
             return;
         };
-        let attacks: Vec<_> = attacks.collect();
-        for attack in attacks {
-            self.do_damage(opponent, attack);
+        let attack = attacks.next().unwrap(); // can only be a single attack
+        drop(attacks);
+        self.do_damage(opponent, attack);
+    }
+
+    fn trigger_erstschlag(&mut self, opponent: &mut Self) {
+        if !self.character.edges.erstschlag.is_set()
+            || opponent.character.edges.erstschlag.is_set()
+            || self.shaken
+            || self.erstschlag_done
+        {
+            return;
         }
+
+        self.erstschlag_done = true;
+
+        let Some(mut attacks) = self.try_to_hit(opponent, 1, 0) else {
+            self.critical_fail();
+            return;
+        };
+        let attack = attacks.next().unwrap();
+        drop(attacks);
+        self.do_damage(opponent, attack);
     }
 
     pub fn dex_roll(&self) -> Option<Roll> {
@@ -146,6 +173,7 @@ impl Fighter {
             self.interrupted = false;
             return false;
         }
+        self.erstschlag_done = false;
         if !self.shaken {
             return true;
         }

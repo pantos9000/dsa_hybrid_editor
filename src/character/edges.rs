@@ -10,6 +10,7 @@ pub struct Edges {
     pub(crate) blitzhieb: Edge3,
     pub(crate) berserker: Edge3,
     pub(crate) riposte: Edge3,
+    pub(crate) erstschlag: Edge2,
     pub(crate) ubertolpeln: Edge2,
 }
 
@@ -24,6 +25,8 @@ impl Drawable for Edges {
             self.berserker.draw(Edge3Name::Berserker, sim, ui);
             ui.end_row();
             self.riposte.draw(Edge3Name::Riposte, sim, ui);
+            ui.end_row();
+            self.erstschlag.draw(Edge2Name::Erstschlag, sim, ui);
             ui.end_row();
             self.ubertolpeln.draw(Edge2Name::Übertölpeln, sim, ui);
             ui.end_row();
@@ -41,7 +44,10 @@ impl Drawable for Edges {
             ui.end_row();
             self.riposte.draw_as_opponent(Edge3Name::Riposte, ui);
             ui.end_row();
-            self.ubertolpeln.draw_as_opponent(ui);
+            self.erstschlag.draw_as_opponent(Edge2Name::Erstschlag, ui);
+            ui.end_row();
+            self.ubertolpeln
+                .draw_as_opponent(Edge2Name::Übertölpeln, ui);
             ui.end_row();
         });
     }
@@ -50,30 +56,35 @@ impl Drawable for Edges {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Edge2Name {
     Übertölpeln,
+    Erstschlag,
 }
 
 impl Edge2Name {
     fn as_str(&self) -> &'static str {
         match self {
             Edge2Name::Übertölpeln => "Übertölpeln",
+            Edge2Name::Erstschlag => "Erstschlag",
         }
     }
 
     fn modification_dec(&self) -> CharModification {
         match self {
             Edge2Name::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.decrement()),
+            Edge2Name::Erstschlag => Box::new(|c| c.edges.erstschlag.decrement()),
         }
     }
 
     fn modification_inc(&self) -> CharModification {
         match self {
             Edge2Name::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.increment()),
+            Edge2Name::Erstschlag => Box::new(|c| c.edges.erstschlag.increment()),
         }
     }
 
     fn modification_toggle(&self) -> CharModification {
         match self {
             Edge2Name::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.toggle()),
+            Edge2Name::Erstschlag => Box::new(|c| c.edges.erstschlag.toggle()),
         }
     }
 }
@@ -122,8 +133,8 @@ impl Edge2 {
         });
     }
 
-    fn draw_as_opponent(&self, ui: &mut egui::Ui) {
-        ui.label("Übertölpeln");
+    fn draw_as_opponent(&self, name: Edge2Name, ui: &mut egui::Ui) {
+        ui.label(name.as_str());
         let _ = ui.button(self.as_str());
     }
 }

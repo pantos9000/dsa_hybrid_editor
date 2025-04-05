@@ -43,6 +43,7 @@ impl Fighter {
     pub fn new_round(&mut self, joker: bool) {
         self.joker = joker;
         self.riposte_done = false;
+        self.erstschlag_done = false;
     }
 
     pub fn is_dead(&self) -> bool {
@@ -179,7 +180,6 @@ impl Fighter {
             self.interrupted = false;
             return false;
         }
-        self.erstschlag_done = false;
         if !self.shaken {
             return true;
         }

@@ -44,16 +44,19 @@ impl Fighter {
     }
 
     fn draw_card(&self, cards: &mut CardDeck) -> Card {
-        if self.character.edges.schnell.is_set() {
-            'card_draw: loop {
-                let card = cards.draw();
-                if card.suit() >= Suit::Seven {
-                    break 'card_draw card;
-                }
-            }
-        } else {
-            cards.draw()
+        let num_cards = match self.character.edges.kuhler_kopf {
+            Edge3::None => 1,
+            Edge3::Normal => 2,
+            Edge3::Improved => 3,
+        };
+
+        let mut card = (0..num_cards).map(|_| cards.draw()).max().unwrap();
+
+        while card.suit() < Suit::Seven {
+            card = cards.draw();
         }
+
+        card
     }
 
     pub fn new_round(&mut self, cards: &mut CardDeck) -> Card {

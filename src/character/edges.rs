@@ -16,6 +16,7 @@ pub struct Edges {
     pub(crate) erstschlag: Edge2,
     pub(crate) ubertolpeln: Edge2,
     pub(crate) schnell: Edge2,
+    pub(crate) kuhler_kopf: Edge3,
 }
 
 impl Drawable for Edges {
@@ -41,6 +42,8 @@ impl Drawable for Edges {
             self.ubertolpeln.draw(Edge2Name::Übertölpeln, sim, ui);
             ui.end_row();
             self.schnell.draw(Edge2Name::Schnell, sim, ui);
+            ui.end_row();
+            self.kuhler_kopf.draw(Edge3Name::KühlerKopf, sim, ui);
             ui.end_row();
         });
     }
@@ -71,6 +74,8 @@ impl Drawable for Edges {
                 .draw_as_opponent(Edge2Name::Übertölpeln, ui);
             ui.end_row();
             self.schnell.draw_as_opponent(Edge2Name::Schnell, ui);
+            ui.end_row();
+            self.kuhler_kopf.draw_as_opponent(Edge3Name::KühlerKopf, ui);
             ui.end_row();
         });
     }
@@ -179,6 +184,7 @@ enum Edge3Name {
     Riposte,
     Tuchfühlung,
     Lebenskraft,
+    KühlerKopf,
 }
 
 impl Edge3Name {
@@ -189,6 +195,7 @@ impl Edge3Name {
             Edge3Name::Riposte => "Riposte",
             Edge3Name::Tuchfühlung => "Tuchfühlung",
             Edge3Name::Lebenskraft => "Lebenskraft",
+            Edge3Name::KühlerKopf => "Kühler Kopf",
         }
     }
 
@@ -199,6 +206,7 @@ impl Edge3Name {
             Edge3Name::Riposte => Box::new(|c| c.edges.riposte.decrement()),
             Edge3Name::Tuchfühlung => Box::new(|c| c.edges.tuchfuhlung.decrement()),
             Edge3Name::Lebenskraft => Box::new(|c| c.edges.lebenskraft.decrement()),
+            Edge3Name::KühlerKopf => Box::new(|c| c.edges.kuhler_kopf.decrement()),
         }
     }
 
@@ -209,6 +217,7 @@ impl Edge3Name {
             Edge3Name::Riposte => Box::new(|c| c.edges.riposte.increment()),
             Edge3Name::Tuchfühlung => Box::new(|c| c.edges.tuchfuhlung.increment()),
             Edge3Name::Lebenskraft => Box::new(|c| c.edges.lebenskraft.increment()),
+            Edge3Name::KühlerKopf => Box::new(|c| c.edges.kuhler_kopf.increment()),
         }
     }
 
@@ -219,6 +228,7 @@ impl Edge3Name {
             Edge3Name::Riposte => Box::new(move |c| c.edges.riposte = value),
             Edge3Name::Tuchfühlung => Box::new(move |c| c.edges.tuchfuhlung = value),
             Edge3Name::Lebenskraft => Box::new(move |c| c.edges.lebenskraft = value),
+            Edge3Name::KühlerKopf => Box::new(move |c| c.edges.kuhler_kopf = value),
         }
     }
 }
@@ -247,6 +257,8 @@ impl Edge3 {
             (Edge3::Improved, Edge3Name::Tuchfühlung) => "Meisterl. Tuchfühlung",
             (Edge3::Normal, Edge3Name::Lebenskraft) => "Lebenskraft",
             (Edge3::Improved, Edge3Name::Lebenskraft) => "Noch mehr Lebenskraft",
+            (Edge3::Normal, Edge3Name::KühlerKopf) => "Kühler Kopf",
+            (Edge3::Improved, Edge3Name::KühlerKopf) => "Kühlerer Kopf",
         }
     }
 

@@ -10,6 +10,7 @@ pub struct Edges {
     pub(crate) blitzhieb: Edge3,
     pub(crate) berserker: Edge3,
     pub(crate) riposte: Edge3,
+    pub(crate) tuchfuhlung: Edge3,
     pub(crate) kampfreflexe: Edge2,
     pub(crate) erstschlag: Edge2,
     pub(crate) ubertolpeln: Edge2,
@@ -26,6 +27,8 @@ impl Drawable for Edges {
             self.berserker.draw(Edge3Name::Berserker, sim, ui);
             ui.end_row();
             self.riposte.draw(Edge3Name::Riposte, sim, ui);
+            ui.end_row();
+            self.tuchfuhlung.draw(Edge3Name::Tuchfühlung, sim, ui);
             ui.end_row();
             self.kampfreflexe.draw(Edge2Name::Kampfreflexe, sim, ui);
             ui.end_row();
@@ -46,6 +49,9 @@ impl Drawable for Edges {
             self.berserker.draw_as_opponent(Edge3Name::Berserker, ui);
             ui.end_row();
             self.riposte.draw_as_opponent(Edge3Name::Riposte, ui);
+            ui.end_row();
+            self.tuchfuhlung
+                .draw_as_opponent(Edge3Name::Tuchfühlung, ui);
             ui.end_row();
             self.kampfreflexe
                 .draw_as_opponent(Edge2Name::Kampfreflexe, ui);
@@ -155,6 +161,7 @@ enum Edge3Name {
     Blitzhieb,
     Berserker,
     Riposte,
+    Tuchfühlung,
 }
 
 impl Edge3Name {
@@ -163,6 +170,7 @@ impl Edge3Name {
             Edge3Name::Blitzhieb => "Blitzhieb",
             Edge3Name::Berserker => "Berserker",
             Edge3Name::Riposte => "Riposte",
+            Edge3Name::Tuchfühlung => "Tuchfühlung",
         }
     }
 
@@ -171,6 +179,7 @@ impl Edge3Name {
             Edge3Name::Blitzhieb => Box::new(|c| c.edges.blitzhieb.decrement()),
             Edge3Name::Berserker => Box::new(|c| c.edges.berserker.decrement()),
             Edge3Name::Riposte => Box::new(|c| c.edges.riposte.decrement()),
+            Edge3Name::Tuchfühlung => Box::new(|c| c.edges.tuchfuhlung.decrement()),
         }
     }
 
@@ -179,6 +188,7 @@ impl Edge3Name {
             Edge3Name::Blitzhieb => Box::new(|c| c.edges.blitzhieb.increment()),
             Edge3Name::Berserker => Box::new(|c| c.edges.berserker.increment()),
             Edge3Name::Riposte => Box::new(|c| c.edges.riposte.increment()),
+            Edge3Name::Tuchfühlung => Box::new(|c| c.edges.tuchfuhlung.increment()),
         }
     }
 
@@ -187,6 +197,7 @@ impl Edge3Name {
             Edge3Name::Blitzhieb => Box::new(move |c| c.edges.blitzhieb = value),
             Edge3Name::Berserker => Box::new(move |c| c.edges.berserker = value),
             Edge3Name::Riposte => Box::new(move |c| c.edges.riposte = value),
+            Edge3Name::Tuchfühlung => Box::new(move |c| c.edges.tuchfuhlung = value),
         }
     }
 }
@@ -211,6 +222,8 @@ impl Edge3 {
             (Edge3::Improved, Edge3Name::Berserker) => "Berserker Sofort",
             (Edge3::Normal, Edge3Name::Riposte) => "Riposte",
             (Edge3::Improved, Edge3Name::Riposte) => "Verb. Riposte",
+            (Edge3::Normal, Edge3Name::Tuchfühlung) => "Tuchfühlung",
+            (Edge3::Improved, Edge3Name::Tuchfühlung) => "Meisterl. Tuchfühlung",
         }
     }
 

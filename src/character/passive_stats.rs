@@ -10,17 +10,27 @@ pub struct PassiveStats {
 
 impl PassiveStats {
     pub fn new(character: &Character) -> Self {
-        let life = 24 + u8::from(character.attributes.kon) + u8::from(character.attributes.wil);
+        Self {
+            life: Self::calc_life(character),
+            parry: Self::calc_parry(character),
+            robustness: Self::calc_robustness(character),
+        }
+    }
+
+    fn calc_life(character: &Character) -> u8 {
+        24 + u8::from(character.attributes.kon) + u8::from(character.attributes.wil)
+    }
+
+    fn calc_parry(character: &Character) -> u8 {
         let mut parry = 2 + u8::from(character.skills.kampfen) / 2;
         parry = parry.saturating_add_signed(character.weapon.bonus_parry.into());
-        let robustness =
-            2 + u8::from(character.attributes.kon) / 2 + u8::from(character.armor.torso);
+        parry
+    }
 
-        Self {
-            life,
-            parry,
-            robustness,
-        }
+    fn calc_robustness(character: &Character) -> u8 {
+        let mut robustness = 2 + u8::from(character.attributes.kon) / 2;
+        robustness += u8::from(character.armor.torso);
+        robustness
     }
 
     fn draw_stats(&self, grid_name: &str, ui: &mut egui::Ui) {

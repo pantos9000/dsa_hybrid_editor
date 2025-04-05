@@ -138,6 +138,22 @@ impl Fighter {
         *roll += piercing.min(armor);
     }
 
+    fn apply_tuchfühlung_to_attack(&self, opponent: &Self, roll: &mut Roll) {
+        if self.character.edges.tuchfuhlung == Edge3::Improved {
+            let reach = i8::from(opponent.character.weapon.reach);
+            *roll += 1 + reach;
+        }
+    }
+
+    fn apply_tuchfühlung_to_parry(&self, opponent: &Self, parry: &mut u8) {
+        if self.character.edges.tuchfuhlung != Edge3::None {
+            let reach = i8::from(opponent.character.weapon.reach)
+                .try_into()
+                .unwrap_or(0);
+            *parry += 1 + reach;
+        }
+    }
+
     fn trigger_riposte(&mut self, opponent: &mut Self) {
         if self.shaken || self.riposte_done {
             return;
@@ -209,12 +225,12 @@ impl Fighter {
         }
     }
 
-    fn try_to_hit(
-        &self,
-        opponent: &Fighter,
+    fn try_to_hit<'a>(
+        &'a self,
+        opponent: &'a Fighter,
         num_skill_dice: usize,
         modifier: i8,
-    ) -> Option<impl Iterator<Item = AttackResult> + use<'_>> {
+    ) -> Option<impl Iterator<Item = AttackResult> + use<'a>> {
         let fell_state_modifier: u8 = match opponent.fell {
             true => 2,
             false => 0,
@@ -226,6 +242,7 @@ impl Fighter {
         let mut opponent_parry = opponent.passive_stats.parry;
         opponent_parry = opponent_parry.saturating_sub(fell_state_modifier);
         opponent_parry = opponent_parry.saturating_sub(berserker_state_modifier);
+        opponent.apply_tuchfühlung_to_parry(self, &mut opponent_parry);
 
         let apply_modifier = move |roll| roll + modifier;
         let apply_wound_penalty = move |mut roll| {
@@ -238,6 +255,10 @@ impl Fighter {
         };
         let apply_berserker_attack = move |mut roll| {
             self.apply_berserker_attack(&mut roll);
+            roll
+        };
+        let apply_tuchfühlung = move |mut roll| {
+            self.apply_tuchfühlung_to_attack(opponent, &mut roll);
             roll
         };
         let check_hit = move |mut roll: Roll| -> AttackResult {
@@ -257,6 +278,7 @@ impl Fighter {
             .map(apply_wound_penalty)
             .map(apply_joker)
             .map(apply_berserker_attack)
+            .map(apply_tuchfühlung)
             .map(check_hit);
         Some(hit_iter)
     }

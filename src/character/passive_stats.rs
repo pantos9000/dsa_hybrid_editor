@@ -18,7 +18,13 @@ impl PassiveStats {
     }
 
     fn calc_life(character: &Character) -> u8 {
-        24 + u8::from(character.attributes.kon) + u8::from(character.attributes.wil)
+        let mut life = 24 + u8::from(character.attributes.kon) + u8::from(character.attributes.wil);
+        life += match character.edges.lebenskraft {
+            super::Edge3::None => 0,
+            super::Edge3::Normal => 5,
+            super::Edge3::Improved => 10,
+        };
+        life
     }
 
     fn calc_parry(character: &Character) -> u8 {

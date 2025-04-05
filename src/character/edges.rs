@@ -7,6 +7,7 @@ use super::Drawable;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Edges {
+    pub(crate) lebenskraft: Edge3,
     pub(crate) blitzhieb: Edge3,
     pub(crate) berserker: Edge3,
     pub(crate) riposte: Edge3,
@@ -22,6 +23,8 @@ impl Drawable for Edges {
 
         ui.heading("Edges");
         grid.show(ui, |ui| {
+            self.lebenskraft.draw(Edge3Name::Lebenskraft, sim, ui);
+            ui.end_row();
             self.blitzhieb.draw(Edge3Name::Blitzhieb, sim, ui);
             ui.end_row();
             self.berserker.draw(Edge3Name::Berserker, sim, ui);
@@ -44,6 +47,9 @@ impl Drawable for Edges {
 
         ui.heading("Edges");
         grid.show(ui, |ui| {
+            self.lebenskraft
+                .draw_as_opponent(Edge3Name::Lebenskraft, ui);
+            ui.end_row();
             self.blitzhieb.draw_as_opponent(Edge3Name::Blitzhieb, ui);
             ui.end_row();
             self.berserker.draw_as_opponent(Edge3Name::Berserker, ui);
@@ -162,6 +168,7 @@ enum Edge3Name {
     Berserker,
     Riposte,
     Tuchfühlung,
+    Lebenskraft,
 }
 
 impl Edge3Name {
@@ -171,6 +178,7 @@ impl Edge3Name {
             Edge3Name::Berserker => "Berserker",
             Edge3Name::Riposte => "Riposte",
             Edge3Name::Tuchfühlung => "Tuchfühlung",
+            Edge3Name::Lebenskraft => "Lebenskraft",
         }
     }
 
@@ -180,6 +188,7 @@ impl Edge3Name {
             Edge3Name::Berserker => Box::new(|c| c.edges.berserker.decrement()),
             Edge3Name::Riposte => Box::new(|c| c.edges.riposte.decrement()),
             Edge3Name::Tuchfühlung => Box::new(|c| c.edges.tuchfuhlung.decrement()),
+            Edge3Name::Lebenskraft => Box::new(|c| c.edges.lebenskraft.decrement()),
         }
     }
 
@@ -189,6 +198,7 @@ impl Edge3Name {
             Edge3Name::Berserker => Box::new(|c| c.edges.berserker.increment()),
             Edge3Name::Riposte => Box::new(|c| c.edges.riposte.increment()),
             Edge3Name::Tuchfühlung => Box::new(|c| c.edges.tuchfuhlung.increment()),
+            Edge3Name::Lebenskraft => Box::new(|c| c.edges.lebenskraft.increment()),
         }
     }
 
@@ -198,6 +208,7 @@ impl Edge3Name {
             Edge3Name::Berserker => Box::new(move |c| c.edges.berserker = value),
             Edge3Name::Riposte => Box::new(move |c| c.edges.riposte = value),
             Edge3Name::Tuchfühlung => Box::new(move |c| c.edges.tuchfuhlung = value),
+            Edge3Name::Lebenskraft => Box::new(move |c| c.edges.lebenskraft = value),
         }
     }
 }
@@ -224,6 +235,8 @@ impl Edge3 {
             (Edge3::Improved, Edge3Name::Riposte) => "Verb. Riposte",
             (Edge3::Normal, Edge3Name::Tuchfühlung) => "Tuchfühlung",
             (Edge3::Improved, Edge3Name::Tuchfühlung) => "Meisterl. Tuchfühlung",
+            (Edge3::Normal, Edge3Name::Lebenskraft) => "Lebenskraft",
+            (Edge3::Improved, Edge3Name::Lebenskraft) => "Noch mehr Lebenskraft",
         }
     }
 

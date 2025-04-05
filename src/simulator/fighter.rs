@@ -130,6 +130,14 @@ impl Fighter {
         }
     }
 
+    fn apply_piercing(&self, opponent: &Self, roll: &mut Roll) {
+        let piercing: u8 = i8::from(self.character.weapon.piercing)
+            .try_into()
+            .unwrap_or(0);
+        let armor = u8::from(opponent.character.armor.torso);
+        *roll += piercing.min(armor);
+    }
+
     fn trigger_riposte(&mut self, opponent: &mut Self) {
         if self.shaken || self.riposte_done {
             return;
@@ -273,6 +281,7 @@ impl Fighter {
         if raise {
             damage += roller().roll_raise();
         }
+        self.apply_piercing(opponent, &mut damage);
         self.apply_joker(&mut damage);
         self.apply_berserker_damage(&mut damage);
         if self.character.edges.ubertolpeln.is_set() && opponent.shaken {

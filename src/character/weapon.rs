@@ -8,6 +8,7 @@ use super::{Character, Drawable};
 pub struct Weapon {
     pub(crate) damage: Damage,
     pub(crate) bonus_damage: Modifier<-2, 2>,
+    pub(crate) piercing: Modifier<0, 3>,
     pub(crate) bonus_parry: Modifier<-2, 2>,
     pub(crate) reach: Modifier<0, 2>,
 }
@@ -21,6 +22,8 @@ impl Drawable for Weapon {
             self.damage.draw(sim, ui);
             ui.end_row();
             self.bonus_damage.draw(ModifierName::BonusDamage, sim, ui);
+            ui.end_row();
+            self.piercing.draw(ModifierName::Piercing, sim, ui);
             ui.end_row();
             self.bonus_parry.draw(ModifierName::BonusParry, sim, ui);
             ui.end_row();
@@ -38,6 +41,8 @@ impl Drawable for Weapon {
             ui.end_row();
             self.bonus_damage
                 .draw_as_opponent(ModifierName::BonusDamage, ui);
+            ui.end_row();
+            self.piercing.draw_as_opponent(ModifierName::Piercing, ui);
             ui.end_row();
             self.bonus_parry
                 .draw_as_opponent(ModifierName::BonusParry, ui);
@@ -134,6 +139,7 @@ impl Damage {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ModifierName {
     BonusDamage,
+    Piercing,
     BonusParry,
     Reach,
 }
@@ -142,6 +148,7 @@ impl ModifierName {
     fn as_str(&self) -> &'static str {
         match self {
             ModifierName::BonusDamage => "Schadensbonus",
+            ModifierName::Piercing => "Panzerbrechend",
             ModifierName::BonusParry => "Paradebonus",
             ModifierName::Reach => "Reichweite",
         }
@@ -150,6 +157,7 @@ impl ModifierName {
     fn modification_dec(&self) -> CharModification {
         match self {
             ModifierName::BonusDamage => Box::new(|c| c.weapon.bonus_damage.decrement()),
+            ModifierName::Piercing => Box::new(|c| c.weapon.piercing.decrement()),
             ModifierName::BonusParry => Box::new(|c| c.weapon.bonus_parry.decrement()),
             ModifierName::Reach => Box::new(|c| c.weapon.reach.decrement()),
         }
@@ -158,6 +166,7 @@ impl ModifierName {
     fn modification_inc(&self) -> CharModification {
         match self {
             ModifierName::BonusDamage => Box::new(|c| c.weapon.bonus_damage.increment()),
+            ModifierName::Piercing => Box::new(|c| c.weapon.piercing.increment()),
             ModifierName::BonusParry => Box::new(|c| c.weapon.bonus_parry.increment()),
             ModifierName::Reach => Box::new(|c| c.weapon.reach.increment()),
         }
@@ -170,6 +179,7 @@ impl ModifierName {
     ) -> CharModification {
         match self {
             ModifierName::BonusDamage => Box::new(move |c| c.weapon.bonus_damage.0 = value.0),
+            ModifierName::Piercing => Box::new(move |c| c.weapon.piercing.0 = value.0),
             ModifierName::BonusParry => Box::new(move |c| c.weapon.bonus_parry.0 = value.0),
             ModifierName::Reach => Box::new(move |c| c.weapon.reach.0 = value.0),
         }

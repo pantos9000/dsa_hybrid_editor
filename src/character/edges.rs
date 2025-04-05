@@ -226,7 +226,7 @@ pub enum Edge3 {
 impl Edge3 {
     fn as_str(&self, name: Edge3Name) -> &'static str {
         match (self, name) {
-            (Edge3::None, _) => "Kein",
+            (Edge3::None, _) => "Nein",
             (Edge3::Normal, Edge3Name::Blitzhieb) => "Blitzhieb",
             (Edge3::Improved, Edge3Name::Blitzhieb) => "Verb. Blitzhieb",
             (Edge3::Normal, Edge3Name::Berserker) => "Berserker",

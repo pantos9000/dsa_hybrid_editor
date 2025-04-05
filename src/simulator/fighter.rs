@@ -121,6 +121,12 @@ impl Fighter {
         }
     }
 
+    fn apply_kampfreflexe(&self, roll: &mut Roll) {
+        if self.character.edges.kampfreflexe.is_set() {
+            *roll += 2_u8;
+        }
+    }
+
     fn trigger_riposte(&mut self, opponent: &mut Self) {
         if self.shaken || self.riposte_done {
             return;
@@ -182,6 +188,7 @@ impl Fighter {
         };
         self.apply_wound_penalty(&mut roll);
         self.apply_joker(&mut roll);
+        self.apply_kampfreflexe(&mut roll);
         match roll.eval() {
             RollResult::Fail => false,
             RollResult::Success => {

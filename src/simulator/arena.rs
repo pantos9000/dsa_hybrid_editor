@@ -65,10 +65,8 @@ impl Arena {
     fn round(&mut self) -> FightResult {
         self.cards.new_round();
 
-        let fighter_card = self.cards.draw();
-        let opponent_card = self.cards.draw();
-        self.fighter.new_round(fighter_card.is_joker());
-        self.opponent.new_round(opponent_card.is_joker());
+        let fighter_card = self.fighter.new_round(&mut self.cards);
+        let opponent_card = self.opponent.new_round(&mut self.cards);
 
         match self.initiative(fighter_card, opponent_card) {
             Initiative::FighterFirst => {

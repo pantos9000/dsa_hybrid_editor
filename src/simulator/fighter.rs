@@ -1,6 +1,9 @@
 use crate::character::{Character, Edge3, PassiveStats};
 
-use super::roller::{roller, Roll, RollResult};
+use super::{
+    cards::{Card, CardDeck},
+    roller::{roller, Roll, RollResult},
+};
 
 #[derive(Debug, Clone)]
 pub struct Fighter {
@@ -40,12 +43,14 @@ impl Fighter {
         }
     }
 
-    pub fn new_round(&mut self, joker: bool) {
-        self.joker = joker;
+    pub fn new_round(&mut self, cards: &mut CardDeck) -> Card {
+        let card = cards.draw();
+        self.joker = card.is_joker();
         self.riposte_done = false;
         if i8::from(self.character.weapon.reach) > 0 {
             self.erstschlag_done = false;
         }
+        card
     }
 
     pub fn is_dead(&self) -> bool {

@@ -79,6 +79,45 @@ impl Card {
     pub fn is_joker(&self) -> bool {
         self.0 == 52
     }
+
+    pub fn suit(&self) -> Suit {
+        match self.0 {
+            0..4 => Suit::Two,
+            4..8 => Suit::Three,
+            8..12 => Suit::Four,
+            12..16 => Suit::Five,
+            16..20 => Suit::Six,
+            20..24 => Suit::Seven,
+            24..28 => Suit::Eight,
+            28..32 => Suit::Nine,
+            32..36 => Suit::Ten,
+            36..40 => Suit::Jack,
+            40..44 => Suit::Queen,
+            44..48 => Suit::King,
+            48..52 => Suit::Ace,
+            52 => Suit::Joker,
+            53.. => unreachable!(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u8)]
+pub enum Suit {
+    Two = 2,
+    Three = 3,
+    Four = 4,
+    Five = 5,
+    Six = 6,
+    Seven = 7,
+    Eight = 8,
+    Nine = 9,
+    Ten = 10,
+    Jack = 11,
+    Queen = 12,
+    King = 13,
+    Ace = 14,
+    Joker = 15,
 }
 
 #[cfg(test)]
@@ -152,5 +191,15 @@ mod tests {
 
         deck.new_round();
         assert_eq!(deck.cards, cards);
+    }
+
+    #[test]
+    fn test_suit() {
+        assert!(Suit::Three < Suit::Four);
+        assert!(Suit::Four < Suit::Ten);
+        assert!(Suit::Ten < Suit::Jack);
+        assert!(Suit::Jack < Suit::Ace);
+        assert!(Suit::King < Suit::Joker);
+        assert_eq!(Card::JOKER.suit(), Suit::Joker);
     }
 }

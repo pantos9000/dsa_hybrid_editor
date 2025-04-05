@@ -1,7 +1,7 @@
 use crate::character::{Character, Edge3, PassiveStats};
 
 use super::{
-    cards::{Card, CardDeck},
+    cards::{Card, CardDeck, Suit},
     roller::{roller, Roll, RollResult},
 };
 
@@ -43,8 +43,21 @@ impl Fighter {
         }
     }
 
+    fn draw_card(&self, cards: &mut CardDeck) -> Card {
+        if self.character.edges.schnell.is_set() {
+            'card_draw: loop {
+                let card = cards.draw();
+                if card.suit() >= Suit::Seven {
+                    break 'card_draw card;
+                }
+            }
+        } else {
+            cards.draw()
+        }
+    }
+
     pub fn new_round(&mut self, cards: &mut CardDeck) -> Card {
-        let card = cards.draw();
+        let card = self.draw_card(cards);
         self.joker = card.is_joker();
         self.riposte_done = false;
         if i8::from(self.character.weapon.reach) > 0 {

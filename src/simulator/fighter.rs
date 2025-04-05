@@ -43,7 +43,9 @@ impl Fighter {
     pub fn new_round(&mut self, joker: bool) {
         self.joker = joker;
         self.riposte_done = false;
-        self.erstschlag_done = false;
+        if i8::from(self.character.weapon.reach) > 0 {
+            self.erstschlag_done = false;
+        }
     }
 
     pub fn is_dead(&self) -> bool {
@@ -149,7 +151,7 @@ impl Fighter {
 
     fn trigger_erstschlag(&mut self, opponent: &mut Self) {
         if !self.character.edges.erstschlag.is_set()
-            || opponent.character.edges.erstschlag.is_set()
+            || i8::from(opponent.character.weapon.reach) > 0
             || self.shaken
             || self.erstschlag_done
         {

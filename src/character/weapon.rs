@@ -9,6 +9,7 @@ pub struct Weapon {
     pub(crate) damage: Damage,
     pub(crate) bonus_damage: Modifier<-2, 2>,
     pub(crate) bonus_parry: Modifier<-2, 2>,
+    pub(crate) reach: Modifier<0, 2>,
 }
 
 impl Drawable for Weapon {
@@ -22,6 +23,8 @@ impl Drawable for Weapon {
             self.bonus_damage.draw(ModifierName::BonusDamage, sim, ui);
             ui.end_row();
             self.bonus_parry.draw(ModifierName::BonusParry, sim, ui);
+            ui.end_row();
+            self.reach.draw(ModifierName::Reach, sim, ui);
             ui.end_row();
         });
     }
@@ -38,6 +41,8 @@ impl Drawable for Weapon {
             ui.end_row();
             self.bonus_parry
                 .draw_as_opponent(ModifierName::BonusParry, ui);
+            ui.end_row();
+            self.reach.draw_as_opponent(ModifierName::Reach, ui);
             ui.end_row();
         });
     }
@@ -130,6 +135,7 @@ impl Damage {
 enum ModifierName {
     BonusDamage,
     BonusParry,
+    Reach,
 }
 
 impl ModifierName {
@@ -137,6 +143,7 @@ impl ModifierName {
         match self {
             ModifierName::BonusDamage => "Schadensbonus",
             ModifierName::BonusParry => "Paradebonus",
+            ModifierName::Reach => "Reichweite",
         }
     }
 
@@ -144,6 +151,7 @@ impl ModifierName {
         match self {
             ModifierName::BonusDamage => Box::new(|c| c.weapon.bonus_damage.decrement()),
             ModifierName::BonusParry => Box::new(|c| c.weapon.bonus_parry.decrement()),
+            ModifierName::Reach => Box::new(|c| c.weapon.reach.decrement()),
         }
     }
 
@@ -151,6 +159,7 @@ impl ModifierName {
         match self {
             ModifierName::BonusDamage => Box::new(|c| c.weapon.bonus_damage.increment()),
             ModifierName::BonusParry => Box::new(|c| c.weapon.bonus_parry.increment()),
+            ModifierName::Reach => Box::new(|c| c.weapon.reach.increment()),
         }
     }
 
@@ -160,9 +169,9 @@ impl ModifierName {
         value: Modifier<MIN, MAX>,
     ) -> CharModification {
         match self {
-            // ugly workaround accessing 0, but hey, it works...
             ModifierName::BonusDamage => Box::new(move |c| c.weapon.bonus_damage.0 = value.0),
             ModifierName::BonusParry => Box::new(move |c| c.weapon.bonus_parry.0 = value.0),
+            ModifierName::Reach => Box::new(move |c| c.weapon.reach.0 = value.0),
         }
     }
 }

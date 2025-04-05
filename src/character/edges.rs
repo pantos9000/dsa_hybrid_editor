@@ -158,15 +158,11 @@ enum Edge3Name {
 }
 
 impl Edge3Name {
-    fn as_str(&self, val: Edge3) -> &'static str {
-        match (self, val) {
-            (_, Edge3::None) => "Kein",
-            (Edge3Name::Blitzhieb, Edge3::Normal) => "Blitzhieb",
-            (Edge3Name::Blitzhieb, Edge3::Improved) => "Verb. Blitzhieb",
-            (Edge3Name::Berserker, Edge3::Normal) => "Berserker",
-            (Edge3Name::Berserker, Edge3::Improved) => "Berserker Sofort",
-            (Edge3Name::Riposte, Edge3::Normal) => "Riposte",
-            (Edge3Name::Riposte, Edge3::Improved) => "Verb. Riposte",
+    fn as_str(&self) -> &'static str {
+        match self {
+            Edge3Name::Blitzhieb => "Blitzhieb",
+            Edge3Name::Berserker => "Berserker",
+            Edge3Name::Riposte => "Riposte",
         }
     }
 
@@ -206,6 +202,18 @@ pub enum Edge3 {
 }
 
 impl Edge3 {
+    fn as_str(&self, name: Edge3Name) -> &'static str {
+        match (self, name) {
+            (Edge3::None, _) => "Kein",
+            (Edge3::Normal, Edge3Name::Blitzhieb) => "Blitzhieb",
+            (Edge3::Improved, Edge3Name::Blitzhieb) => "Verb. Blitzhieb",
+            (Edge3::Normal, Edge3Name::Berserker) => "Berserker",
+            (Edge3::Improved, Edge3Name::Berserker) => "Berserker Sofort",
+            (Edge3::Normal, Edge3Name::Riposte) => "Riposte",
+            (Edge3::Improved, Edge3Name::Riposte) => "Verb. Riposte",
+        }
+    }
+
     fn decrement(&mut self) {
         let new = match self {
             Edge3::None => Self::None,
@@ -225,7 +233,7 @@ impl Edge3 {
     }
 
     fn draw_selectable(&mut self, name: Edge3Name, val: Self, sim: &Simulator, ui: &mut egui::Ui) {
-        ui.selectable_value(self, val, name.as_str(val))
+        ui.selectable_value(self, val, val.as_str(name))
             .on_hover_ui(|ui| {
                 ui.horizontal(|ui| {
                     sim.gradient(name.modification_set(val)).draw(ui);
@@ -234,7 +242,7 @@ impl Edge3 {
     }
 
     fn draw(&mut self, name: Edge3Name, sim: &Simulator, ui: &mut egui::Ui) {
-        ui.label("Blitzhieb");
+        ui.label(name.as_str());
 
         ui.horizontal(|ui| {
             self.draw_selectable(name, Self::None, sim, ui);
@@ -249,7 +257,7 @@ impl Edge3 {
     }
 
     fn draw_as_opponent(&self, name: Edge3Name, ui: &mut egui::Ui) {
-        ui.label("Blitzhieb");
-        let _ = ui.button(name.as_str(*self));
+        ui.label(name.as_str());
+        let _ = ui.button(self.as_str(name));
     }
 }

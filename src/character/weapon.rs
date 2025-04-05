@@ -7,8 +7,8 @@ use super::{Character, Drawable};
 #[derive(Debug, Default, Clone, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Weapon {
     pub(crate) damage: Damage,
-    pub(crate) bonus_damage: Modifier,
-    pub(crate) bonus_parry: Modifier,
+    pub(crate) bonus_damage: Modifier<-2, 2>,
+    pub(crate) bonus_parry: Modifier<-2, 2>,
 }
 
 impl Drawable for Weapon {
@@ -155,10 +155,14 @@ impl ModifierName {
     }
 
     #[allow(dead_code)]
-    fn modification_set(&self, value: Modifier) -> CharModification {
+    fn modification_set<const MIN: i8, const MAX: i8>(
+        &self,
+        value: Modifier<MIN, MAX>,
+    ) -> CharModification {
         match self {
-            ModifierName::BonusDamage => Box::new(move |c| c.weapon.bonus_damage = value),
-            ModifierName::BonusParry => Box::new(move |c| c.weapon.bonus_parry = value),
+            // ugly workaround accessing 0, but hey, it works...
+            ModifierName::BonusDamage => Box::new(move |c| c.weapon.bonus_damage.0 = value.0),
+            ModifierName::BonusParry => Box::new(move |c| c.weapon.bonus_parry.0 = value.0),
         }
     }
 }
@@ -166,24 +170,21 @@ impl ModifierName {
 #[derive(
     Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
 )]
-pub struct Modifier(i8);
+pub struct Modifier<const MIN: i8, const MAX: i8>(i8);
 
-impl From<i8> for Modifier {
+impl<const MIN: i8, const MAX: i8> From<i8> for Modifier<MIN, MAX> {
     fn from(value: i8) -> Self {
         Self(value)
     }
 }
 
-impl From<Modifier> for i8 {
-    fn from(value: Modifier) -> Self {
+impl<const MIN: i8, const MAX: i8> From<Modifier<MIN, MAX>> for i8 {
+    fn from(value: Modifier<MIN, MAX>) -> Self {
         value.0
     }
 }
 
-impl Modifier {
-    const MIN: i8 = -3;
-    const MAX: i8 = 3;
-
+impl<const MIN: i8, const MAX: i8> Modifier<MIN, MAX> {
     fn as_str(&self) -> &'static str {
         match self.0 {
             ..-3 => unreachable!(),
@@ -201,7 +202,7 @@ impl Modifier {
     fn draw(&mut self, name: ModifierName, sim: &Simulator, ui: &mut egui::Ui) {
         ui.label(name.as_str());
 
-        let slider = egui::Slider::new(&mut self.0, Self::MIN..=Self::MAX);
+        let slider = egui::Slider::new(&mut self.0, MIN..=MAX);
         ui.add(slider);
 
         ui.horizontal(|ui| {
@@ -217,9 +218,9 @@ impl Modifier {
 
     fn decrement(&mut self) {
         let new = match self.0 {
-            val if val < Self::MIN => unreachable!(),
-            val if val > Self::MAX => unreachable!(),
-            Self::MIN => Self::MIN,
+            val if val < MIN => unreachable!(),
+            val if val > MAX => unreachable!(),
+            val if val == MIN => MIN,
             val => val - 1,
         };
         self.0 = new;
@@ -227,9 +228,9 @@ impl Modifier {
 
     fn increment(&mut self) {
         let new = match self.0 {
-            val if val < Self::MIN => unreachable!(),
-            val if val > Self::MAX => unreachable!(),
-            Self::MAX => Self::MAX,
+            val if val < MIN => unreachable!(),
+            val if val > MAX => unreachable!(),
+            val if val == MAX => MAX,
             val => val + 1,
         };
         self.0 = new;

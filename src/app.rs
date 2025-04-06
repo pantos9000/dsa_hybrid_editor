@@ -74,54 +74,28 @@ impl eframe::App for App {
             });
         });
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-
-            egui::containers::Resize::default()
-                .auto_sized()
-                .show(ui, |ui| {
-                    egui::Grid::new("CharCols")
-                        .num_columns(3)
-                        .spacing([10.0, 4.0])
-                        .striped(false)
-                        .show(ui, |ui| {
-                            ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
-                                let copy_opponent_button = util::create_menu_button(
-                                    "⬅",
-                                    "Copy opponent to char",
-                                    40.0,
-                                    ui,
-                                );
-                                if copy_opponent_button.clicked() {
-                                    self.char = self.opponent.clone();
-                                }
-                                let switch_button =
-                                    util::create_menu_button("↔", "Switch chars", 40.0, ui);
-                                if switch_button.clicked() {
-                                    std::mem::swap(&mut self.char, &mut self.opponent);
-                                }
-                                let copy_char_button = util::create_menu_button(
-                                    "➡",
-                                    "Copy char to opponent",
-                                    40.0,
-                                    ui,
-                                );
-                                if copy_char_button.clicked() {
-                                    self.opponent = self.char.clone();
-                                }
-                            });
-                            ui.end_row();
-                            self.char.draw(&self.simulator, &self.io, ui);
-                            self.opponent.draw_as_opponent(&self.io, ui);
-                            ui.end_row();
-                        });
-                });
-        });
-
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
             self.progress_bar(ui);
             egui::widgets::global_theme_preference_buttons(ui);
             egui::warn_if_debug_build(ui);
+        });
+
+        egui::CentralPanel::default().show(ctx, |ui| {
+            // The central panel the region left after adding other panels - has to come last
+
+            self.menu_buttons(ui);
+            ui.separator();
+            egui::containers::ScrollArea::both().show(ui, |ui| {
+                egui::Grid::new("CharCols")
+                    .num_columns(3)
+                    .spacing([10.0, 4.0])
+                    .striped(false)
+                    .show(ui, |ui| {
+                        self.char.draw(&self.simulator, &self.io, ui);
+                        self.opponent.draw_as_opponent(&self.io, ui);
+                        ui.end_row();
+                    });
+            });
         });
     }
 }
@@ -136,6 +110,26 @@ impl App {
         let progress: f32 = f32::from(progress) / 100_f32;
         let progress_bar = egui::widgets::ProgressBar::new(progress).show_percentage();
         ui.add(progress_bar);
+    }
+
+    fn menu_buttons(&mut self, ui: &mut egui::Ui) {
+        ui.with_layout(Layout::left_to_right(Align::TOP), |ui| {
+            let copy_char_button = util::create_menu_button("➡", "Copy char to opponent", 40.0, ui);
+            if copy_char_button.clicked() {
+                self.opponent = self.char.clone();
+            }
+
+            let switch_button = util::create_menu_button("↔", "Switch chars", 40.0, ui);
+            if switch_button.clicked() {
+                std::mem::swap(&mut self.char, &mut self.opponent);
+            }
+
+            let copy_opponent_button =
+                util::create_menu_button("⬅", "Copy opponent to char", 40.0, ui);
+            if copy_opponent_button.clicked() {
+                self.char = self.opponent.clone();
+            }
+        });
     }
 
     fn quit_button(ui: &mut egui::Ui, ctx: &egui::Context) {

@@ -31,7 +31,8 @@ pub struct Character {
     pub(crate) name: Name,
     pub(crate) attributes: Attributes,
     pub(crate) skills: Skills,
-    pub(crate) weapon: Weapon<true>,
+    pub(crate) weapon: Weapon<false>,
+    pub(crate) secondary_weapon: Weapon<true>,
     pub(crate) armor: Armor,
     pub(crate) edges: Edges,
 }
@@ -64,6 +65,9 @@ impl Character {
                     self.weapon.draw(sim, ui);
                 });
                 util::create_frame(ui).show(ui, |ui| {
+                    self.secondary_weapon.draw(sim, ui);
+                });
+                util::create_frame(ui).show(ui, |ui| {
                     self.armor.draw(sim, ui);
                 });
                 util::create_frame(ui).show(ui, |ui| {
@@ -93,6 +97,9 @@ impl Character {
                 });
                 util::create_frame(ui).show(ui, |ui| {
                     self.weapon.draw_as_opponent(ui);
+                });
+                util::create_frame(ui).show(ui, |ui| {
+                    self.secondary_weapon.draw_as_opponent(ui);
                 });
                 util::create_frame(ui).show(ui, |ui| {
                     self.armor.draw_as_opponent(ui);

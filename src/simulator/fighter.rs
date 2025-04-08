@@ -78,20 +78,35 @@ impl Fighter {
     }
 
     fn do_full_attack(&mut self, opponent: &mut Fighter) {
-        if !self.character.weapon.active {
-            return;
+        if self.character.weapon.active {
+            let (num_rolls, mut modifier) = match self.character.edges.blitzhieb {
+                Edge3::None => (1, 0),
+                Edge3::Normal => (2, -2),
+                Edge3::Improved => (2, 0),
+            };
+            if self.character.secondary_weapon.active {
+                modifier -= 2;
+            }
+            let Some(attacks) = self.try_to_hit(opponent, num_rolls, modifier) else {
+                self.critical_fail();
+                return;
+            };
+            let attacks: Vec<_> = attacks.collect();
+            for attack in attacks {
+                self.do_damage(opponent, attack);
+            }
         }
-        let (num_rolls, modifier) = match self.character.edges.blitzhieb {
-            Edge3::None => (1, 0),
-            Edge3::Normal => (2, -2),
-            Edge3::Improved => (2, 0),
-        };
-        let Some(attacks) = self.try_to_hit(opponent, num_rolls, modifier) else {
-            self.critical_fail();
-            return;
-        };
-        let attacks: Vec<_> = attacks.collect();
-        for attack in attacks {
+        if self.character.secondary_weapon.active {
+            let mut modifier = -2;
+            if self.character.weapon.active {
+                modifier -= 2;
+            }
+            let Some(mut attacks) = self.try_to_hit(opponent, 1, modifier) else {
+                self.critical_fail();
+                return;
+            };
+            let attack = attacks.next().unwrap();
+            drop(attacks);
             self.do_damage(opponent, attack);
         }
     }

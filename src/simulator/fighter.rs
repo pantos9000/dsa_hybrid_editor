@@ -77,6 +77,38 @@ impl Fighter {
         self.passive_stats.life <= threshold
     }
 
+    fn do_full_attack(&mut self, opponent: &mut Fighter) {
+        if !self.character.weapon.active {
+            return;
+        }
+        let (num_rolls, modifier) = match self.character.edges.blitzhieb {
+            Edge3::None => (1, 0),
+            Edge3::Normal => (2, -2),
+            Edge3::Improved => (2, 0),
+        };
+        let Some(attacks) = self.try_to_hit(opponent, num_rolls, modifier) else {
+            self.critical_fail();
+            return;
+        };
+        let attacks: Vec<_> = attacks.collect();
+        for attack in attacks {
+            self.do_damage(opponent, attack);
+        }
+    }
+
+    fn do_special_attack(&mut self, opponent: &mut Fighter) {
+        if !self.character.weapon.active {
+            return;
+        }
+        let Some(mut attacks) = self.try_to_hit(opponent, 1, 0) else {
+            self.critical_fail();
+            return;
+        };
+        let attack = attacks.next().unwrap(); // can only be a single attack
+        drop(attacks);
+        self.do_damage(opponent, attack);
+    }
+
     pub fn action(&mut self, opponent: &mut Fighter) {
         self.fell = false;
         if !self.unshake() {
@@ -94,19 +126,7 @@ impl Fighter {
             return;
         }
 
-        let (num_rolls, modifier) = match self.character.edges.blitzhieb {
-            Edge3::None => (1, 0),
-            Edge3::Normal => (2, -2),
-            Edge3::Improved => (2, 0),
-        };
-        let Some(attacks) = self.try_to_hit(opponent, num_rolls, modifier) else {
-            self.critical_fail();
-            return;
-        };
-        let attacks: Vec<_> = attacks.collect();
-        for attack in attacks {
-            self.do_damage(opponent, attack);
-        }
+        self.do_full_attack(opponent);
     }
 
     fn apply_wound_penalty(&self, roll: &mut Roll) {
@@ -185,13 +205,7 @@ impl Fighter {
             Edge3::Improved => (),
         }
 
-        let Some(mut attacks) = self.try_to_hit(opponent, 1, 0) else {
-            self.critical_fail();
-            return;
-        };
-        let attack = attacks.next().unwrap(); // can only be a single attack
-        drop(attacks);
-        self.do_damage(opponent, attack);
+        self.do_special_attack(opponent);
     }
 
     fn trigger_erstschlag(&mut self, opponent: &mut Self) {
@@ -205,13 +219,7 @@ impl Fighter {
 
         self.erstschlag_done = true;
 
-        let Some(mut attacks) = self.try_to_hit(opponent, 1, 0) else {
-            self.critical_fail();
-            return;
-        };
-        let attack = attacks.next().unwrap();
-        drop(attacks);
-        self.do_damage(opponent, attack);
+        self.do_special_attack(opponent);
     }
 
     pub fn dex_roll(&self) -> Option<Roll> {

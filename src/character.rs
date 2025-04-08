@@ -31,7 +31,7 @@ pub struct Character {
     pub(crate) name: Name,
     pub(crate) attributes: Attributes,
     pub(crate) skills: Skills,
-    pub(crate) weapon: Weapon,
+    pub(crate) weapon: Weapon<true>,
     pub(crate) armor: Armor,
     pub(crate) edges: Edges,
 }

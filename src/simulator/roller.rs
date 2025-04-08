@@ -155,7 +155,7 @@ impl Roller {
         Some(ret)
     }
 
-    pub fn roll_weapon_damage(&self, weapon: &Weapon) -> Roll {
+    pub fn roll_weapon_damage<const SECONDARY: bool>(&self, weapon: &Weapon<SECONDARY>) -> Roll {
         let sides = match weapon.damage {
             Damage::W4 => 4,
             Damage::W6 => 6,

@@ -4,8 +4,9 @@ use crate::simulator::{CharModification, Simulator};
 
 use super::{Character, Drawable};
 
-#[derive(Debug, Default, Clone, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub struct Weapon {
+#[derive(Debug, Clone, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct Weapon<const SECONDARY: bool> {
+    pub(crate) active: bool,
     pub(crate) damage: Damage,
     pub(crate) bonus_damage: Modifier<-2, 2>,
     pub(crate) piercing: Modifier<0, 3>,
@@ -13,12 +14,32 @@ pub struct Weapon {
     pub(crate) reach: Modifier<0, 2>,
 }
 
-impl Drawable for Weapon {
-    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
-        let grid = crate::util::create_grid("Waffe");
+impl<const SECONDARY: bool> Default for Weapon<SECONDARY> {
+    fn default() -> Self {
+        Self {
+            active: SECONDARY,
+            damage: Default::default(),
+            bonus_damage: Default::default(),
+            piercing: Default::default(),
+            bonus_parry: Default::default(),
+            reach: Default::default(),
+        }
+    }
+}
 
-        ui.heading("Waffe");
+impl<const SECONDARY: bool> Drawable for Weapon<SECONDARY> {
+    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+        let name = if SECONDARY {
+            "Zweitwaffe"
+        } else {
+            "Hauptwaffe"
+        };
+        let grid = crate::util::create_grid(name);
+
+        ui.heading(name);
         grid.show(ui, |ui| {
+            self.draw_active(sim, ui);
+            ui.end_row();
             self.damage.draw(sim, ui);
             ui.end_row();
             self.bonus_damage.draw(ModifierName::BonusDamage, sim, ui);
@@ -33,10 +54,17 @@ impl Drawable for Weapon {
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let grid = crate::util::create_grid("OpponentWeapon");
+        let name = if SECONDARY {
+            "Gegner Zweitwaffe"
+        } else {
+            "Gegner Hauptwaffe"
+        };
+        let grid = crate::util::create_grid(name);
 
-        ui.heading("Waffe");
+        ui.heading(name);
         grid.show(ui, |ui| {
+            self.draw_active_as_opponent(ui);
+            ui.end_row();
             self.damage.draw_as_opponent(ui);
             ui.end_row();
             self.bonus_damage
@@ -50,6 +78,43 @@ impl Drawable for Weapon {
             self.reach.draw_as_opponent(ModifierName::Reach, ui);
             ui.end_row();
         });
+    }
+}
+
+impl<const SECONDARY: bool> Weapon<SECONDARY> {
+    fn draw_active(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+        let mod_dec: CharModification;
+        let mod_inc: CharModification;
+        let mod_toggle: CharModification;
+
+        if SECONDARY {
+            mod_dec = Box::new(|c| c.secondary_weapon.active = false);
+            mod_inc = Box::new(|c| c.secondary_weapon.active = true);
+            mod_toggle = Box::new(|c| c.secondary_weapon.active = !c.weapon.active);
+        } else {
+            mod_dec = Box::new(|c| c.weapon.active = false);
+            mod_inc = Box::new(|c| c.weapon.active = true);
+            mod_toggle = Box::new(|c| c.weapon.active = !c.weapon.active);
+        }
+        ui.checkbox(&mut self.active, "Aktiv").on_hover_ui(|ui| {
+            ui.horizontal(|ui| {
+                sim.gradient(mod_toggle).draw(ui);
+            });
+        });
+
+        ui.horizontal(|ui| {
+            sim.gradient(mod_dec).draw(ui);
+            sim.gradient(mod_inc).draw(ui);
+        });
+    }
+
+    fn draw_active_as_opponent(&mut self, ui: &mut egui::Ui) {
+        ui.label("Aktiv");
+        let active = match self.active {
+            true => "Ja",
+            false => "Nein",
+        };
+        let _ = ui.button(active);
     }
 }
 

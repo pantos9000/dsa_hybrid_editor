@@ -104,7 +104,7 @@ impl Edge2Name {
             Edge2Name::Erstschlag => "Erstschlag",
             Edge2Name::BeidhändigerKampf => "Beidhändiger Kampf",
             Edge2Name::Kampfreflexe => "Kampfreflexe",
-            Edge2Name::Schnell => "Schnell",
+            Edge2Name::Schnell => "Schnell (Hintergrund)",
         }
     }
 

@@ -17,7 +17,7 @@ pub struct Weapon<const SECONDARY: bool> {
 impl<const SECONDARY: bool> Default for Weapon<SECONDARY> {
     fn default() -> Self {
         Self {
-            active: SECONDARY,
+            active: !SECONDARY,
             damage: Default::default(),
             bonus_damage: Default::default(),
             piercing: Default::default(),

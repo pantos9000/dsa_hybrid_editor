@@ -84,7 +84,9 @@ impl Fighter {
                 Edge3::Normal => (2, -2),
                 Edge3::Improved => (2, 0),
             };
-            if self.character.secondary_weapon.active {
+            if self.character.secondary_weapon.active
+                && !self.character.edges.beidhandiger_kampf.is_set()
+            {
                 modifier -= 2;
             }
             let Some(attacks) = self.try_to_hit(opponent, num_rolls, modifier) else {
@@ -98,7 +100,7 @@ impl Fighter {
         }
         if self.character.secondary_weapon.active {
             let mut modifier = -2;
-            if self.character.weapon.active {
+            if self.character.weapon.active && !self.character.edges.beidhandiger_kampf.is_set() {
                 modifier -= 2;
             }
             let Some(mut attacks) = self.try_to_hit(opponent, 1, modifier) else {

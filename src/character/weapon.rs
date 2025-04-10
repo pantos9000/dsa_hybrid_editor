@@ -1,6 +1,9 @@
 use strum::IntoEnumIterator;
 
-use crate::simulator::{CharModification, Simulator};
+use crate::{
+    simulator::{CharModification, Simulator},
+    util::{Modifier, ModifierName},
+};
 
 use super::{Character, Drawable};
 
@@ -10,7 +13,6 @@ pub struct Weapon<const SECONDARY: bool> {
     pub(crate) damage: Damage,
     pub(crate) bonus_damage: Modifier<-2, 2>,
     pub(crate) piercing: Modifier<0, 3>,
-    pub(crate) bonus_parry: Modifier<-2, 2>,
     pub(crate) reach: Modifier<0, 2>,
 }
 
@@ -21,7 +23,6 @@ impl<const SECONDARY: bool> Default for Weapon<SECONDARY> {
             damage: Default::default(),
             bonus_damage: Default::default(),
             piercing: Default::default(),
-            bonus_parry: Default::default(),
             reach: Default::default(),
         }
     }
@@ -42,13 +43,11 @@ impl<const SECONDARY: bool> Drawable for Weapon<SECONDARY> {
             ui.end_row();
             self.damage.draw(sim, ui);
             ui.end_row();
-            self.bonus_damage.draw(ModifierName::BonusDamage, sim, ui);
+            self.bonus_damage.draw(WeaponModifier::BonusDamage, sim, ui);
             ui.end_row();
-            self.piercing.draw(ModifierName::Piercing, sim, ui);
+            self.piercing.draw(WeaponModifier::Piercing, sim, ui);
             ui.end_row();
-            self.bonus_parry.draw(ModifierName::BonusParry, sim, ui);
-            ui.end_row();
-            self.reach.draw(ModifierName::Reach, sim, ui);
+            self.reach.draw(WeaponModifier::Reach, sim, ui);
             ui.end_row();
         });
     }
@@ -68,14 +67,11 @@ impl<const SECONDARY: bool> Drawable for Weapon<SECONDARY> {
             self.damage.draw_as_opponent(ui);
             ui.end_row();
             self.bonus_damage
-                .draw_as_opponent(ModifierName::BonusDamage, ui);
+                .draw_as_opponent(WeaponModifier::BonusDamage, ui);
             ui.end_row();
-            self.piercing.draw_as_opponent(ModifierName::Piercing, ui);
+            self.piercing.draw_as_opponent(WeaponModifier::Piercing, ui);
             ui.end_row();
-            self.bonus_parry
-                .draw_as_opponent(ModifierName::BonusParry, ui);
-            ui.end_row();
-            self.reach.draw_as_opponent(ModifierName::Reach, ui);
+            self.reach.draw_as_opponent(WeaponModifier::Reach, ui);
             ui.end_row();
         });
     }
@@ -202,121 +198,34 @@ impl Damage {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ModifierName {
+enum WeaponModifier {
     BonusDamage,
     Piercing,
-    BonusParry,
     Reach,
 }
 
-impl ModifierName {
-    fn as_str(&self) -> &'static str {
+impl ModifierName for WeaponModifier {
+    fn as_str(&self) -> &str {
         match self {
-            ModifierName::BonusDamage => "Schadensbonus",
-            ModifierName::Piercing => "Panzerbrechend",
-            ModifierName::BonusParry => "Paradebonus",
-            ModifierName::Reach => "Reichweite",
+            WeaponModifier::BonusDamage => "Schadensbonus",
+            WeaponModifier::Piercing => "Panzerbrechend",
+            WeaponModifier::Reach => "Reichweite",
         }
     }
 
     fn modification_dec(&self) -> CharModification {
         match self {
-            ModifierName::BonusDamage => Box::new(|c| c.weapon.bonus_damage.decrement()),
-            ModifierName::Piercing => Box::new(|c| c.weapon.piercing.decrement()),
-            ModifierName::BonusParry => Box::new(|c| c.weapon.bonus_parry.decrement()),
-            ModifierName::Reach => Box::new(|c| c.weapon.reach.decrement()),
+            WeaponModifier::BonusDamage => Box::new(|c| c.weapon.bonus_damage.decrement()),
+            WeaponModifier::Piercing => Box::new(|c| c.weapon.piercing.decrement()),
+            WeaponModifier::Reach => Box::new(|c| c.weapon.reach.decrement()),
         }
     }
 
     fn modification_inc(&self) -> CharModification {
         match self {
-            ModifierName::BonusDamage => Box::new(|c| c.weapon.bonus_damage.increment()),
-            ModifierName::Piercing => Box::new(|c| c.weapon.piercing.increment()),
-            ModifierName::BonusParry => Box::new(|c| c.weapon.bonus_parry.increment()),
-            ModifierName::Reach => Box::new(|c| c.weapon.reach.increment()),
+            WeaponModifier::BonusDamage => Box::new(|c| c.weapon.bonus_damage.increment()),
+            WeaponModifier::Piercing => Box::new(|c| c.weapon.piercing.increment()),
+            WeaponModifier::Reach => Box::new(|c| c.weapon.reach.increment()),
         }
-    }
-
-    #[allow(dead_code)]
-    fn modification_set<const MIN: i8, const MAX: i8>(
-        &self,
-        value: Modifier<MIN, MAX>,
-    ) -> CharModification {
-        match self {
-            ModifierName::BonusDamage => Box::new(move |c| c.weapon.bonus_damage.0 = value.0),
-            ModifierName::Piercing => Box::new(move |c| c.weapon.piercing.0 = value.0),
-            ModifierName::BonusParry => Box::new(move |c| c.weapon.bonus_parry.0 = value.0),
-            ModifierName::Reach => Box::new(move |c| c.weapon.reach.0 = value.0),
-        }
-    }
-}
-
-#[derive(
-    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
-)]
-pub struct Modifier<const MIN: i8, const MAX: i8>(i8);
-
-impl<const MIN: i8, const MAX: i8> From<i8> for Modifier<MIN, MAX> {
-    fn from(value: i8) -> Self {
-        Self(value)
-    }
-}
-
-impl<const MIN: i8, const MAX: i8> From<Modifier<MIN, MAX>> for i8 {
-    fn from(value: Modifier<MIN, MAX>) -> Self {
-        value.0
-    }
-}
-
-impl<const MIN: i8, const MAX: i8> Modifier<MIN, MAX> {
-    fn as_str(&self) -> &'static str {
-        match self.0 {
-            ..-3 => unreachable!(),
-            4.. => unreachable!(),
-            -3 => "-3",
-            -2 => "-2",
-            -1 => "-1",
-            0 => "0",
-            1 => "1",
-            2 => "2",
-            3 => "3",
-        }
-    }
-
-    fn draw(&mut self, name: ModifierName, sim: &Simulator, ui: &mut egui::Ui) {
-        ui.label(name.as_str());
-
-        let slider = egui::Slider::new(&mut self.0, MIN..=MAX);
-        ui.add(slider);
-
-        ui.horizontal(|ui| {
-            sim.gradient(name.modification_dec()).draw(ui);
-            sim.gradient(name.modification_inc()).draw(ui);
-        });
-    }
-
-    fn draw_as_opponent(&mut self, name: ModifierName, ui: &mut egui::Ui) {
-        ui.label(name.as_str());
-        let _ = ui.button(self.as_str());
-    }
-
-    fn decrement(&mut self) {
-        let new = match self.0 {
-            val if val < MIN => unreachable!(),
-            val if val > MAX => unreachable!(),
-            val if val == MIN => MIN,
-            val => val - 1,
-        };
-        self.0 = new;
-    }
-
-    fn increment(&mut self) {
-        let new = match self.0 {
-            val if val < MIN => unreachable!(),
-            val if val > MAX => unreachable!(),
-            val if val == MAX => MAX,
-            val => val + 1,
-        };
-        self.0 = new;
     }
 }

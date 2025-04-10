@@ -305,6 +305,8 @@ impl Fighter {
         opponent.apply_tuchfühlung_to_parry(self, &mut opponent_parry);
 
         let apply_modifier = move |roll| roll + modifier;
+        let apply_passive_modifiers =
+            move |roll| roll + i8::from(self.character.passive_modifiers.attack);
         let apply_wound_penalty = move |mut roll| {
             self.apply_wound_penalty(&mut roll);
             roll
@@ -335,6 +337,7 @@ impl Fighter {
         let hit_iter = rolls
             .into_iter()
             .map(apply_modifier)
+            .map(apply_passive_modifiers)
             .map(apply_wound_penalty)
             .map(apply_joker)
             .map(apply_berserker_attack)

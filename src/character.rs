@@ -10,6 +10,7 @@ pub use armor::Armor;
 pub use attributes::{Attribute, Attributes};
 pub use edges::{Edge3, Edges};
 pub use name::Name;
+use passive_stats::PassiveModifiers;
 pub use passive_stats::PassiveStats;
 pub use skills::{Skill, Skills};
 pub use weapon::{Damage, Weapon};
@@ -29,6 +30,7 @@ trait Drawable {
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Character {
     pub(crate) name: Name,
+    pub(crate) passive_modifiers: PassiveModifiers,
     pub(crate) attributes: Attributes,
     pub(crate) skills: Skills,
     pub(crate) weapon: Weapon<false>,
@@ -54,6 +56,9 @@ impl Character {
                 });
                 util::create_frame(ui).show(ui, |ui| {
                     PassiveStats::new(self).draw(sim, ui);
+                });
+                util::create_frame(ui).show(ui, |ui| {
+                    self.passive_modifiers.draw(sim, ui);
                 });
                 util::create_frame(ui).show(ui, |ui| {
                     self.attributes.draw(sim, ui);

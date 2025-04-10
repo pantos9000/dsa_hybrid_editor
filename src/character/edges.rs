@@ -17,6 +17,7 @@ pub struct Edges {
     pub(crate) beidhandiger_kampf: Edge2,
     pub(crate) beidhandig: Edge2,
     pub(crate) ubertolpeln: Edge2,
+    pub(crate) machtiger_hieb: Edge2,
     pub(crate) schnell: Edge2,
     pub(crate) kuhler_kopf: Edge3,
 }
@@ -47,6 +48,8 @@ impl Drawable for Edges {
             self.beidhandig.draw(Edge2Name::Beidhändig, sim, ui);
             ui.end_row();
             self.ubertolpeln.draw(Edge2Name::Übertölpeln, sim, ui);
+            ui.end_row();
+            self.machtiger_hieb.draw(Edge2Name::MächtigerHieb, sim, ui);
             ui.end_row();
             self.schnell.draw(Edge2Name::Schnell, sim, ui);
             ui.end_row();
@@ -85,6 +88,9 @@ impl Drawable for Edges {
             self.ubertolpeln
                 .draw_as_opponent(Edge2Name::Übertölpeln, ui);
             ui.end_row();
+            self.machtiger_hieb
+                .draw_as_opponent(Edge2Name::MächtigerHieb, ui);
+            ui.end_row();
             self.schnell.draw_as_opponent(Edge2Name::Schnell, ui);
             ui.end_row();
             self.kuhler_kopf.draw_as_opponent(Edge3Name::KühlerKopf, ui);
@@ -96,6 +102,7 @@ impl Drawable for Edges {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Edge2Name {
     Übertölpeln,
+    MächtigerHieb,
     Erstschlag,
     Kampfreflexe,
     Schnell,
@@ -107,6 +114,7 @@ impl Edge2Name {
     fn as_str(&self) -> &'static str {
         match self {
             Edge2Name::Übertölpeln => "Übertölpeln",
+            Edge2Name::MächtigerHieb => "Mächtiger Hieb",
             Edge2Name::Erstschlag => "Erstschlag",
             Edge2Name::BeidhändigerKampf => "Beidhändiger Kampf",
             Edge2Name::Beidhändig => "Beidhändig (Hintergrund)",
@@ -118,6 +126,7 @@ impl Edge2Name {
     fn modification_dec(&self) -> CharModification {
         match self {
             Edge2Name::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.decrement()),
+            Edge2Name::MächtigerHieb => Box::new(|c| c.edges.machtiger_hieb.decrement()),
             Edge2Name::Erstschlag => Box::new(|c| c.edges.erstschlag.decrement()),
             Edge2Name::BeidhändigerKampf => Box::new(|c| c.edges.beidhandiger_kampf.decrement()),
             Edge2Name::Beidhändig => Box::new(|c| c.edges.beidhandig.decrement()),
@@ -129,6 +138,7 @@ impl Edge2Name {
     fn modification_inc(&self) -> CharModification {
         match self {
             Edge2Name::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.increment()),
+            Edge2Name::MächtigerHieb => Box::new(|c| c.edges.machtiger_hieb.increment()),
             Edge2Name::Erstschlag => Box::new(|c| c.edges.erstschlag.increment()),
             Edge2Name::BeidhändigerKampf => Box::new(|c| c.edges.beidhandiger_kampf.increment()),
             Edge2Name::Beidhändig => Box::new(|c| c.edges.beidhandig.increment()),
@@ -140,6 +150,7 @@ impl Edge2Name {
     fn modification_toggle(&self) -> CharModification {
         match self {
             Edge2Name::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.toggle()),
+            Edge2Name::MächtigerHieb => Box::new(|c| c.edges.machtiger_hieb.toggle()),
             Edge2Name::Erstschlag => Box::new(|c| c.edges.erstschlag.toggle()),
             Edge2Name::BeidhändigerKampf => Box::new(|c| c.edges.beidhandiger_kampf.toggle()),
             Edge2Name::Beidhändig => Box::new(|c| c.edges.beidhandig.toggle()),

@@ -243,6 +243,21 @@ impl std::ops::SubAssign<u8> for Roll {
     }
 }
 
+impl std::ops::Mul<u8> for Roll {
+    type Output = Self;
+
+    fn mul(self, rhs: u8) -> Self::Output {
+        let rhs: i8 = rhs.try_into().unwrap_or(i8::MAX);
+        Roll(self.0.saturating_mul(rhs))
+    }
+}
+
+impl std::ops::MulAssign<u8> for Roll {
+    fn mul_assign(&mut self, rhs: u8) {
+        *self = *self * rhs;
+    }
+}
+
 impl std::ops::Add<i8> for Roll {
     type Output = Self;
 

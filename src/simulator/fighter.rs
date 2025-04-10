@@ -167,6 +167,17 @@ impl Fighter {
         }
     }
 
+    fn apply_joker_to_damage(&self, roll: &mut Roll) {
+        if !self.joker {
+            return;
+        }
+        *roll += 2_u8;
+        if !self.character.edges.machtiger_hieb.is_set() {
+            return;
+        }
+        *roll *= 2_u8;
+    }
+
     fn enable_berserker(&mut self) {
         if self.character.edges.berserker == Edge3::Normal {
             self.berserker = true;
@@ -353,11 +364,11 @@ impl Fighter {
             damage += roller().roll_raise();
         }
         self.apply_piercing(opponent, &mut damage);
-        self.apply_joker(&mut damage);
         self.apply_berserker_damage(&mut damage);
         if self.character.edges.ubertolpeln.is_set() && opponent.shaken {
             damage += 4_u8;
         }
+        self.apply_joker_to_damage(&mut damage);
         if u8::from(damage) < opponent.passive_stats.robustness {
             return;
         }

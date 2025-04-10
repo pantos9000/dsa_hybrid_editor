@@ -99,7 +99,10 @@ impl Fighter {
             }
         }
         if self.character.secondary_weapon.active {
-            let mut modifier = -2;
+            let mut modifier = 0;
+            if !self.character.edges.beidhandig.is_set() {
+                modifier -= 2;
+            }
             if self.character.weapon.active && !self.character.edges.beidhandiger_kampf.is_set() {
                 modifier -= 2;
             }

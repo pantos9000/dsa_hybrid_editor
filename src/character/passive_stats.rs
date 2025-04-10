@@ -30,6 +30,12 @@ impl PassiveStats {
     fn calc_parry(character: &Character) -> u8 {
         let mut parry = 2 + u8::from(character.skills.kampfen) / 2;
         parry = parry.saturating_add_signed(character.weapon.bonus_parry.into());
+        if character.edges.beidhandig.is_set()
+            && character.weapon.active
+            && character.secondary_weapon.active
+        {
+            parry += 1;
+        }
         parry
     }
 

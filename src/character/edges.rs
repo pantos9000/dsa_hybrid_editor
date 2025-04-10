@@ -15,6 +15,7 @@ pub struct Edges {
     pub(crate) kampfreflexe: Edge2,
     pub(crate) erstschlag: Edge2,
     pub(crate) beidhandiger_kampf: Edge2,
+    pub(crate) beidhandig: Edge2,
     pub(crate) ubertolpeln: Edge2,
     pub(crate) schnell: Edge2,
     pub(crate) kuhler_kopf: Edge3,
@@ -42,6 +43,8 @@ impl Drawable for Edges {
             ui.end_row();
             self.beidhandiger_kampf
                 .draw(Edge2Name::BeidhändigerKampf, sim, ui);
+            ui.end_row();
+            self.beidhandig.draw(Edge2Name::Beidhändig, sim, ui);
             ui.end_row();
             self.ubertolpeln.draw(Edge2Name::Übertölpeln, sim, ui);
             ui.end_row();
@@ -77,6 +80,8 @@ impl Drawable for Edges {
             self.beidhandiger_kampf
                 .draw_as_opponent(Edge2Name::BeidhändigerKampf, ui);
             ui.end_row();
+            self.beidhandig.draw_as_opponent(Edge2Name::Beidhändig, ui);
+            ui.end_row();
             self.ubertolpeln
                 .draw_as_opponent(Edge2Name::Übertölpeln, ui);
             ui.end_row();
@@ -95,6 +100,7 @@ enum Edge2Name {
     Kampfreflexe,
     Schnell,
     BeidhändigerKampf,
+    Beidhändig,
 }
 
 impl Edge2Name {
@@ -103,6 +109,7 @@ impl Edge2Name {
             Edge2Name::Übertölpeln => "Übertölpeln",
             Edge2Name::Erstschlag => "Erstschlag",
             Edge2Name::BeidhändigerKampf => "Beidhändiger Kampf",
+            Edge2Name::Beidhändig => "Beidhändig (Hintergrund)",
             Edge2Name::Kampfreflexe => "Kampfreflexe",
             Edge2Name::Schnell => "Schnell (Hintergrund)",
         }
@@ -113,6 +120,7 @@ impl Edge2Name {
             Edge2Name::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.decrement()),
             Edge2Name::Erstschlag => Box::new(|c| c.edges.erstschlag.decrement()),
             Edge2Name::BeidhändigerKampf => Box::new(|c| c.edges.beidhandiger_kampf.decrement()),
+            Edge2Name::Beidhändig => Box::new(|c| c.edges.beidhandig.decrement()),
             Edge2Name::Kampfreflexe => Box::new(|c| c.edges.kampfreflexe.decrement()),
             Edge2Name::Schnell => Box::new(|c| c.edges.schnell.decrement()),
         }
@@ -123,6 +131,7 @@ impl Edge2Name {
             Edge2Name::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.increment()),
             Edge2Name::Erstschlag => Box::new(|c| c.edges.erstschlag.increment()),
             Edge2Name::BeidhändigerKampf => Box::new(|c| c.edges.beidhandiger_kampf.increment()),
+            Edge2Name::Beidhändig => Box::new(|c| c.edges.beidhandig.increment()),
             Edge2Name::Kampfreflexe => Box::new(|c| c.edges.kampfreflexe.increment()),
             Edge2Name::Schnell => Box::new(|c| c.edges.schnell.increment()),
         }
@@ -133,6 +142,7 @@ impl Edge2Name {
             Edge2Name::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.toggle()),
             Edge2Name::Erstschlag => Box::new(|c| c.edges.erstschlag.toggle()),
             Edge2Name::BeidhändigerKampf => Box::new(|c| c.edges.beidhandiger_kampf.toggle()),
+            Edge2Name::Beidhändig => Box::new(|c| c.edges.beidhandig.toggle()),
             Edge2Name::Kampfreflexe => Box::new(|c| c.edges.kampfreflexe.toggle()),
             Edge2Name::Schnell => Box::new(|c| c.edges.schnell.toggle()),
         }
@@ -203,7 +213,7 @@ impl Edge3Name {
     fn as_str(&self) -> &'static str {
         match self {
             Edge3Name::Blitzhieb => "Blitzhieb",
-            Edge3Name::Berserker => "Berserker",
+            Edge3Name::Berserker => "Berserker (Hintergrund)",
             Edge3Name::Riposte => "Riposte",
             Edge3Name::Tuchfühlung => "Tuchfühlung",
             Edge3Name::Lebenskraft => "Lebenskraft",

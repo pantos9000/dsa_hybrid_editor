@@ -7,7 +7,7 @@ use super::{
 
 #[derive(Debug, Clone)]
 pub struct Fighter {
-    pub(super) character: Character,
+    character: Character,
     passive_stats: PassiveStats,
     shaken: bool,
     interrupted: bool,

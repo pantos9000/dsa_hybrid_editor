@@ -9,6 +9,7 @@ use super::{
 pub struct Fighter {
     character: Character,
     passive_stats: PassiveStats,
+    bennies: u8,
     shaken: bool,
     interrupted: bool,
     fell: bool,
@@ -29,9 +30,11 @@ impl Fighter {
     pub fn new(character: Character) -> Self {
         let passive_stats = PassiveStats::new(&character);
         let berserker = character.edges.berserker == Edge3::Improved;
+        let bennies = i8::from(character.bennies.num_bennies).try_into().unwrap();
         Self {
             character,
             passive_stats,
+            bennies,
             shaken: false,
             interrupted: false,
             fell: false,
@@ -93,7 +96,6 @@ impl Fighter {
                 self.critical_fail();
                 return;
             };
-            let attacks: Vec<_> = attacks.collect();
             for attack in attacks {
                 self.do_damage(opponent, attack);
             }
@@ -106,12 +108,16 @@ impl Fighter {
             if self.character.weapon.active && !self.character.edges.beidhandiger_kampf.is_set() {
                 modifier -= 2;
             }
-            let Some(mut attacks) = self.try_to_hit(opponent, 1, modifier) else {
+            let Some(attacks) = self.try_to_hit(opponent, 1, modifier) else {
                 self.critical_fail();
                 return;
             };
-            let attack = attacks.next().unwrap();
-            drop(attacks);
+            let attack = attacks[0];
+            debug_assert_eq!(
+                attacks.len(),
+                1,
+                "attacks should only contain single attack"
+            );
             self.do_damage(opponent, attack);
         }
     }
@@ -120,12 +126,16 @@ impl Fighter {
         if !self.character.weapon.active {
             return;
         }
-        let Some(mut attacks) = self.try_to_hit(opponent, 1, 0) else {
+        let Some(attacks) = self.try_to_hit(opponent, 1, 0) else {
             self.critical_fail();
             return;
         };
-        let attack = attacks.next().unwrap(); // can only be a single attack
-        drop(attacks);
+        let attack = attacks[0];
+        debug_assert_eq!(
+            attacks.len(),
+            1,
+            "attacks should only contain single attack"
+        );
         self.do_damage(opponent, attack);
     }
 
@@ -262,6 +272,18 @@ impl Fighter {
 
     /// returns `true` if char still has an action this round
     fn unshake(&mut self) -> bool {
+        let has_action = self.unshake_without_bennie();
+        if has_action {
+            return true;
+        }
+        if self.character.bennies.use_for_unshake.is_set() && self.bennies > 0 {
+            self.bennies -= 1;
+            return true;
+        }
+        false
+    }
+
+    fn unshake_without_bennie(&mut self) -> bool {
         if self.interrupted {
             self.interrupted = false;
             return false;
@@ -285,12 +307,12 @@ impl Fighter {
         }
     }
 
-    fn try_to_hit<'a>(
-        &'a self,
-        opponent: &'a Fighter,
+    fn try_to_hit(
+        &mut self,
+        opponent: &Fighter,
         num_skill_dice: usize,
         modifier: i8,
-    ) -> Option<impl Iterator<Item = AttackResult> + use<'a>> {
+    ) -> Option<Vec<AttackResult>> {
         let fell_state_modifier: u8 = match opponent.fell {
             true => 2,
             false => 0,
@@ -304,26 +326,26 @@ impl Fighter {
         opponent_parry = opponent_parry.saturating_sub(berserker_state_modifier);
         opponent.apply_tuchfühlung_to_parry(self, &mut opponent_parry);
 
-        let apply_modifier = move |roll| roll + modifier;
+        let apply_modifier = |roll| roll + modifier;
         let apply_passive_modifiers =
-            move |roll| roll + i8::from(self.character.passive_modifiers.attack);
-        let apply_wound_penalty = move |mut roll| {
+            |roll| roll + i8::from(self.character.passive_modifiers.attack);
+        let apply_wound_penalty = |mut roll| {
             self.apply_wound_penalty(&mut roll);
             roll
         };
-        let apply_joker = move |mut roll| {
+        let apply_joker = |mut roll| {
             self.apply_joker(&mut roll);
             roll
         };
-        let apply_berserker_attack = move |mut roll| {
+        let apply_berserker_attack = |mut roll| {
             self.apply_berserker_attack(&mut roll);
             roll
         };
-        let apply_tuchfühlung = move |mut roll| {
+        let apply_tuchfühlung = |mut roll| {
             self.apply_tuchfühlung_to_attack(opponent, &mut roll);
             roll
         };
-        let check_hit = move |mut roll: Roll| -> AttackResult {
+        let check_hit = |mut roll: Roll| -> AttackResult {
             roll += 1_u8; // add 1 to be able to check against 0 later
             roll -= opponent_parry;
             match roll.as_u8() {
@@ -332,9 +354,16 @@ impl Fighter {
                 5.. => AttackResult::Raise,
             }
         };
+        let mut all_failed = true;
+        let check_fails = |hit| -> AttackResult {
+            if hit != AttackResult::Miss {
+                all_failed = false;
+            }
+            hit
+        };
         let rolls =
             roller().roll_skill_with_n_dice(&self.character.skills.kampfen, num_skill_dice)?;
-        let hit_iter = rolls
+        let hits = rolls
             .into_iter()
             .map(apply_modifier)
             .map(apply_passive_modifiers)
@@ -342,8 +371,16 @@ impl Fighter {
             .map(apply_joker)
             .map(apply_berserker_attack)
             .map(apply_tuchfühlung)
-            .map(check_hit);
-        Some(hit_iter)
+            .map(check_hit)
+            .map(check_fails)
+            .collect();
+
+        if all_failed && self.character.bennies.use_for_attack.is_set() && self.bennies > 0 {
+            self.bennies -= 1;
+            self.try_to_hit(opponent, num_skill_dice, modifier)
+        } else {
+            Some(hits)
+        }
     }
 
     fn do_damage(&mut self, opponent: &mut Self, attack_result: AttackResult) {
@@ -373,6 +410,10 @@ impl Fighter {
         }
         self.apply_joker_to_damage(&mut damage);
         if u8::from(damage) < opponent.passive_stats.robustness {
+            if self.character.bennies.use_for_damage.is_set() && self.bennies > 0 {
+                self.bennies -= 1;
+                self.do_damage(opponent, attack_result);
+            }
             return;
         }
 
@@ -420,6 +461,7 @@ impl Fighter {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AttackResult {
     Miss,
     Hit,

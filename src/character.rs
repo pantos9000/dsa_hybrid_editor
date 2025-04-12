@@ -1,16 +1,19 @@
 mod armor;
 mod attributes;
+mod bennies;
 mod edges;
 mod name;
 mod passive_stats;
 mod skills;
 mod weapon;
 
+use passive_stats::PassiveModifiers;
+
 pub use armor::Armor;
 pub use attributes::{Attribute, Attributes};
+pub use bennies::Bennies;
 pub use edges::{Edge3, Edges};
 pub use name::Name;
-use passive_stats::PassiveModifiers;
 pub use passive_stats::PassiveStats;
 pub use skills::{Skill, Skills};
 pub use weapon::{Damage, Weapon};
@@ -37,6 +40,7 @@ pub struct Character {
     pub(crate) secondary_weapon: Weapon<true>,
     pub(crate) armor: Armor,
     pub(crate) edges: Edges,
+    pub(crate) bennies: Bennies,
 }
 
 impl Character {
@@ -78,6 +82,9 @@ impl Character {
                 util::create_frame(ui).show(ui, |ui| {
                     self.edges.draw(sim, ui);
                 });
+                util::create_frame(ui).show(ui, |ui| {
+                    self.bennies.draw(sim, ui);
+                })
             });
         });
     }

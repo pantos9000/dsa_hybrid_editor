@@ -10,6 +10,57 @@ pub struct PassiveModifiers {
     pub(crate) parry: Modifier<-4, 4>,
     pub(crate) robustness: Modifier<-4, 4>,
     pub(crate) attack: Modifier<-4, 4>,
+    pub(crate) attack_wild: WildAttack,
+}
+
+#[derive(
+    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
+pub struct WildAttack(bool);
+
+impl WildAttack {
+    pub fn is_set(&self) -> bool {
+        self.0
+    }
+
+    fn decrement(&mut self) {
+        self.0 = false;
+    }
+
+    fn increment(&mut self) {
+        self.0 = true;
+    }
+
+    fn toggle(&mut self) {
+        self.0 = !self.0;
+    }
+
+    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+        let mod_toggle: CharModification = Box::new(|c| c.passive_modifiers.attack_wild.toggle());
+        let mod_dec: CharModification = Box::new(|c| c.passive_modifiers.attack_wild.decrement());
+        let mod_inc: CharModification = Box::new(|c| c.passive_modifiers.attack_wild.increment());
+
+        ui.checkbox(&mut self.0, "Wild angreifen")
+            .on_hover_ui(|ui| {
+                ui.horizontal(|ui| {
+                    sim.gradient(mod_toggle).draw(ui);
+                });
+            });
+
+        ui.horizontal(|ui| {
+            sim.gradient(mod_dec).draw(ui);
+            sim.gradient(mod_inc).draw(ui);
+        });
+    }
+
+    fn draw_as_opponent(&self, ui: &mut egui::Ui) {
+        ui.label("Wild angreifen");
+        let text = match self.0 {
+            true => "Ja",
+            false => "Nein",
+        };
+        let _ = ui.button(text);
+    }
 }
 
 impl Drawable for PassiveModifiers {
@@ -25,6 +76,8 @@ impl Drawable for PassiveModifiers {
             self.robustness.draw(PassiveModifier::Robustness, sim, ui);
             ui.end_row();
             self.attack.draw(PassiveModifier::Attack, sim, ui);
+            ui.end_row();
+            self.attack_wild.draw(sim, ui);
             ui.end_row();
         });
     }
@@ -42,6 +95,8 @@ impl Drawable for PassiveModifiers {
                 .draw_as_opponent(PassiveModifier::Robustness, ui);
             ui.end_row();
             self.attack.draw_as_opponent(PassiveModifier::Attack, ui);
+            ui.end_row();
+            self.attack_wild.draw_as_opponent(ui);
             ui.end_row();
         });
     }

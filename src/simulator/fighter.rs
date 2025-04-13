@@ -18,6 +18,7 @@ pub struct Fighter {
     berserker: bool,
     riposte_done: bool,
     erstschlag_done: bool,
+    attacked_wild: bool,
 }
 
 impl Default for Fighter {
@@ -43,6 +44,7 @@ impl Fighter {
             berserker,
             riposte_done: false,
             erstschlag_done: false,
+            attacked_wild: false,
         }
     }
 
@@ -82,6 +84,10 @@ impl Fighter {
 
     fn do_full_attack(&mut self, opponent: &mut Fighter) {
         if self.character.weapon.active {
+            if self.character.passive_modifiers.attack_wild.is_set() {
+                self.attacked_wild = true;
+            }
+
             let (num_rolls, mut modifier) = match self.character.edges.blitzhieb {
                 Edge3::None => (1, 0),
                 Edge3::Normal => (2, -2),
@@ -100,7 +106,12 @@ impl Fighter {
                 self.do_damage(opponent, attack);
             }
         }
+
         if self.character.secondary_weapon.active {
+            if self.character.passive_modifiers.attack_wild.is_set() {
+                self.attacked_wild = true;
+            }
+
             let mut modifier = 0;
             if !self.character.edges.beidhandig.is_set() {
                 modifier -= 2;
@@ -141,6 +152,7 @@ impl Fighter {
 
     pub fn action(&mut self, opponent: &mut Fighter) {
         self.fell = false;
+        self.attacked_wild = false;
         if !self.unshake() {
             return;
         }
@@ -202,6 +214,12 @@ impl Fighter {
 
     fn apply_berserker_damage(&self, roll: &mut Roll) {
         if self.berserker {
+            *roll += 2_u8;
+        }
+    }
+
+    fn apply_wild(&self, roll: &mut Roll) {
+        if self.attacked_wild {
             *roll += 2_u8;
         }
     }
@@ -313,17 +331,22 @@ impl Fighter {
         num_skill_dice: usize,
         modifier: i8,
     ) -> Option<Vec<AttackResult>> {
-        let fell_state_modifier: u8 = match opponent.fell {
+        let opponent_fell_modifier: u8 = match opponent.fell {
             true => 2,
             false => 0,
         };
-        let berserker_state_modifier: u8 = match opponent.berserker {
+        let opponent_berserker_modifier: u8 = match opponent.berserker {
+            true => 2,
+            false => 0,
+        };
+        let opponent_wild_modifier: u8 = match opponent.attacked_wild {
             true => 2,
             false => 0,
         };
         let mut opponent_parry = opponent.passive_stats.parry;
-        opponent_parry = opponent_parry.saturating_sub(fell_state_modifier);
-        opponent_parry = opponent_parry.saturating_sub(berserker_state_modifier);
+        opponent_parry = opponent_parry.saturating_sub(opponent_fell_modifier);
+        opponent_parry = opponent_parry.saturating_sub(opponent_berserker_modifier);
+        opponent_parry = opponent_parry.saturating_sub(opponent_wild_modifier);
         opponent.apply_tuchfühlung_to_parry(self, &mut opponent_parry);
 
         let apply_modifier = |roll| roll + modifier;
@@ -339,6 +362,10 @@ impl Fighter {
         };
         let apply_berserker_attack = |mut roll| {
             self.apply_berserker_attack(&mut roll);
+            roll
+        };
+        let apply_wild_attack = |mut roll| {
+            self.apply_wild(&mut roll);
             roll
         };
         let apply_tuchfühlung = |mut roll| {
@@ -370,6 +397,7 @@ impl Fighter {
             .map(apply_wound_penalty)
             .map(apply_joker)
             .map(apply_berserker_attack)
+            .map(apply_wild_attack)
             .map(apply_tuchfühlung)
             .map(check_hit)
             .map(check_fails)
@@ -408,6 +436,7 @@ impl Fighter {
         if self.character.edges.ubertolpeln.is_set() && opponent.shaken {
             damage += 4_u8;
         }
+        self.apply_wild(&mut damage);
         self.apply_joker_to_damage(&mut damage);
         if u8::from(damage) < opponent.passive_stats.robustness {
             if self.character.bennies.use_for_damage.is_set() && self.bennies > 0 {

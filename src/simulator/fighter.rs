@@ -137,6 +137,12 @@ impl Fighter {
         if !self.character.weapon.active {
             return;
         }
+        if self.character.edges.erbarmungslos.is_set()
+            && self.character.passive_modifiers.attack_wild.is_set()
+        {
+            self.attacked_wild = true;
+        }
+
         let Some(attacks) = self.try_to_hit(opponent, 1, 0) else {
             self.critical_fail();
             return;

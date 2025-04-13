@@ -51,8 +51,8 @@ impl Roller {
     }
 
     /// return `None`` on crit fail
-    fn roll_additional_wild_die(&self, old_result: Roll) -> Option<Roll> {
-        let wild_die = self.roll_die(6, 0);
+    fn roll_additional_wild_die(&self, old_result: Roll, sides: u8) -> Option<Roll> {
+        let wild_die = self.roll_die(sides, 0);
         if old_result.as_u8() < 2 && wild_die.as_u8() < 2 {
             return None;
         }
@@ -77,6 +77,7 @@ impl Roller {
             Attribute::W12 => (12, 0),
             Attribute::W12p1 => (12, 1),
             Attribute::W12p2 => (12, 2),
+            Attribute::Master => (12, 2),
         };
         self.roll_die(sides, modifier)
     }
@@ -84,7 +85,7 @@ impl Roller {
     /// returns `None` on crit fail
     pub fn roll_attribute(&self, attribute: &Attribute) -> Option<Roll> {
         let mut roll = self.roll_attribute_without_wild_die(attribute);
-        roll = self.roll_additional_wild_die(roll)?;
+        roll = self.roll_additional_wild_die(roll, attribute.wild_die_sides())?;
         Some(roll)
     }
 
@@ -99,9 +100,10 @@ impl Roller {
             Skill::W12 => (12, 0),
             Skill::W12p1 => (12, 1),
             Skill::W12p2 => (12, 2),
+            Skill::Master => (12, 2),
         };
         let roll = self.roll_die(sides, modifier);
-        self.roll_additional_wild_die(roll)
+        self.roll_additional_wild_die(roll, skill.wild_die_sides())
     }
 
     #[allow(dead_code)]
@@ -115,6 +117,7 @@ impl Roller {
             Skill::W12 => (12, 0),
             Skill::W12p1 => (12, 1),
             Skill::W12p2 => (12, 2),
+            Skill::Master => (12, 2),
         };
         let mut roll1 = self.roll_die(sides, modifier);
         let mut roll2 = self.roll_die(sides, modifier);
@@ -123,7 +126,7 @@ impl Roller {
         } else {
             &mut roll1
         };
-        *smaller = self.roll_additional_wild_die(*smaller)?;
+        *smaller = self.roll_additional_wild_die(*smaller, skill.wild_die_sides())?;
         Some((roll1, roll2))
     }
 
@@ -138,6 +141,7 @@ impl Roller {
             Skill::W12 => (12, 0),
             Skill::W12p1 => (12, 1),
             Skill::W12p2 => (12, 2),
+            Skill::Master => (12, 2),
         };
         let mut ret = Vec::with_capacity(n);
         let mut index_minimum = 0;
@@ -151,7 +155,7 @@ impl Roller {
             ret.push(roll);
         }
         let minimum = &mut ret[index_minimum];
-        *minimum = self.roll_additional_wild_die(*minimum)?;
+        *minimum = self.roll_additional_wild_die(*minimum, skill.wild_die_sides())?;
         Some(ret)
     }
 

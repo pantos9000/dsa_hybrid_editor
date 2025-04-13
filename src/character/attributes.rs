@@ -123,6 +123,7 @@ pub enum Attribute {
     W12,
     W12p1,
     W12p2,
+    Master,
 }
 
 impl From<Attribute> for u8 {
@@ -135,6 +136,7 @@ impl From<Attribute> for u8 {
             Attribute::W12 => 12,
             Attribute::W12p1 => 13,
             Attribute::W12p2 => 14,
+            Attribute::Master => 14,
         }
     }
 }
@@ -174,6 +176,14 @@ impl Attribute {
             Self::W12 => "W12",
             Self::W12p1 => "W12+1",
             Self::W12p2 => "W12+2",
+            Self::Master => "Meister",
+        }
+    }
+
+    pub fn wild_die_sides(&self) -> u8 {
+        match self {
+            Self::Master => 10,
+            _ => 6,
         }
     }
 
@@ -186,7 +196,8 @@ impl Attribute {
             Self::W10 => Self::W12,
             Self::W12 => Self::W12p1,
             Self::W12p1 => Self::W12p2,
-            Self::W12p2 => Self::W12p2,
+            Self::W12p2 => Self::Master,
+            Self::Master => Self::Master,
         };
         *self = new;
     }
@@ -201,6 +212,7 @@ impl Attribute {
             Self::W12 => Self::W10,
             Self::W12p1 => Self::W12,
             Self::W12p2 => Self::W12p1,
+            Self::Master => Self::W12p2,
         };
         *self = new;
     }

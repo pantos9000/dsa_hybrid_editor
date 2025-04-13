@@ -78,6 +78,7 @@ pub enum Skill {
     W12,
     W12p1,
     W12p2,
+    Master,
 }
 
 impl From<Skill> for u8 {
@@ -91,6 +92,7 @@ impl From<Skill> for u8 {
             Skill::W12 => 12,
             Skill::W12p1 => 13,
             Skill::W12p2 => 14,
+            Skill::Master => 14,
         }
     }
 }
@@ -130,6 +132,14 @@ impl Skill {
             Skill::W12 => "W12",
             Skill::W12p1 => "W12+1",
             Skill::W12p2 => "W12+2",
+            Skill::Master => "Meister",
+        }
+    }
+
+    pub fn wild_die_sides(&self) -> u8 {
+        match self {
+            Self::Master => 10,
+            _ => 6,
         }
     }
 
@@ -143,7 +153,8 @@ impl Skill {
             Self::W10 => Self::W12,
             Self::W12 => Self::W12p1,
             Self::W12p1 => Self::W12p2,
-            Self::W12p2 => Self::W12p2,
+            Self::W12p2 => Self::Master,
+            Self::Master => Self::Master,
         };
         *self = new;
     }
@@ -159,6 +170,7 @@ impl Skill {
             Self::W12 => Self::W10,
             Self::W12p1 => Self::W12,
             Self::W12p2 => Self::W12p1,
+            Self::Master => Self::W12p2,
         };
         *self = new;
     }

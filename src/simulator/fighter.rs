@@ -99,11 +99,11 @@ impl Fighter {
                 modifier -= 2;
             }
             let Some(attacks) = self.try_to_hit(opponent, num_rolls, modifier) else {
-                self.critical_fail();
+                self.critical_fail(true);
                 return;
             };
             for attack in attacks {
-                self.do_damage(opponent, attack);
+                self.do_damage(true, opponent, attack);
             }
         }
 
@@ -120,7 +120,7 @@ impl Fighter {
                 modifier -= 2;
             }
             let Some(attacks) = self.try_to_hit(opponent, 1, modifier) else {
-                self.critical_fail();
+                self.critical_fail(false);
                 return;
             };
             let attack = attacks[0];
@@ -129,7 +129,7 @@ impl Fighter {
                 1,
                 "attacks should only contain single attack"
             );
-            self.do_damage(opponent, attack);
+            self.do_damage(false, opponent, attack);
         }
     }
 
@@ -144,7 +144,7 @@ impl Fighter {
         }
 
         let Some(attacks) = self.try_to_hit(opponent, 1, 0) else {
-            self.critical_fail();
+            self.critical_fail(true);
             return;
         };
         let attack = attacks[0];
@@ -153,7 +153,7 @@ impl Fighter {
             1,
             "attacks should only contain single attack"
         );
-        self.do_damage(opponent, attack);
+        self.do_damage(true, opponent, attack);
     }
 
     pub fn action(&mut self, opponent: &mut Fighter) {
@@ -237,10 +237,8 @@ impl Fighter {
     }
 
     fn apply_piercing(&self, opponent: &Self, roll: &mut Roll) {
-        let piercing: u8 = i8::from(self.character.weapon.piercing)
-            .try_into()
-            .unwrap_or(0);
-        let armor = u8::from(opponent.character.armor.torso);
+        let piercing = i8::from(self.character.weapon.piercing);
+        let armor = i8::from(opponent.character.armor.torso);
         *roll += piercing.min(armor);
     }
 
@@ -417,7 +415,12 @@ impl Fighter {
         }
     }
 
-    fn do_damage(&mut self, opponent: &mut Self, attack_result: AttackResult) {
+    fn do_damage(
+        &mut self,
+        primary_weapon: bool,
+        opponent: &mut Self,
+        attack_result: AttackResult,
+    ) {
         // might have gone shaken in between due to riposte
         if self.shaken {
             return;
@@ -432,8 +435,12 @@ impl Fighter {
             AttackResult::Raise => true,
         };
 
-        let mut damage = roller().roll_attribute_without_wild_die(&self.character.attributes.sta);
-        damage += roller().roll_weapon_damage(&self.character.weapon);
+        let mut damage = match primary_weapon {
+            true => roller().roll_weapon_damage(&self.character.weapon),
+            false => roller().roll_weapon_damage(&self.character.secondary_weapon),
+        };
+
+        damage += roller().roll_attribute_without_wild_die(&self.character.attributes.sta);
         if raise {
             damage += roller().roll_raise();
         }
@@ -447,7 +454,7 @@ impl Fighter {
         if u8::from(damage) < opponent.passive_stats.robustness {
             if self.character.bennies.use_for_damage.is_set() && self.bennies > 0 {
                 self.bennies -= 1;
-                self.do_damage(opponent, attack_result);
+                self.do_damage(primary_weapon, opponent, attack_result);
             }
             return;
         }
@@ -464,7 +471,7 @@ impl Fighter {
         }
     }
 
-    fn critical_fail(&mut self) {
+    fn critical_fail(&mut self, primary_weapon: bool) {
         let fail_result = CriticalFailResult::short_range();
 
         match fail_result {
@@ -484,13 +491,11 @@ impl Fighter {
             CriticalFailResult::WeaponLost => self.weapon_lost = true,
             CriticalFailResult::Injured => {
                 let mut tmp = self.clone();
-                self.do_damage(&mut tmp, AttackResult::Hit);
-                *self = tmp;
+                tmp.do_damage(primary_weapon, self, AttackResult::Hit);
             }
             CriticalFailResult::HeavilyInjured => {
                 let mut tmp = self.clone();
-                self.do_damage(&mut tmp, AttackResult::Raise);
-                *self = tmp;
+                tmp.do_damage(primary_weapon, self, AttackResult::Raise);
             }
         }
     }

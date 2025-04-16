@@ -1,15 +1,16 @@
 use super::{Character, Drawable};
 use crate::{
     simulator::{CharModification, Simulator},
-    util::{self, Modifier},
+    util,
+    widgets::{DrawInfo, IntStat, ValueSlider as _},
 };
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct PassiveModifiers {
-    pub(crate) life: Modifier<-20, 20>,
-    pub(crate) parry: Modifier<-4, 4>,
-    pub(crate) robustness: Modifier<-4, 4>,
-    pub(crate) attack: Modifier<-4, 4>,
+    pub(crate) life: IntStat<-20, 20>,
+    pub(crate) parry: IntStat<-4, 4>,
+    pub(crate) robustness: IntStat<-4, 4>,
+    pub(crate) attack: IntStat<-4, 4>,
     pub(crate) attack_wild: WildAttack,
 }
 
@@ -110,8 +111,8 @@ enum PassiveModifier {
     Attack,
 }
 
-impl util::ModifierName for PassiveModifier {
-    fn as_str(&self) -> &str {
+impl<const MIN: i8, const MAX: i8> DrawInfo<IntStat<MIN, MAX>> for PassiveModifier {
+    fn as_str(&self) -> &'static str {
         match self {
             PassiveModifier::Life => "LeP",
             PassiveModifier::Parry => "PA",
@@ -120,7 +121,7 @@ impl util::ModifierName for PassiveModifier {
         }
     }
 
-    fn modification_dec(&self) -> CharModification {
+    fn mod_dec(&self) -> CharModification {
         match self {
             PassiveModifier::Life => Box::new(|c| c.passive_modifiers.life.decrement()),
             PassiveModifier::Parry => Box::new(|c| c.passive_modifiers.parry.decrement()),
@@ -129,12 +130,27 @@ impl util::ModifierName for PassiveModifier {
         }
     }
 
-    fn modification_inc(&self) -> CharModification {
+    fn mod_inc(&self) -> CharModification {
         match self {
             PassiveModifier::Life => Box::new(|c| c.passive_modifiers.life.increment()),
             PassiveModifier::Parry => Box::new(|c| c.passive_modifiers.parry.increment()),
             PassiveModifier::Robustness => Box::new(|c| c.passive_modifiers.robustness.increment()),
             PassiveModifier::Attack => Box::new(|c| c.passive_modifiers.attack.increment()),
+        }
+    }
+
+    fn mod_set(&self, value: IntStat<MIN, MAX>) -> CharModification {
+        match self {
+            PassiveModifier::Life => Box::new(move |c| c.passive_modifiers.life.set(value.into())),
+            PassiveModifier::Parry => {
+                Box::new(move |c| c.passive_modifiers.parry.set(value.into()))
+            }
+            PassiveModifier::Robustness => {
+                Box::new(move |c| c.passive_modifiers.robustness.set(value.into()))
+            }
+            PassiveModifier::Attack => {
+                Box::new(move |c| c.passive_modifiers.attack.set(value.into()))
+            }
         }
     }
 }
@@ -181,7 +197,7 @@ impl PassiveStats {
 
     fn calc_robustness(character: &Character) -> u8 {
         let mut robustness = 2 + u8::from(character.attributes.kon) / 2;
-        robustness = robustness.saturating_add(character.armor.torso.into());
+        robustness = robustness.saturating_add_signed(character.armor.torso.into());
         robustness =
             robustness.saturating_add_signed(character.passive_modifiers.robustness.into());
         robustness

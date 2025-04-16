@@ -2,18 +2,18 @@ use strum::IntoEnumIterator;
 
 use crate::{
     simulator::{CharModification, Simulator},
-    util::{Modifier, ModifierName},
+    widgets::{DrawInfo, IntStat, ValueSelector, ValueSlider},
 };
 
-use super::{Character, Drawable};
+use super::Drawable;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Weapon<const SECONDARY: bool> {
     pub(crate) active: bool,
     pub(crate) damage: Damage,
-    pub(crate) bonus_damage: Modifier<-2, 2>,
-    pub(crate) piercing: Modifier<0, 3>,
-    pub(crate) reach: Modifier<0, 2>,
+    pub(crate) bonus_damage: IntStat<-2, 2>,
+    pub(crate) piercing: IntStat<0, 3>,
+    pub(crate) reach: IntStat<0, 2>,
 }
 
 impl<const SECONDARY: bool> Default for Weapon<SECONDARY> {
@@ -30,54 +30,64 @@ impl<const SECONDARY: bool> Default for Weapon<SECONDARY> {
 
 impl<const SECONDARY: bool> Drawable for Weapon<SECONDARY> {
     fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
-        let name = if SECONDARY {
-            "Zweitwaffe"
-        } else {
-            "Hauptwaffe"
-        };
-        let grid = crate::util::create_grid(name);
-
-        ui.heading(name);
+        let heading = self.heading(false);
+        let grid = crate::util::create_grid(heading);
+        ui.heading(heading);
         grid.show(ui, |ui| {
             self.draw_active(sim, ui);
             ui.end_row();
-            self.damage.draw(sim, ui);
+            self.damage.draw(self.damage_name(), sim, ui);
             ui.end_row();
-            self.bonus_damage.draw(WeaponModifier::BonusDamage, sim, ui);
+            self.bonus_damage
+                .draw(ModifierName::<SECONDARY>::BonusDamage, sim, ui);
             ui.end_row();
-            self.piercing.draw(WeaponModifier::Piercing, sim, ui);
+            self.piercing
+                .draw(ModifierName::<SECONDARY>::Piercing, sim, ui);
             ui.end_row();
-            self.reach.draw(WeaponModifier::Reach, sim, ui);
+            self.reach.draw(ModifierName::<SECONDARY>::Reach, sim, ui);
             ui.end_row();
         });
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let name = if SECONDARY {
-            "Gegner Zweitwaffe"
-        } else {
-            "Gegner Hauptwaffe"
-        };
-        let grid = crate::util::create_grid(name);
-
-        ui.heading(name);
+        let heading = self.heading(true);
+        let grid = crate::util::create_grid(heading);
+        ui.heading(heading);
         grid.show(ui, |ui| {
             self.draw_active_as_opponent(ui);
             ui.end_row();
-            self.damage.draw_as_opponent(ui);
+            self.damage.draw_as_opponent(self.damage_name(), ui);
             ui.end_row();
             self.bonus_damage
-                .draw_as_opponent(WeaponModifier::BonusDamage, ui);
+                .draw_as_opponent(ModifierName::<SECONDARY>::BonusDamage, ui);
             ui.end_row();
-            self.piercing.draw_as_opponent(WeaponModifier::Piercing, ui);
+            self.piercing
+                .draw_as_opponent(ModifierName::<SECONDARY>::Piercing, ui);
             ui.end_row();
-            self.reach.draw_as_opponent(WeaponModifier::Reach, ui);
+            self.reach
+                .draw_as_opponent(ModifierName::<SECONDARY>::Reach, ui);
             ui.end_row();
         });
     }
 }
 
 impl<const SECONDARY: bool> Weapon<SECONDARY> {
+    fn heading(&self, opponent: bool) -> &'static str {
+        match (SECONDARY, opponent) {
+            (false, false) => "Hauptwaffe",
+            (true, false) => "Zweitwaffe",
+            (false, true) => "Gegner Hauptwaffe",
+            (true, true) => "Gegner Zweitwaffe",
+        }
+    }
+
+    fn damage_name(&self) -> DamageName {
+        match SECONDARY {
+            false => DamageName::Primary,
+            true => DamageName::Secondary,
+        }
+    }
+
     fn draw_active(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
         let mod_dec: CharModification;
         let mod_inc: CharModification;
@@ -114,6 +124,38 @@ impl<const SECONDARY: bool> Weapon<SECONDARY> {
     }
 }
 
+pub enum DamageName {
+    Primary,
+    Secondary,
+}
+
+impl DrawInfo<Damage> for DamageName {
+    fn as_str(&self) -> &'static str {
+        "Schaden"
+    }
+
+    fn mod_dec(&self) -> CharModification {
+        match self {
+            DamageName::Primary => Box::new(|c| c.weapon.damage.decrement()),
+            DamageName::Secondary => Box::new(|c| c.secondary_weapon.damage.decrement()),
+        }
+    }
+
+    fn mod_inc(&self) -> CharModification {
+        match self {
+            DamageName::Primary => Box::new(|c| c.weapon.damage.increment()),
+            DamageName::Secondary => Box::new(|c| c.secondary_weapon.damage.increment()),
+        }
+    }
+
+    fn mod_set(&self, value: Damage) -> CharModification {
+        match self {
+            DamageName::Primary => Box::new(move |c| c.weapon.damage = value),
+            DamageName::Secondary => Box::new(move |c| c.secondary_weapon.damage = value),
+        }
+    }
+}
+
 #[derive(
     Debug,
     Default,
@@ -135,34 +177,14 @@ pub enum Damage {
     W12,
 }
 
-impl Damage {
-    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
-        ui.label("Schaden");
-        ui.horizontal(|ui| {
-            for val in Self::iter() {
-                ui.selectable_value(self, val, val.as_str())
-                    .on_hover_ui(|ui| {
-                        ui.horizontal(|ui| {
-                            let mod_set = Box::new(move |c: &mut Character| c.weapon.damage = val);
-                            sim.gradient(mod_set).draw(ui);
-                        });
-                    });
-            }
-        });
-        let mod_dec = Box::new(|c: &mut Character| c.weapon.damage.decrement());
-        let mod_inc = Box::new(|c: &mut Character| c.weapon.damage.increment());
-        ui.horizontal(|ui| {
-            sim.gradient(mod_dec).draw(ui);
-            sim.gradient(mod_inc).draw(ui);
-        });
+impl ValueSelector for Damage {
+    type Info = DamageName;
+
+    fn possible_values() -> impl Iterator<Item = Self> {
+        Self::iter()
     }
 
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        ui.label("Schaden");
-        let _ = ui.button(self.as_str());
-    }
-
-    fn as_str(&self) -> &'static str {
+    fn as_str(&self, _info: &Self::Info) -> &'static str {
         match self {
             Damage::W4 => "W4",
             Damage::W6 => "W6",
@@ -171,8 +193,9 @@ impl Damage {
             Damage::W12 => "W12",
         }
     }
+}
 
-    #[allow(dead_code)]
+impl Damage {
     fn decrement(&mut self) {
         let new = match self {
             Self::W4 => Self::W4,
@@ -184,7 +207,6 @@ impl Damage {
         *self = new;
     }
 
-    #[allow(dead_code)]
     fn increment(&mut self) {
         let new = match self {
             Self::W4 => Self::W6,
@@ -198,34 +220,56 @@ impl Damage {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum WeaponModifier {
+enum ModifierName<const SECONDARY: bool> {
     BonusDamage,
     Piercing,
     Reach,
 }
 
-impl ModifierName for WeaponModifier {
-    fn as_str(&self) -> &str {
+impl<const SECONDARY: bool, const MIN: i8, const MAX: i8> DrawInfo<IntStat<MIN, MAX>>
+    for ModifierName<SECONDARY>
+{
+    fn as_str(&self) -> &'static str {
         match self {
-            WeaponModifier::BonusDamage => "Schadensbonus",
-            WeaponModifier::Piercing => "Panzerbrechend",
-            WeaponModifier::Reach => "Reichweite",
+            ModifierName::BonusDamage => "Bonusschaden",
+            ModifierName::Piercing => "Panzerbrechend",
+            ModifierName::Reach => "Reichweite",
         }
     }
 
-    fn modification_dec(&self) -> CharModification {
-        match self {
-            WeaponModifier::BonusDamage => Box::new(|c| c.weapon.bonus_damage.decrement()),
-            WeaponModifier::Piercing => Box::new(|c| c.weapon.piercing.decrement()),
-            WeaponModifier::Reach => Box::new(|c| c.weapon.reach.decrement()),
+    fn mod_dec(&self) -> CharModification {
+        match (SECONDARY, self) {
+            (false, Self::BonusDamage) => Box::new(|c| c.weapon.bonus_damage.decrement()),
+            (false, Self::Piercing) => Box::new(|c| c.weapon.piercing.decrement()),
+            (false, Self::Reach) => Box::new(|c| c.weapon.reach.decrement()),
+            (true, Self::BonusDamage) => Box::new(|c| c.secondary_weapon.bonus_damage.decrement()),
+            (true, Self::Piercing) => Box::new(|c| c.secondary_weapon.piercing.decrement()),
+            (true, Self::Reach) => Box::new(|c| c.secondary_weapon.reach.decrement()),
         }
     }
 
-    fn modification_inc(&self) -> CharModification {
-        match self {
-            WeaponModifier::BonusDamage => Box::new(|c| c.weapon.bonus_damage.increment()),
-            WeaponModifier::Piercing => Box::new(|c| c.weapon.piercing.increment()),
-            WeaponModifier::Reach => Box::new(|c| c.weapon.reach.increment()),
+    fn mod_inc(&self) -> CharModification {
+        match (SECONDARY, self) {
+            (false, Self::BonusDamage) => Box::new(|c| c.weapon.bonus_damage.increment()),
+            (false, Self::Piercing) => Box::new(|c| c.weapon.piercing.increment()),
+            (false, Self::Reach) => Box::new(|c| c.weapon.reach.increment()),
+            (true, Self::BonusDamage) => Box::new(|c| c.secondary_weapon.bonus_damage.increment()),
+            (true, Self::Piercing) => Box::new(|c| c.secondary_weapon.piercing.increment()),
+            (true, Self::Reach) => Box::new(|c| c.secondary_weapon.reach.increment()),
+        }
+    }
+
+    fn mod_set(&self, value: IntStat<MIN, MAX>) -> CharModification {
+        let value = value.into();
+        match (SECONDARY, self) {
+            (false, Self::BonusDamage) => Box::new(move |c| c.weapon.bonus_damage.set(value)),
+            (false, Self::Piercing) => Box::new(move |c| c.weapon.piercing.set(value)),
+            (false, Self::Reach) => Box::new(move |c| c.weapon.reach.set(value)),
+            (true, Self::BonusDamage) => {
+                Box::new(move |c| c.secondary_weapon.bonus_damage.set(value))
+            }
+            (true, Self::Piercing) => Box::new(move |c| c.secondary_weapon.piercing.set(value)),
+            (true, Self::Reach) => Box::new(move |c| c.secondary_weapon.reach.set(value)),
         }
     }
 }

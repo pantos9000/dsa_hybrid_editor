@@ -1,6 +1,7 @@
-use strum::IntoEnumIterator;
-
-use crate::simulator::{CharModification, Simulator};
+use crate::{
+    simulator::{CharModification, Simulator},
+    widgets::{DrawInfo, ValueSelector},
+};
 
 use super::Drawable;
 
@@ -52,7 +53,7 @@ impl Drawable for Attributes {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum AttrName {
+pub enum AttrName {
     Ges,
     Stä,
     Kon,
@@ -60,7 +61,7 @@ enum AttrName {
     Wil,
 }
 
-impl AttrName {
+impl DrawInfo<Attribute> for AttrName {
     fn as_str(&self) -> &'static str {
         match self {
             AttrName::Ges => "Ges",
@@ -71,7 +72,7 @@ impl AttrName {
         }
     }
 
-    fn modification_dec(&self) -> CharModification {
+    fn mod_dec(&self) -> CharModification {
         match self {
             AttrName::Ges => Box::new(|c| c.attributes.ges.decrement()),
             AttrName::Stä => Box::new(|c| c.attributes.sta.decrement()),
@@ -81,7 +82,7 @@ impl AttrName {
         }
     }
 
-    fn modification_inc(&self) -> CharModification {
+    fn mod_inc(&self) -> CharModification {
         match self {
             AttrName::Ges => Box::new(|c| c.attributes.ges.increment()),
             AttrName::Stä => Box::new(|c| c.attributes.sta.increment()),
@@ -91,7 +92,7 @@ impl AttrName {
         }
     }
 
-    fn modification_set(&self, value: Attribute) -> CharModification {
+    fn mod_set(&self, value: Attribute) -> CharModification {
         match self {
             AttrName::Ges => Box::new(move |c| c.attributes.ges = value),
             AttrName::Stä => Box::new(move |c| c.attributes.sta = value),
@@ -141,33 +142,16 @@ impl From<Attribute> for u8 {
     }
 }
 
-impl Attribute {
-    fn draw(&mut self, name: AttrName, sim: &Simulator, ui: &mut egui::Ui) {
-        ui.label(name.as_str());
+impl ValueSelector for Attribute {
+    type Info = AttrName;
 
-        ui.horizontal(|ui| {
-            for val in Self::iter() {
-                ui.selectable_value(self, val, val.as_str())
-                    .on_hover_ui(|ui| {
-                        ui.horizontal(|ui| {
-                            sim.gradient(name.modification_set(val)).draw(ui);
-                        });
-                    });
-            }
-        });
+    fn possible_values() -> impl Iterator<Item = Self> {
+        use strum::IntoEnumIterator as _;
 
-        ui.horizontal(|ui| {
-            sim.gradient(name.modification_dec()).draw(ui);
-            sim.gradient(name.modification_inc()).draw(ui);
-        });
+        Self::iter()
     }
 
-    fn draw_as_opponent(&mut self, name: AttrName, ui: &mut egui::Ui) {
-        ui.label(name.as_str());
-        let _ = ui.button(self.as_str());
-    }
-
-    fn as_str(&self) -> &'static str {
+    fn as_str(&self, _info: &Self::Info) -> &'static str {
         match self {
             Self::W4 => "W4",
             Self::W6 => "W6",
@@ -179,7 +163,9 @@ impl Attribute {
             Self::Master => "Meister",
         }
     }
+}
 
+impl Attribute {
     pub fn wild_die_sides(&self) -> u8 {
         match self {
             Self::Master => 10,

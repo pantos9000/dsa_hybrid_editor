@@ -1,6 +1,9 @@
 use strum::IntoEnumIterator;
 
-use crate::simulator::{CharModification, Simulator};
+use crate::{
+    simulator::{CharModification, Simulator},
+    widgets::{DrawInfo, ValueSelector},
+};
 
 use super::Drawable;
 
@@ -32,24 +35,30 @@ impl Drawable for Skills {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, strum_macros::Display)]
-enum SkillName {
+pub enum SkillName {
     Kämpfen,
 }
 
-impl SkillName {
-    fn modification_dec(&self) -> CharModification {
+impl DrawInfo<Skill> for SkillName {
+    fn as_str(&self) -> &'static str {
+        match self {
+            SkillName::Kämpfen => "Kämpfen",
+        }
+    }
+
+    fn mod_dec(&self) -> CharModification {
         match self {
             SkillName::Kämpfen => Box::new(|c| c.skills.kampfen.decrement()),
         }
     }
 
-    fn modification_inc(&self) -> CharModification {
+    fn mod_inc(&self) -> CharModification {
         match self {
             SkillName::Kämpfen => Box::new(|c| c.skills.kampfen.increment()),
         }
     }
 
-    fn modification_set(&self, value: Skill) -> CharModification {
+    fn mod_set(&self, value: Skill) -> CharModification {
         match self {
             SkillName::Kämpfen => Box::new(move |c| c.skills.kampfen = value),
         }
@@ -97,32 +106,14 @@ impl From<Skill> for u8 {
     }
 }
 
-impl Skill {
-    fn draw(&mut self, name: SkillName, sim: &Simulator, ui: &mut egui::Ui) {
-        ui.label(format!("{name}"));
-        ui.horizontal(|ui| {
-            for val in Self::iter() {
-                ui.selectable_value(self, val, val.as_str())
-                    .on_hover_ui(|ui| {
-                        ui.horizontal(|ui| {
-                            sim.gradient(name.modification_set(val)).draw(ui);
-                        });
-                    });
-            }
-        });
+impl ValueSelector for Skill {
+    type Info = SkillName;
 
-        ui.horizontal(|ui| {
-            sim.gradient(name.modification_dec()).draw(ui);
-            sim.gradient(name.modification_inc()).draw(ui);
-        });
+    fn possible_values() -> impl Iterator<Item = Self> {
+        Self::iter()
     }
 
-    fn draw_as_opponent(&mut self, name: SkillName, ui: &mut egui::Ui) {
-        ui.label(format!("{name}"));
-        let _ = ui.button(self.as_str());
-    }
-
-    fn as_str(&self) -> &'static str {
+    fn as_str(&self, _info: &Self::Info) -> &'static str {
         match self {
             Skill::W4m2 => "W4-2",
             Skill::W4 => "W4",
@@ -135,7 +126,9 @@ impl Skill {
             Skill::Master => "Meister",
         }
     }
+}
 
+impl Skill {
     pub fn wild_die_sides(&self) -> u8 {
         match self {
             Self::Master => 10,

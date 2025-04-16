@@ -1,16 +1,17 @@
 use crate::{
-    simulator::{CharModification, Simulator},
+    simulator::CharModification,
     util,
+    widgets::{BoolStat, DrawInfo, IntStat, ValueSlider as _},
 };
 
 use super::Drawable;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Bennies {
-    pub(crate) num_bennies: util::Modifier<0, 10>,
-    pub(crate) use_for_unshake: BennieUsage,
-    pub(crate) use_for_attack: BennieUsage,
-    pub(crate) use_for_damage: BennieUsage,
+    pub(crate) num_bennies: IntStat<0, 10>,
+    pub(crate) use_for_unshake: BoolStat,
+    pub(crate) use_for_attack: BoolStat,
+    pub(crate) use_for_damage: BoolStat,
 }
 
 impl Drawable for Bennies {
@@ -21,11 +22,11 @@ impl Drawable for Bennies {
         grid.show(ui, |ui| {
             self.num_bennies.draw(NumBennies, sim, ui);
             ui.end_row();
-            self.use_for_unshake.draw(OptionName::Unshake, sim, ui);
+            self.use_for_unshake.draw(UsageInfo::Unshake, sim, ui);
             ui.end_row();
-            self.use_for_attack.draw(OptionName::Attack, sim, ui);
+            self.use_for_attack.draw(UsageInfo::Attack, sim, ui);
             ui.end_row();
-            self.use_for_damage.draw(OptionName::Damage, sim, ui);
+            self.use_for_damage.draw(UsageInfo::Damage, sim, ui);
             ui.end_row();
         });
     }
@@ -38,11 +39,11 @@ impl Drawable for Bennies {
             self.num_bennies.draw_as_opponent(NumBennies, ui);
             ui.end_row();
             self.use_for_unshake
-                .draw_as_opponent(OptionName::Unshake, ui);
+                .draw_as_opponent(UsageInfo::Unshake, ui);
             ui.end_row();
-            self.use_for_attack.draw_as_opponent(OptionName::Attack, ui);
+            self.use_for_attack.draw_as_opponent(UsageInfo::Attack, ui);
             ui.end_row();
-            self.use_for_damage.draw_as_opponent(OptionName::Damage, ui);
+            self.use_for_damage.draw_as_opponent(UsageInfo::Damage, ui);
             ui.end_row();
         });
     }
@@ -51,105 +52,61 @@ impl Drawable for Bennies {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NumBennies;
 
-impl util::ModifierName for NumBennies {
-    fn as_str(&self) -> &str {
+impl<const MIN: i8, const MAX: i8> DrawInfo<IntStat<MIN, MAX>> for NumBennies {
+    fn as_str(&self) -> &'static str {
         "Anzahl Bennies"
     }
 
-    fn modification_dec(&self) -> CharModification {
+    fn mod_dec(&self) -> CharModification {
         Box::new(|c| c.bennies.num_bennies.decrement())
     }
 
-    fn modification_inc(&self) -> CharModification {
+    fn mod_inc(&self) -> CharModification {
         Box::new(|c| c.bennies.num_bennies.increment())
+    }
+
+    fn mod_set(&self, value: IntStat<MIN, MAX>) -> CharModification {
+        Box::new(move |c| c.bennies.num_bennies.set(value.into()))
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum OptionName {
+enum UsageInfo {
     Unshake,
     Attack,
     Damage,
 }
 
-impl OptionName {
+impl DrawInfo<BoolStat> for UsageInfo {
     fn as_str(&self) -> &'static str {
         match self {
-            OptionName::Unshake => "Nutzen für Entschütteln",
-            OptionName::Attack => "Nutzen für Angriffe",
-            OptionName::Damage => "Nutzen für Schaden",
+            UsageInfo::Unshake => "Nutzen für Entschütteln",
+            UsageInfo::Attack => "Nutzen für Angriffe",
+            UsageInfo::Damage => "Nutzen für Schaden",
         }
     }
 
-    fn modification_dec(&self) -> CharModification {
+    fn mod_dec(&self) -> CharModification {
         match self {
-            OptionName::Unshake => Box::new(|c| c.bennies.use_for_unshake.decrement()),
-            OptionName::Attack => Box::new(|c| c.bennies.use_for_attack.decrement()),
-            OptionName::Damage => Box::new(|c| c.bennies.use_for_damage.decrement()),
+            UsageInfo::Unshake => Box::new(|c| c.bennies.use_for_unshake.decrement()),
+            UsageInfo::Attack => Box::new(|c| c.bennies.use_for_attack.decrement()),
+            UsageInfo::Damage => Box::new(|c| c.bennies.use_for_damage.decrement()),
         }
     }
 
-    fn modification_inc(&self) -> CharModification {
+    fn mod_inc(&self) -> CharModification {
         match self {
-            OptionName::Unshake => Box::new(|c| c.bennies.use_for_unshake.increment()),
-            OptionName::Attack => Box::new(|c| c.bennies.use_for_attack.increment()),
-            OptionName::Damage => Box::new(|c| c.bennies.use_for_damage.increment()),
+            UsageInfo::Unshake => Box::new(|c| c.bennies.use_for_unshake.increment()),
+            UsageInfo::Attack => Box::new(|c| c.bennies.use_for_attack.increment()),
+            UsageInfo::Damage => Box::new(|c| c.bennies.use_for_damage.increment()),
         }
     }
 
-    fn modification_toggle(&self) -> CharModification {
+    fn mod_set(&self, value: BoolStat) -> CharModification {
         match self {
-            OptionName::Unshake => Box::new(|c| c.bennies.use_for_unshake.toggle()),
-            OptionName::Attack => Box::new(|c| c.bennies.use_for_attack.toggle()),
-            OptionName::Damage => Box::new(|c| c.bennies.use_for_damage.toggle()),
+            UsageInfo::Unshake => Box::new(move |c| c.bennies.use_for_unshake.set(value)),
+            UsageInfo::Attack => Box::new(move |c| c.bennies.use_for_attack.set(value)),
+            UsageInfo::Damage => Box::new(move |c| c.bennies.use_for_damage.set(value)),
         }
-    }
-}
-
-#[derive(
-    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
-)]
-pub struct BennieUsage(bool);
-
-impl BennieUsage {
-    pub fn is_set(&self) -> bool {
-        self.0
-    }
-
-    fn as_str(&self) -> &'static str {
-        match self.0 {
-            true => "Ja",
-            false => "Nein",
-        }
-    }
-
-    fn decrement(&mut self) {
-        self.0 = false;
-    }
-
-    fn increment(&mut self) {
-        self.0 = true;
-    }
-
-    fn toggle(&mut self) {
-        self.0 = !self.0;
-    }
-
-    fn draw(&mut self, name: OptionName, sim: &Simulator, ui: &mut egui::Ui) {
-        ui.checkbox(&mut self.0, name.as_str()).on_hover_ui(|ui| {
-            ui.horizontal(|ui| {
-                sim.gradient(name.modification_toggle()).draw(ui);
-            });
-        });
-
-        ui.horizontal(|ui| {
-            sim.gradient(name.modification_dec()).draw(ui);
-            sim.gradient(name.modification_inc()).draw(ui);
-        });
-    }
-
-    fn draw_as_opponent(&self, name: OptionName, ui: &mut egui::Ui) {
-        ui.label(name.as_str());
-        let _ = ui.button(self.as_str());
     }
 }

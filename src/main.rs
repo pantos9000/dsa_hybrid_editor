@@ -6,6 +6,7 @@ mod gradient;
 mod io;
 mod simulator;
 mod util;
+mod widgets;
 
 fn init_logging() {
     let default_level = if cfg!(debug_assertions) {

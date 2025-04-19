@@ -7,9 +7,7 @@ pub struct InvalidGradientValue;
 pub struct InvalidTotalValue;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub struct Total {
-    value: Option<i8>,
-}
+pub struct Total(Option<i8>);
 
 impl TryFrom<i8> for Total {
     type Error = InvalidTotalValue;
@@ -18,7 +16,7 @@ impl TryFrom<i8> for Total {
         match value {
             ..0 => Err(InvalidTotalValue),
             101.. => Err(InvalidTotalValue),
-            value => Ok(Self { value: Some(value) }),
+            value => Ok(Self(Some(value))),
         }
     }
 }
@@ -27,10 +25,10 @@ impl std::ops::Sub for Total {
     type Output = Gradient;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        let Some(lhs) = self.value else {
+        let Some(lhs) = self.0 else {
             return Gradient::NONE;
         };
-        let Some(rhs) = rhs.value else {
+        let Some(rhs) = rhs.0 else {
             return Gradient::NONE;
         };
 
@@ -41,10 +39,10 @@ impl std::ops::Sub for Total {
 }
 
 impl Total {
-    pub const NONE: Self = Total { value: None };
+    pub const NONE: Self = Total(None);
 
     pub fn draw(&self, max_size: impl Into<egui::Vec2>, ui: &mut egui::Ui) {
-        match self.value {
+        match self.0 {
             None => {
                 ui.add_sized(max_size, egui::widgets::Spinner::new());
             }
@@ -116,7 +114,7 @@ mod tests {
 
     impl From<Total> for Option<i8> {
         fn from(value: Total) -> Self {
-            value.value
+            value.0
         }
     }
 }

@@ -347,10 +347,15 @@ impl Fighter {
             true => 2,
             false => 0,
         };
+        let opponent_weapon_lost_modifier: u8 = match opponent.weapon_lost {
+            true => 2,
+            false => 0,
+        };
         let mut opponent_parry = opponent.passive_stats.parry;
         opponent_parry = opponent_parry.saturating_sub(opponent_fell_modifier);
         opponent_parry = opponent_parry.saturating_sub(opponent_berserker_modifier);
         opponent_parry = opponent_parry.saturating_sub(opponent_wild_modifier);
+        opponent_parry = opponent_parry.saturating_sub(opponent_weapon_lost_modifier);
         opponent.apply_tuchfühlung_to_parry(self, &mut opponent_parry);
 
         let apply_modifier = |roll| roll + modifier;
@@ -476,6 +481,10 @@ impl Fighter {
 
         match fail_result {
             CriticalFailResult::WeaponDestroyed => {
+                // kampfkünstler not affected
+                if self.character.edges.kampfkunstler.is_set() {
+                    return;
+                }
                 // handle this as defeat for now
                 self.passive_stats.life = 0;
             }
@@ -488,7 +497,9 @@ impl Fighter {
                 self.shaken = true;
                 self.fell = true;
             }
-            CriticalFailResult::WeaponLost => self.weapon_lost = true,
+            CriticalFailResult::WeaponLost => {
+                self.weapon_lost = !self.character.edges.kampfkunstler.is_set()
+            }
             CriticalFailResult::Injured => {
                 let mut tmp = self.clone();
                 tmp.do_damage(primary_weapon, self, AttackResult::Hit);

@@ -21,6 +21,7 @@ pub struct Edges {
     pub(crate) erbarmungslos: BoolStat,
     pub(crate) machtiger_hieb: BoolStat,
     pub(crate) schnell: BoolStat,
+    pub(crate) kampfkunstler: BoolStat,
     pub(crate) kuhler_kopf: Edge3,
 }
 
@@ -56,6 +57,8 @@ impl Drawable for Edges {
             self.machtiger_hieb.draw(Edge2Info::MächtigerHieb, sim, ui);
             ui.end_row();
             self.schnell.draw(Edge2Info::Schnell, sim, ui);
+            ui.end_row();
+            self.kampfkunstler.draw(Edge2Info::Kampfkünstler, sim, ui);
             ui.end_row();
             self.kuhler_kopf.draw(Edge3Info::KühlerKopf, sim, ui);
             ui.end_row();
@@ -100,6 +103,9 @@ impl Drawable for Edges {
             ui.end_row();
             self.schnell.draw_as_opponent(Edge2Info::Schnell, ui);
             ui.end_row();
+            self.kampfkunstler
+                .draw_as_opponent(Edge2Info::Kampfkünstler, ui);
+            ui.end_row();
             self.kuhler_kopf.draw_as_opponent(Edge3Info::KühlerKopf, ui);
             ui.end_row();
         });
@@ -116,6 +122,7 @@ enum Edge2Info {
     Schnell,
     BeidhändigerKampf,
     Beidhändig,
+    Kampfkünstler,
 }
 
 impl DrawInfo<BoolStat> for Edge2Info {
@@ -129,6 +136,7 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Beidhändig => "Beidhändig (Hintergrund)",
             Self::Kampfreflexe => "Kampfreflexe",
             Self::Schnell => "Schnell (Hintergrund)",
+            Self::Kampfkünstler => "Kampfkünstler",
         }
     }
 
@@ -142,6 +150,7 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Beidhändig => Box::new(|c| c.edges.beidhandig.decrement()),
             Self::Kampfreflexe => Box::new(|c| c.edges.kampfreflexe.decrement()),
             Self::Schnell => Box::new(|c| c.edges.schnell.decrement()),
+            Self::Kampfkünstler => Box::new(|c| c.edges.kampfkunstler.decrement()),
         }
     }
 
@@ -155,6 +164,7 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Beidhändig => Box::new(|c| c.edges.beidhandig.increment()),
             Self::Kampfreflexe => Box::new(|c| c.edges.kampfreflexe.increment()),
             Self::Schnell => Box::new(|c| c.edges.schnell.increment()),
+            Self::Kampfkünstler => Box::new(|c| c.edges.kampfkunstler.increment()),
         }
     }
 
@@ -168,6 +178,7 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Beidhändig => Box::new(move |c| c.edges.beidhandig.set(value)),
             Self::Kampfreflexe => Box::new(move |c| c.edges.kampfreflexe.set(value)),
             Self::Schnell => Box::new(move |c| c.edges.schnell.set(value)),
+            Self::Kampfkünstler => Box::new(move |c| c.edges.kampfkunstler.set(value)),
         }
     }
 }

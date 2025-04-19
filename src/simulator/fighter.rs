@@ -207,7 +207,7 @@ impl Fighter {
     }
 
     fn enable_berserker(&mut self) {
-        if self.character.edges.berserker == Edge3::Normal {
+        if self.character.edges.berserker != Edge3::None {
             self.berserker = true;
         }
     }

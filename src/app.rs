@@ -83,7 +83,11 @@ impl eframe::App for App {
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding other panels - has to come last
 
-            self.menu_buttons(ui);
+            ui.horizontal(|ui| {
+                self.menu_buttons(ui);
+                ui.separator();
+                self.simulator.total().draw([40.0, 40.0], ui);
+            });
             ui.separator();
             egui::containers::ScrollArea::both().show(ui, |ui| {
                 egui::Grid::new("CharCols")
@@ -113,23 +117,20 @@ impl App {
     }
 
     fn menu_buttons(&mut self, ui: &mut egui::Ui) {
-        ui.with_layout(Layout::left_to_right(Align::TOP), |ui| {
-            let copy_char_button = util::create_menu_button("➡", "Copy char to opponent", 40.0, ui);
-            if copy_char_button.clicked() {
-                self.opponent = self.char.clone();
-            }
+        let copy_char_button = util::create_menu_button("➡", "Copy char to opponent", 40.0, ui);
+        if copy_char_button.clicked() {
+            self.opponent = self.char.clone();
+        }
 
-            let switch_button = util::create_menu_button("↔", "Switch chars", 40.0, ui);
-            if switch_button.clicked() {
-                std::mem::swap(&mut self.char, &mut self.opponent);
-            }
+        let switch_button = util::create_menu_button("↔", "Switch chars", 40.0, ui);
+        if switch_button.clicked() {
+            std::mem::swap(&mut self.char, &mut self.opponent);
+        }
 
-            let copy_opponent_button =
-                util::create_menu_button("⬅", "Copy opponent to char", 40.0, ui);
-            if copy_opponent_button.clicked() {
-                self.char = self.opponent.clone();
-            }
-        });
+        let copy_opponent_button = util::create_menu_button("⬅", "Copy opponent to char", 40.0, ui);
+        if copy_opponent_button.clicked() {
+            self.char = self.opponent.clone();
+        }
     }
 
     fn quit_button(ui: &mut egui::Ui, ctx: &egui::Context) {

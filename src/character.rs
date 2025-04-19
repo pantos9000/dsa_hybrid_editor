@@ -22,8 +22,6 @@ use crate::io::{IoRequest, IoThread};
 use crate::simulator::Simulator;
 use crate::util;
 
-use egui::Layout;
-
 /// Represents a drawable element of a char
 trait Drawable {
     fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui);
@@ -51,9 +49,6 @@ impl Character {
             ui.with_layout(egui::Layout::top_down_justified(egui::Align::Min), |ui| {
                 ui.horizontal(|ui| {
                     self.draw_buttons(io, ui, false);
-                    ui.with_layout(Layout::right_to_left(egui::Align::TOP), |ui| {
-                        sim.total().draw([Self::BUTTON_SIZE, Self::BUTTON_SIZE], ui);
-                    });
                 });
                 util::create_frame(ui).show(ui, |ui| {
                     self.name.draw(sim, ui);

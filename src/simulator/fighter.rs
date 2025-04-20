@@ -1,4 +1,7 @@
+use std::cell::RefCell;
+
 use crate::character::{Character, Edge3, PassiveStats};
+use crate::simulator::fight_report::FightStats;
 
 use super::{
     cards::{Card, CardDeck, Suit},
@@ -7,6 +10,7 @@ use super::{
 
 #[derive(Debug, Clone)]
 pub struct Fighter {
+    fight_stats: RefCell<FightStats>, // change stats even when self is immutable
     character: Character,
     passive_stats: PassiveStats,
     bennies: u8,
@@ -33,6 +37,7 @@ impl Fighter {
         let berserker = character.edges.berserker == Edge3::Improved;
         let bennies = i8::from(character.bennies.num_bennies).try_into().unwrap();
         Self {
+            fight_stats: RefCell::new(FightStats::new()),
             character,
             passive_stats,
             bennies,
@@ -46,6 +51,10 @@ impl Fighter {
             erstschlag_done: false,
             attacked_wild: false,
         }
+    }
+
+    pub fn finish(self) -> FightStats {
+        self.fight_stats.into_inner()
     }
 
     fn draw_card(&self, cards: &mut CardDeck) -> Card {
@@ -65,6 +74,7 @@ impl Fighter {
     }
 
     pub fn new_round(&mut self, cards: &mut CardDeck) -> Card {
+        self.fight_stats.borrow_mut().add_round();
         let card = self.draw_card(cards);
         self.joker = card.is_joker();
         self.riposte_done = false;
@@ -390,10 +400,10 @@ impl Fighter {
                 5.. => AttackResult::Raise,
             }
         };
-        let mut all_failed = true;
+        let mut num_hits: u8 = 0;
         let check_fails = |hit| -> AttackResult {
             if hit != AttackResult::Miss {
-                all_failed = false;
+                num_hits += 1;
             }
             hit
         };
@@ -412,10 +422,15 @@ impl Fighter {
             .map(check_fails)
             .collect();
 
-        if all_failed && self.character.bennies.use_for_attack.is_set() && self.bennies > 0 {
+        if num_hits == 0 && self.character.bennies.use_for_attack.is_set() && self.bennies > 0 {
             self.bennies -= 1;
             self.try_to_hit(opponent, num_skill_dice, modifier)
         } else {
+            self.fight_stats.borrow_mut().add_hits_dealt(num_hits);
+            opponent
+                .fight_stats
+                .borrow_mut()
+                .add_hits_received(num_hits);
             Some(hits)
         }
     }
@@ -468,6 +483,14 @@ impl Fighter {
         opponent.passive_stats.life -= damage;
         opponent.shaken = true;
         opponent.enable_berserker();
+
+        self.fight_stats
+            .borrow_mut()
+            .add_damage_dealt(damage.into());
+        opponent
+            .fight_stats
+            .borrow_mut()
+            .add_damage_received(damage.into());
 
         // instead of implementing interrupting logic, we can just assume that
         // damage done while holding a joker just interrupts the opponent.

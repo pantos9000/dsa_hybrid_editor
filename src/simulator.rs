@@ -1,5 +1,6 @@
 mod arena;
 mod cards;
+mod fight_report;
 mod fighter;
 mod roller;
 
@@ -11,6 +12,7 @@ use std::time::Duration;
 use crossbeam::channel::unbounded as channel;
 use crossbeam::channel::{self as mpsc, RecvTimeoutError};
 use dashmap::DashMap;
+use fight_report::FightReport;
 use fxhash::FxBuildHasher;
 
 use crate::character::Character;
@@ -19,11 +21,11 @@ use crate::gradient::{Gradient, Total};
 pub type CharModification = Box<dyn FnOnce(&mut Character)>;
 
 /// Holds all total results
-type DataMap = DashMap<CharData, Total, FxBuildHasher>;
+type DataMap = DashMap<CharData, FightReport, FxBuildHasher>;
 
 pub struct Simulator {
     thread: Option<thread::JoinHandle<()>>,
-    total_map: Arc<DataMap>,
+    report_map: Arc<DataMap>,
     send: Option<mpsc::Sender<CharData>>,
     stop: Arc<AtomicBool>,
     progress: Arc<AtomicU8>,
@@ -68,7 +70,7 @@ impl Simulator {
         ));
         Self {
             thread,
-            total_map: gradient_map,
+            report_map: gradient_map,
             send: Some(send),
             stop,
             progress,
@@ -120,8 +122,8 @@ impl Simulator {
             };
 
             // do the calculation and store the result if needed
-            let total = arena::calculate_probability(&char_data);
-            gradient_map.insert(char_data, total);
+            let report = arena::simulate_fights(&char_data);
+            gradient_map.insert(char_data, report);
 
             // update progress
             count_done += 1;
@@ -146,28 +148,18 @@ impl Simulator {
         self.progress.load(Ordering::Relaxed)
     }
 
-    pub fn total(&self) -> Total {
-        self.modified_total(self.char_data.clone())
+    pub fn report(&self) -> FightReport {
+        self.request_report(self.char_data.clone())
     }
 
-    pub fn gradient(&self, modification: CharModification) -> Gradient {
-        let mut char_data = self.char_data.clone();
-        modification(&mut char_data.character);
-
-        let old_total = self.total();
-        let new_total = self.modified_total(char_data);
-
-        new_total - old_total
-    }
-
-    fn modified_total(&self, char_data: CharData) -> Total {
+    fn request_report(&self, char_data: CharData) -> FightReport {
         // return early if already in map
-        if let Some(total) = self.total_map.get(&char_data) {
-            return *total;
+        if let Some(report) = self.report_map.get(&char_data) {
+            return report.clone();
         }
 
         // otherwise insert a placeholder...
-        self.total_map.insert(char_data.clone(), Total::default());
+        self.report_map.insert(char_data.clone(), FightReport::NONE);
 
         // ... and request that a result is calculated
         self.send
@@ -176,7 +168,21 @@ impl Simulator {
             .send(char_data)
             .expect("simulator thread is gone");
 
-        Total::NONE
+        FightReport::NONE
+    }
+
+    pub fn gradient(&self, modification: CharModification) -> Gradient {
+        let mut char_data = self.char_data.clone();
+        modification(&mut char_data.character);
+
+        let old_total = self.total(self.char_data.clone());
+        let new_total = self.total(char_data);
+
+        new_total - old_total
+    }
+
+    fn total(&self, char_data: CharData) -> Total {
+        self.request_report(char_data).total()
     }
 }
 

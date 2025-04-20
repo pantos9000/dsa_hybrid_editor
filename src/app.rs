@@ -86,7 +86,7 @@ impl eframe::App for App {
             ui.horizontal(|ui| {
                 self.menu_buttons(ui);
                 ui.separator();
-                self.simulator.total().draw([40.0, 40.0], ui);
+                self.simulator.report().draw(ui);
             });
             ui.separator();
             egui::containers::ScrollArea::both().show(ui, |ui| {

@@ -1,47 +1,32 @@
-use crate::gradient::Total;
-
 use super::cards::{Card, CardDeck};
+use super::fight_report::{FightOutcome, FightReport, ReportBuilder};
 use super::fighter::Fighter;
 use super::CharData;
 
 const COUNT_FIGHTS: u32 = 5000;
 const MAX_ROUNDS: u32 = 100;
 
-pub fn calculate_probability(char_data: &CharData) -> Total {
-    fn calc_prob(wins: u32) -> u32 {
-        100 * wins / COUNT_FIGHTS
-    }
-
-    let mut count_character_wins = 0;
-    let mut count_opponent_wins = 0;
-    let mut count_draws = 0;
-
+pub fn simulate_fights(char_data: &CharData) -> FightReport {
+    let mut report = ReportBuilder::new();
     for _ in 0..COUNT_FIGHTS {
-        match calc_fight(char_data) {
-            FightIsOver::FighterWon => count_character_wins += 1,
-            FightIsOver::OpponentWon => count_opponent_wins += 1,
-            FightIsOver::Draw => count_draws += 1,
-        }
+        let outcome = calc_fight(char_data);
+        report.add_fight(outcome);
     }
-    let probability_win = calc_prob(count_character_wins);
-    let _probability_loss = calc_prob(count_opponent_wins);
-    let probability_draw = calc_prob(count_draws);
-
-    let total = probability_win + probability_draw / 2;
-    let total: i8 = total.try_into().unwrap();
-    Total::try_from(total).unwrap()
+    report.build()
 }
 
-fn calc_fight(char_data: &CharData) -> FightIsOver {
+fn calc_fight(char_data: &CharData) -> FightOutcome {
     let mut arena = Arena::new(char_data);
-    for _ in 0..MAX_ROUNDS {
-        match arena.round() {
-            Ok(()) => (),
-            Err(report) => return report,
+    'fight: for _ in 0..MAX_ROUNDS {
+        if matches!(arena.round(), Err(FightIsOver)) {
+            break 'fight;
         }
     }
-    FightIsOver::Draw
+    arena.finish()
 }
+
+struct FightIsOver;
+type FightResult = Result<(), FightIsOver>;
 
 #[derive(Debug, Default)]
 struct Arena {
@@ -105,21 +90,22 @@ impl Arena {
 
     fn check_end(&self) -> FightResult {
         match (self.fighter.is_dead(), self.opponent.is_dead()) {
-            (true, true) => Err(FightIsOver::Draw),
-            (true, false) => Err(FightIsOver::OpponentWon),
-            (false, true) => Err(FightIsOver::FighterWon),
             (false, false) => Ok(()),
+            _ => Err(FightIsOver),
         }
     }
-}
 
-type FightResult = Result<(), FightIsOver>;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum FightIsOver {
-    FighterWon,
-    OpponentWon,
-    Draw,
+    fn finish(self) -> FightOutcome {
+        let fighter_dead = self.fighter.is_dead();
+        let opponent_dead = self.opponent.is_dead();
+        let stats = self.fighter.finish();
+        match (fighter_dead, opponent_dead) {
+            (true, true) => FightOutcome::Draw(stats),
+            (true, false) => FightOutcome::OpponentWon(stats),
+            (false, true) => FightOutcome::FighterWon(stats),
+            (false, false) => FightOutcome::Draw(stats),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -148,8 +134,8 @@ mod tests {
                 opponent: char1,
             };
 
-            let prob1: Option<i8> = calculate_probability(&data1).into();
-            let prob2: Option<i8> = calculate_probability(&data2).into();
+            let prob1: Option<i8> = simulate_fights(&data1).total().into();
+            let prob2: Option<i8> = simulate_fights(&data2).total().into();
             let prob1 = prob1.unwrap();
             let prob2 = prob2.unwrap();
 

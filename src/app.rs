@@ -68,9 +68,6 @@ impl eframe::App for App {
             ui.horizontal(|ui| {
                 ui.heading("DSA Hybrid Char Editor");
                 Self::quit_button(ui, ctx);
-                ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                    egui::widgets::global_theme_preference_buttons(ui);
-                });
             });
         });
 
@@ -117,20 +114,24 @@ impl App {
     }
 
     fn menu_buttons(&mut self, ui: &mut egui::Ui) {
-        let copy_char_button = util::create_menu_button("➡", "Copy char to opponent", 40.0, ui);
-        if copy_char_button.clicked() {
-            self.opponent = self.char.clone();
-        }
+        let size = 60.0;
+        ui.horizontal(|ui| {
+            let copy_char_button = util::create_menu_button("➡", "Copy char to opponent", size, ui);
+            if copy_char_button.clicked() {
+                self.opponent = self.char.clone();
+            }
 
-        let switch_button = util::create_menu_button("↔", "Switch chars", 40.0, ui);
-        if switch_button.clicked() {
-            std::mem::swap(&mut self.char, &mut self.opponent);
-        }
+            let switch_button = util::create_menu_button("↔", "Switch chars", size, ui);
+            if switch_button.clicked() {
+                std::mem::swap(&mut self.char, &mut self.opponent);
+            }
 
-        let copy_opponent_button = util::create_menu_button("⬅", "Copy opponent to char", 40.0, ui);
-        if copy_opponent_button.clicked() {
-            self.char = self.opponent.clone();
-        }
+            let copy_opponent_button =
+                util::create_menu_button("⬅", "Copy opponent to char", size, ui);
+            if copy_opponent_button.clicked() {
+                self.char = self.opponent.clone();
+            }
+        });
     }
 
     fn quit_button(ui: &mut egui::Ui, ctx: &egui::Context) {

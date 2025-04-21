@@ -89,49 +89,12 @@ impl Roller {
         Some(roll)
     }
 
-    #[allow(dead_code)]
-    pub fn roll_skill(&self, skill: &Skill) -> Option<Roll> {
-        let (sides, modifier) = match skill {
-            Skill::W4m2 => (4, -2),
-            Skill::W4 => (4, 0),
-            Skill::W6 => (6, 0),
-            Skill::W8 => (8, 0),
-            Skill::W10 => (10, 0),
-            Skill::W12 => (12, 0),
-            Skill::W12p1 => (12, 1),
-            Skill::W12p2 => (12, 2),
-            Skill::Master => (12, 2),
-        };
-        let roll = self.roll_die(sides, modifier);
-        self.roll_additional_wild_die(roll, skill.wild_die_sides())
-    }
-
-    #[allow(dead_code)]
-    pub fn roll_skill_twice(&self, skill: &Skill) -> Option<(Roll, Roll)> {
-        let (sides, modifier) = match skill {
-            Skill::W4m2 => (4, -2),
-            Skill::W4 => (4, 0),
-            Skill::W6 => (6, 0),
-            Skill::W8 => (8, 0),
-            Skill::W10 => (10, 0),
-            Skill::W12 => (12, 0),
-            Skill::W12p1 => (12, 1),
-            Skill::W12p2 => (12, 2),
-            Skill::Master => (12, 2),
-        };
-        let mut roll1 = self.roll_die(sides, modifier);
-        let mut roll2 = self.roll_die(sides, modifier);
-        let smaller: &mut Roll = if roll1 < roll2 {
-            &mut roll2
-        } else {
-            &mut roll1
-        };
-        *smaller = self.roll_additional_wild_die(*smaller, skill.wild_die_sides())?;
-        Some((roll1, roll2))
-    }
-
-    #[allow(dead_code)]
-    pub fn roll_skill_with_n_dice(&self, skill: &Skill, n: usize) -> Option<Vec<Roll>> {
+    pub fn roll_skill_with_n_dice(
+        &self,
+        skill: &Skill,
+        n: usize,
+        fail_on_one: bool,
+    ) -> Option<Vec<Roll>> {
         let (sides, modifier) = match skill {
             Skill::W4m2 => (4, -2),
             Skill::W4 => (4, 0),
@@ -148,6 +111,9 @@ impl Roller {
         let mut minimum = Roll(i8::MAX);
         for i in 0..n {
             let roll = self.roll_die(sides, modifier);
+            if fail_on_one && (roll.as_u8() == 1) {
+                return Some(Vec::new());
+            }
             if roll < minimum {
                 minimum = roll;
                 index_minimum = i;

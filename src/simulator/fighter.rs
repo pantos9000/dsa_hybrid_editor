@@ -135,13 +135,14 @@ impl Fighter {
                 self.critical_fail(false);
                 return;
             };
-            let attack = attacks[0];
-            debug_assert_eq!(
-                attacks.len(),
-                1,
+            let mut attacks = attacks.into_iter();
+            if let Some(attack) = attacks.next() {
+                self.do_damage(false, opponent, attack);
+            }
+            debug_assert!(
+                attacks.next().is_none(),
                 "attacks should only contain single attack"
             );
-            self.do_damage(false, opponent, attack);
         }
     }
 
@@ -159,13 +160,14 @@ impl Fighter {
             self.critical_fail(true);
             return;
         };
-        let attack = attacks[0];
-        debug_assert_eq!(
-            attacks.len(),
-            1,
+        let mut attacks = attacks.into_iter();
+        if let Some(attack) = attacks.next() {
+            self.do_damage(true, opponent, attack);
+        }
+        debug_assert!(
+            attacks.next().is_none(),
             "attacks should only contain single attack"
         );
-        self.do_damage(true, opponent, attack);
     }
 
     pub fn action(&mut self, opponent: &mut Fighter) {
@@ -412,8 +414,11 @@ impl Fighter {
             }
             hit
         };
-        let rolls =
-            roller().roll_skill_with_n_dice(&self.character.skills.kampfen, num_skill_dice)?;
+        let rolls = roller().roll_skill_with_n_dice(
+            &self.character.skills.kampfen,
+            num_skill_dice,
+            self.berserker,
+        )?;
         let hits = rolls
             .into_iter()
             .map(apply_modifier)

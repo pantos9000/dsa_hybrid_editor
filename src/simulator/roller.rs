@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use rand_xoshiro::Xoshiro256PlusPlus;
 
-use crate::character::{Attribute, Damage, Skill, Weapon};
+use crate::character::{Attribute, Skill, Weapon};
 
 std::thread_local! {
     static ROLLER: Rc<Roller> = Rc::new(Roller::new());
@@ -159,14 +159,15 @@ impl Roller {
         Some(ret)
     }
 
-    pub fn roll_weapon_damage<const SECONDARY: bool>(&self, weapon: &Weapon<SECONDARY>) -> Roll {
-        let sides = match weapon.damage {
-            Damage::W4 => 4,
-            Damage::W6 => 6,
-            Damage::W8 => 8,
-            Damage::W10 => 10,
-            Damage::W12 => 12,
-        };
+    /// roll weapon damage, but cap die sides by strength die
+    pub fn roll_weapon_damage<const SECONDARY: bool>(
+        &self,
+        weapon: &Weapon<SECONDARY>,
+        strength: Attribute,
+    ) -> Roll {
+        let damage_sides: u8 = weapon.damage.into();
+        let strength_sides = strength.into();
+        let sides = damage_sides.min(strength_sides);
         let modifier = weapon.bonus_damage.into();
         self.roll_die(sides, modifier)
     }

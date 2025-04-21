@@ -177,6 +177,18 @@ pub enum Damage {
     W12,
 }
 
+impl From<Damage> for u8 {
+    fn from(value: Damage) -> Self {
+        match value {
+            Damage::W4 => 4,
+            Damage::W6 => 6,
+            Damage::W8 => 8,
+            Damage::W10 => 10,
+            Damage::W12 => 12,
+        }
+    }
+}
+
 impl ValueSelector for Damage {
     type Info = DamageName;
 

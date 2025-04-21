@@ -461,8 +461,13 @@ impl Fighter {
         };
 
         let mut damage = match primary_weapon {
-            true => roller().roll_weapon_damage(&self.character.weapon),
-            false => roller().roll_weapon_damage(&self.character.secondary_weapon),
+            true => {
+                roller().roll_weapon_damage(&self.character.weapon, self.character.attributes.sta)
+            }
+            false => roller().roll_weapon_damage(
+                &self.character.secondary_weapon,
+                self.character.attributes.sta,
+            ),
         };
 
         damage += roller().roll_attribute_without_wild_die(&self.character.attributes.sta);

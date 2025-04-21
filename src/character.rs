@@ -16,7 +16,7 @@ pub use edges::{Edge3, Edges};
 pub use name::Name;
 pub use passive_stats::PassiveStats;
 pub use skills::{Skill, Skills};
-pub use weapon::{Damage, Weapon};
+pub use weapon::Weapon;
 
 use crate::io::{IoRequest, IoThread};
 use crate::simulator::Simulator;

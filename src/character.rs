@@ -42,7 +42,19 @@ pub struct Character {
 }
 
 impl Character {
-    const BUTTON_SIZE: f32 = 40.0;
+    fn drawable_iter(&mut self) -> impl Iterator<Item = &mut dyn Drawable> {
+        [
+            &mut self.attributes as _,
+            &mut self.skills as _,
+            &mut self.passive_modifiers as _,
+            &mut self.weapon as _,
+            &mut self.secondary_weapon as _,
+            &mut self.armor as _,
+            &mut self.edges as _,
+            &mut self.bennies as _,
+        ]
+        .into_iter()
+    }
 
     pub fn draw(&mut self, sim: &Simulator, io: &IoThread, ui: &mut egui::Ui) {
         util::create_frame(ui).show(ui, |ui| {
@@ -50,36 +62,21 @@ impl Character {
                 ui.horizontal(|ui| {
                     self.draw_buttons(io, ui, false);
                 });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.name.draw(sim, ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    PassiveStats::new(self).draw(sim, ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.passive_modifiers.draw(sim, ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.attributes.draw(sim, ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.skills.draw(sim, ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.weapon.draw(sim, ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.secondary_weapon.draw(sim, ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.armor.draw(sim, ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.edges.draw(sim, ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.bennies.draw(sim, ui);
-                })
+
+                let mut draw = |drawable: &mut dyn Drawable| {
+                    util::create_frame(ui).show(ui, |ui| {
+                        drawable.draw(sim, ui);
+                    });
+                };
+
+                let mut passive_stats = PassiveStats::new(self);
+
+                draw(&mut self.name);
+                draw(&mut passive_stats);
+
+                for drawable in self.drawable_iter() {
+                    draw(drawable);
+                }
             });
         });
     }
@@ -90,38 +87,30 @@ impl Character {
                 ui.horizontal(|ui| {
                     self.draw_buttons(io, ui, true);
                 });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.name.draw_as_opponent(ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    PassiveStats::new(self).draw_as_opponent(ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.attributes.draw_as_opponent(ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.skills.draw_as_opponent(ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.weapon.draw_as_opponent(ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.secondary_weapon.draw_as_opponent(ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.armor.draw_as_opponent(ui);
-                });
-                util::create_frame(ui).show(ui, |ui| {
-                    self.edges.draw_as_opponent(ui);
-                });
+
+                let mut draw = |drawable: &mut dyn Drawable| {
+                    util::create_frame(ui).show(ui, |ui| {
+                        drawable.draw_as_opponent(ui);
+                    });
+                };
+
+                let mut passive_stats = PassiveStats::new(self);
+
+                draw(&mut self.name);
+                draw(&mut passive_stats);
+
+                for drawable in self.drawable_iter() {
+                    draw(drawable);
+                }
             });
         });
     }
 
     fn draw_buttons(&mut self, io: &IoThread, ui: &mut egui::Ui, is_opponent: bool) {
-        let save = util::create_menu_button("💾", "Save", Self::BUTTON_SIZE, ui);
-        let open = util::create_menu_button("🗁", "Open", Self::BUTTON_SIZE, ui);
-        let reset = util::create_menu_button("❌", "Reset", Self::BUTTON_SIZE, ui);
+        let button_size = 40.0;
+        let save = util::create_menu_button("💾", "Save", button_size, ui);
+        let open = util::create_menu_button("🗁", "Open", button_size, ui);
+        let reset = util::create_menu_button("❌", "Reset", button_size, ui);
         if save.clicked() {
             io.request(crate::io::IoRequest::Save(self.clone()));
         }

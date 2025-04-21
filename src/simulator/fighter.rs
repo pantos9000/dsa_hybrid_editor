@@ -335,7 +335,10 @@ impl Fighter {
                 self.shaken = false;
                 false
             }
-            RollResult::Raise => true,
+            RollResult::Raise => {
+                self.shaken = false;
+                true
+            }
         }
     }
 

@@ -25,43 +25,49 @@ pub struct Edges {
     pub(crate) kuhler_kopf: Edge3,
 }
 
+impl Edges {
+    fn edge3_iter(&mut self) -> impl Iterator<Item = (&mut Edge3, Edge3Info)> {
+        [
+            (&mut self.berserker, Edge3Info::Berserker),
+            (&mut self.tuchfuhlung, Edge3Info::Tuchfühlung),
+            (&mut self.lebenskraft, Edge3Info::Lebenskraft),
+            (&mut self.blitzhieb, Edge3Info::Blitzhieb),
+            (&mut self.riposte, Edge3Info::Riposte),
+            (&mut self.kuhler_kopf, Edge3Info::KühlerKopf),
+        ]
+        .into_iter()
+    }
+
+    fn edge2_iter(&mut self) -> impl Iterator<Item = (&mut BoolStat, Edge2Info)> {
+        [
+            (&mut self.schnell, Edge2Info::Schnell),
+            (&mut self.beidhandig, Edge2Info::Beidhändig),
+            (&mut self.beidhandiger_kampf, Edge2Info::BeidhändigerKampf),
+            (&mut self.erstschlag, Edge2Info::Erstschlag),
+            (&mut self.ubertolpeln, Edge2Info::Übertölpeln),
+            (&mut self.machtiger_hieb, Edge2Info::MächtigerHieb),
+            (&mut self.erbarmungslos, Edge2Info::Erbarmungslos),
+            (&mut self.kampfreflexe, Edge2Info::Kampfreflexe),
+            (&mut self.kampfkunstler, Edge2Info::Kampfkünstler),
+        ]
+        .into_iter()
+    }
+}
+
 impl Drawable for Edges {
     fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
         let grid = util::create_grid("Edges");
 
         ui.heading("Edges");
         grid.show(ui, |ui| {
-            self.lebenskraft.draw(Edge3Info::Lebenskraft, sim, ui);
-            ui.end_row();
-            self.blitzhieb.draw(Edge3Info::Blitzhieb, sim, ui);
-            ui.end_row();
-            self.berserker.draw(Edge3Info::Berserker, sim, ui);
-            ui.end_row();
-            self.riposte.draw(Edge3Info::Riposte, sim, ui);
-            ui.end_row();
-            self.tuchfuhlung.draw(Edge3Info::Tuchfühlung, sim, ui);
-            ui.end_row();
-            self.kampfreflexe.draw(Edge2Info::Kampfreflexe, sim, ui);
-            ui.end_row();
-            self.erstschlag.draw(Edge2Info::Erstschlag, sim, ui);
-            ui.end_row();
-            self.beidhandiger_kampf
-                .draw(Edge2Info::BeidhändigerKampf, sim, ui);
-            ui.end_row();
-            self.beidhandig.draw(Edge2Info::Beidhändig, sim, ui);
-            ui.end_row();
-            self.ubertolpeln.draw(Edge2Info::Übertölpeln, sim, ui);
-            ui.end_row();
-            self.erbarmungslos.draw(Edge2Info::Erbarmungslos, sim, ui);
-            ui.end_row();
-            self.machtiger_hieb.draw(Edge2Info::MächtigerHieb, sim, ui);
-            ui.end_row();
-            self.schnell.draw(Edge2Info::Schnell, sim, ui);
-            ui.end_row();
-            self.kampfkunstler.draw(Edge2Info::Kampfkünstler, sim, ui);
-            ui.end_row();
-            self.kuhler_kopf.draw(Edge3Info::KühlerKopf, sim, ui);
-            ui.end_row();
+            for (edge, info) in self.edge3_iter() {
+                edge.draw(info, sim, ui);
+                ui.end_row();
+            }
+            for (edge, info) in self.edge2_iter() {
+                edge.draw(info, sim, ui);
+                ui.end_row();
+            }
         });
     }
 
@@ -70,44 +76,14 @@ impl Drawable for Edges {
 
         ui.heading("Edges");
         grid.show(ui, |ui| {
-            self.lebenskraft
-                .draw_as_opponent(Edge3Info::Lebenskraft, ui);
-            ui.end_row();
-            self.blitzhieb.draw_as_opponent(Edge3Info::Blitzhieb, ui);
-            ui.end_row();
-            self.berserker.draw_as_opponent(Edge3Info::Berserker, ui);
-            ui.end_row();
-            self.riposte.draw_as_opponent(Edge3Info::Riposte, ui);
-            ui.end_row();
-            self.tuchfuhlung
-                .draw_as_opponent(Edge3Info::Tuchfühlung, ui);
-            ui.end_row();
-            self.kampfreflexe
-                .draw_as_opponent(Edge2Info::Kampfreflexe, ui);
-            ui.end_row();
-            self.erstschlag.draw_as_opponent(Edge2Info::Erstschlag, ui);
-            ui.end_row();
-            self.beidhandiger_kampf
-                .draw_as_opponent(Edge2Info::BeidhändigerKampf, ui);
-            ui.end_row();
-            self.beidhandig.draw_as_opponent(Edge2Info::Beidhändig, ui);
-            ui.end_row();
-            self.ubertolpeln
-                .draw_as_opponent(Edge2Info::Übertölpeln, ui);
-            ui.end_row();
-            self.erbarmungslos
-                .draw_as_opponent(Edge2Info::Erbarmungslos, ui);
-            ui.end_row();
-            self.machtiger_hieb
-                .draw_as_opponent(Edge2Info::MächtigerHieb, ui);
-            ui.end_row();
-            self.schnell.draw_as_opponent(Edge2Info::Schnell, ui);
-            ui.end_row();
-            self.kampfkunstler
-                .draw_as_opponent(Edge2Info::Kampfkünstler, ui);
-            ui.end_row();
-            self.kuhler_kopf.draw_as_opponent(Edge3Info::KühlerKopf, ui);
-            ui.end_row();
+            for (edge, info) in self.edge3_iter() {
+                edge.draw_as_opponent(info, ui);
+                ui.end_row();
+            }
+            for (edge, info) in self.edge2_iter() {
+                edge.draw_as_opponent(info, ui);
+                ui.end_row();
+            }
         });
     }
 }

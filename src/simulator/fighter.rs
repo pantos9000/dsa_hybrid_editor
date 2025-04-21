@@ -66,8 +66,10 @@ impl Fighter {
 
         let mut card = (0..num_cards).map(|_| cards.draw()).max().unwrap();
 
-        while card.suit() < Suit::Seven {
-            card = cards.draw();
+        if self.character.edges.schnell.is_set() {
+            while card.suit() < Suit::Seven {
+                card = cards.draw();
+            }
         }
 
         card

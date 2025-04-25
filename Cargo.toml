@@ -3,6 +3,7 @@ name = "dsa_hybrid_editor"
 version = "0.1.0"
 authors = ["Pantos <pantos+github@akk.org>"]
 edition = "2021"
+publish = false
 
 [package.metadata.docs.rs]
 all-features = true

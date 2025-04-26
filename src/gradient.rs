@@ -87,7 +87,12 @@ impl Gradient {
     }
 }
 
-fn draw_value(value: i8, ui: &mut egui::Ui, draw_sign: bool, color: bool) -> impl egui::Widget {
+fn draw_value(
+    value: i8,
+    ui: &mut egui::Ui,
+    draw_sign: bool,
+    color: bool,
+) -> impl egui::Widget + use<> {
     let dark = ui.visuals().dark_mode;
     let dark_gray = Color32::from_rgb(64, 64, 64);
     let sign = if draw_sign && value > 0 { "+" } else { "" };

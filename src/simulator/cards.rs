@@ -15,8 +15,8 @@ impl Default for CardDeck {
 
 impl CardDeck {
     pub fn new() -> Self {
-        use rand::seq::SliceRandom as _; // for shuffle()
         use rand::SeedableRng as _; // for seed_from_u64()
+        use rand::seq::SliceRandom as _; // for shuffle()
 
         let last_drawn = Vec::new();
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(rand::random());

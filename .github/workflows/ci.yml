@@ -1,0 +1,78 @@
+name: check
+
+on:
+  push:
+    branches:
+      - main
+    pull_request:
+
+jobs:
+  test:
+    name: cargo test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Rust Toolchain Setup
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Run Tests
+        run: cargo test --all-features
+
+  formatting:
+    name: cargo fmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Rust Toolchain Setup
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt
+      - name: Rustfmt Check
+        uses: actions-rust-lang/rustfmt@v1
+
+  clippy:
+    name: cargo clippy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Rust Toolchain Setup
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy
+      - name: Clippy Lints
+        run: cargo clippy
+
+  audit:
+    name: cargo audit
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Audit Rust Dependencies
+        uses: actions-rust-lang/audit@v1
+        # with:
+          # Comma separated list of issues to ignore
+          # ignore: RUSTSEC-2020-0036
+
+  unused-deps:
+    name: cargo machete
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Unused Dependencies Check
+        uses: bnjbvr/cargo-machete@main
+
+  doc:
+    name: cargo doc
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Rust Toolchain Setup
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build Docs
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --all-features --no-deps --document-private-items

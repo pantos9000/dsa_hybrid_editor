@@ -113,7 +113,7 @@ enum Initiative {
 
 #[cfg(test)]
 mod tests {
-    use crate::character::Character;
+    use crate::app::character::Character;
 
     use super::*;
 

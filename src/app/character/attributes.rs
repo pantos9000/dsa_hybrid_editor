@@ -1,7 +1,5 @@
-use crate::{
-    simulator::{CharModification, Simulator},
-    widgets::{DrawInfo, ValueSelector},
-};
+use crate::app::widgets::{DrawInfo, ValueSelector};
+use crate::simulator::{CharModification, Simulator};
 
 use super::Drawable;
 

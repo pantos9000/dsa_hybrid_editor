@@ -1,12 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 mod app;
-mod character;
-mod gradient;
-mod io;
 mod simulator;
 mod util;
-mod widgets;
 
 fn init_logging() {
     let default_level = if cfg!(debug_assertions) {

@@ -1,7 +1,14 @@
+pub mod character;
+pub mod gradient;
+
+mod io;
+mod widgets;
+
 use egui::{Align, Layout};
 
-use crate::character::Character;
-use crate::io::IoThread;
+use character::Character;
+use io::{IoResponse, IoThread};
+
 use crate::simulator::Simulator;
 use crate::util;
 
@@ -50,11 +57,11 @@ impl eframe::App for App {
 
         for response in self.io.poll_iter() {
             match response {
-                crate::io::IoResponse::CharLoaded(character) => {
+                IoResponse::CharLoaded(character) => {
                     self.char = character;
                     log::info!("character successfully loaded");
                 }
-                crate::io::IoResponse::OpponentLoaded(character) => {
+                IoResponse::OpponentLoaded(character) => {
                     self.opponent = character;
                     log::info!("opponent successfully loaded");
                 }

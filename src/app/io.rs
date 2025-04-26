@@ -1,7 +1,9 @@
 use std::{fs, sync::mpsc, thread};
 
-use crate::{character::Character, util::LogError};
 use anyhow::{Context, Result};
+
+use super::character::Character;
+use crate::util::LogError as _;
 
 pub struct IoThread {
     thread: Option<thread::JoinHandle<()>>,

@@ -15,8 +15,8 @@ use dashmap::DashMap;
 use fight_report::FightReport;
 use fxhash::FxBuildHasher;
 
-use crate::character::Character;
-use crate::gradient::{Gradient, Total};
+use crate::app::character::Character;
+use crate::app::gradient::{Gradient, Total};
 
 pub type CharModification = Box<dyn FnOnce(&mut Character)>;
 

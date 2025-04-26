@@ -18,7 +18,8 @@ pub use passive_stats::PassiveStats;
 pub use skills::{Skill, Skills};
 pub use weapon::Weapon;
 
-use crate::io::{IoRequest, IoThread};
+use super::io::{IoRequest, IoThread};
+
 use crate::simulator::Simulator;
 use crate::util;
 
@@ -112,7 +113,7 @@ impl Character {
         let open = util::create_menu_button("🗁", "Open", button_size, ui);
         let reset = util::create_menu_button("❌", "Reset", button_size, ui);
         if save.clicked() {
-            io.request(crate::io::IoRequest::Save(self.clone()));
+            io.request(IoRequest::Save(self.clone()));
         }
         if open.clicked() {
             let request = if is_opponent {

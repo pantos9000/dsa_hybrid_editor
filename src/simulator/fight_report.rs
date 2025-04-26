@@ -1,6 +1,6 @@
 use egui::{Button, Color32};
 
-use crate::gradient::Total;
+use crate::app::gradient::Total;
 
 #[derive(Debug, Default)]
 pub struct ReportBuilder {

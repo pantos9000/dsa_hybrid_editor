@@ -1,5 +1,5 @@
+use crate::app::widgets::{DrawInfo, IntStat, ValueSlider as _};
 use crate::util;
-use crate::widgets::{DrawInfo, IntStat, ValueSlider as _};
 
 use super::Drawable;
 

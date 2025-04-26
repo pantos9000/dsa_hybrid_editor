@@ -1,11 +1,11 @@
 use std::cell::RefCell;
 
-use crate::character::{Character, Edge3, PassiveStats};
+use crate::app::character::{Character, Edge3, PassiveStats};
 use crate::simulator::fight_report::FightStats;
 
 use super::{
     cards::{Card, CardDeck, Suit},
-    roller::{roller, Roll, RollResult},
+    roller::{Roll, RollResult, roller},
 };
 
 #[allow(clippy::struct_excessive_bools)] // lots of yes/no state

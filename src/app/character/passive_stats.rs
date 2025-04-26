@@ -1,9 +1,7 @@
 use super::{Character, Drawable};
-use crate::{
-    simulator::{CharModification, Simulator},
-    util,
-    widgets::{DrawInfo, IntStat, ValueSlider as _},
-};
+use crate::app::widgets::{DrawInfo, IntStat, ValueSlider as _};
+use crate::simulator::{CharModification, Simulator};
+use crate::util;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct PassiveModifiers {

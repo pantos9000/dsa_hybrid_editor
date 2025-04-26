@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use rand_xoshiro::Xoshiro256PlusPlus;
 
-use crate::character::{Attribute, Skill, Weapon};
+use crate::app::character::{Attribute, Skill, Weapon};
 
 std::thread_local! {
     static ROLLER: Rc<Roller> = Rc::new(Roller::new());

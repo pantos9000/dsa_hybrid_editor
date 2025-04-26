@@ -1,8 +1,6 @@
-use crate::{
-    simulator::CharModification,
-    util,
-    widgets::{BoolStat, DrawInfo, IntStat, ValueSlider as _},
-};
+use crate::app::widgets::{BoolStat, DrawInfo, IntStat, ValueSlider as _};
+use crate::simulator::CharModification;
+use crate::util;
 
 use super::Drawable;
 

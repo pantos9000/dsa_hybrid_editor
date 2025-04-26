@@ -1,9 +1,7 @@
 use strum::IntoEnumIterator;
 
-use crate::{
-    simulator::{CharModification, Simulator},
-    widgets::{DrawInfo, IntStat, ValueSelector, ValueSlider},
-};
+use crate::app::widgets::{DrawInfo, IntStat, ValueSelector, ValueSlider};
+use crate::simulator::{CharModification, Simulator};
 
 use super::Drawable;
 

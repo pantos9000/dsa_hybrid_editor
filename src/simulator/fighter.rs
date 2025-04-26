@@ -8,6 +8,7 @@ use super::{
     roller::{roller, Roll, RollResult},
 };
 
+#[allow(clippy::struct_excessive_bools)] // lots of yes/no state
 #[derive(Debug, Clone)]
 pub struct Fighter {
     fight_stats: RefCell<FightStats>, // change stats even when self is immutable
@@ -35,7 +36,7 @@ impl Fighter {
     pub fn new(character: Character) -> Self {
         let passive_stats = PassiveStats::new(&character);
         let berserker = character.edges.berserker == Edge3::Improved;
-        let bennies = i8::from(character.bennies.num_bennies).try_into().unwrap();
+        let bennies = i8::from(character.bennies.count).try_into().unwrap();
         Self {
             fight_stats: RefCell::new(FightStats::new()),
             character,
@@ -87,10 +88,7 @@ impl Fighter {
     }
 
     pub fn is_dead(&self) -> bool {
-        let threshold = match self.berserker {
-            true => 0,
-            false => 5,
-        };
+        let threshold = if self.berserker { 0 } else { 5 };
         self.passive_stats.life <= threshold
     }
 
@@ -300,7 +298,7 @@ impl Fighter {
     }
 
     pub fn dex_roll(&self) -> Option<Roll> {
-        let mut roll = roller().roll_attribute(&self.character.attributes.ges)?;
+        let mut roll = roller().roll_attribute(self.character.attributes.ges)?;
         self.apply_joker(&mut roll);
         self.apply_wound_penalty(&mut roll);
         Some(roll)
@@ -327,7 +325,7 @@ impl Fighter {
         if !self.shaken {
             return true;
         }
-        let Some(mut roll) = roller().roll_attribute(&self.character.attributes.wil) else {
+        let Some(mut roll) = roller().roll_attribute(self.character.attributes.wil) else {
             return false;
         };
         self.apply_wound_penalty(&mut roll);
@@ -352,22 +350,10 @@ impl Fighter {
         num_skill_dice: usize,
         modifier: i8,
     ) -> Option<Vec<AttackResult>> {
-        let opponent_fell_modifier: u8 = match opponent.fell {
-            true => 2,
-            false => 0,
-        };
-        let opponent_berserker_modifier: u8 = match opponent.berserker {
-            true => 2,
-            false => 0,
-        };
-        let opponent_wild_modifier: u8 = match opponent.attacked_wild {
-            true => 2,
-            false => 0,
-        };
-        let opponent_weapon_lost_modifier: u8 = match opponent.weapon_lost {
-            true => 2,
-            false => 0,
-        };
+        let opponent_fell_modifier: u8 = if opponent.fell { 2 } else { 0 };
+        let opponent_berserker_modifier: u8 = if opponent.berserker { 2 } else { 0 };
+        let opponent_wild_modifier: u8 = if opponent.attacked_wild { 2 } else { 0 };
+        let opponent_weapon_lost_modifier: u8 = if opponent.weapon_lost { 2 } else { 0 };
         let mut opponent_parry = opponent.passive_stats.parry;
         opponent_parry = opponent_parry.saturating_sub(opponent_fell_modifier);
         opponent_parry = opponent_parry.saturating_sub(opponent_berserker_modifier);
@@ -415,7 +401,7 @@ impl Fighter {
             hit
         };
         let rolls = roller().roll_skill_with_n_dice(
-            &self.character.skills.kampfen,
+            self.character.skills.kampfen,
             num_skill_dice,
             self.berserker,
         )?;
@@ -465,17 +451,16 @@ impl Fighter {
             AttackResult::Raise => true,
         };
 
-        let mut damage = match primary_weapon {
-            true => {
-                roller().roll_weapon_damage(&self.character.weapon, self.character.attributes.sta)
-            }
-            false => roller().roll_weapon_damage(
+        let mut damage = if primary_weapon {
+            roller().roll_weapon_damage(&self.character.weapon, self.character.attributes.sta)
+        } else {
+            roller().roll_weapon_damage(
                 &self.character.secondary_weapon,
                 self.character.attributes.sta,
-            ),
+            )
         };
 
-        damage += roller().roll_attribute_without_wild_die(&self.character.attributes.sta);
+        damage += roller().roll_attribute_without_wild_die(self.character.attributes.sta);
         if raise {
             damage += roller().roll_raise();
         }
@@ -536,7 +521,7 @@ impl Fighter {
                 self.fell = true;
             }
             CriticalFailResult::WeaponLost => {
-                self.weapon_lost = !self.character.edges.kampfkunstler.is_set()
+                self.weapon_lost = !self.character.edges.kampfkunstler.is_set();
             }
             CriticalFailResult::Injured => {
                 let mut tmp = self.clone();

@@ -20,7 +20,7 @@ pub struct PassiveModifiers {
 pub struct WildAttack(bool);
 
 impl WildAttack {
-    pub fn is_set(&self) -> bool {
+    pub fn is_set(self) -> bool {
         self.0
     }
 
@@ -54,12 +54,9 @@ impl WildAttack {
         });
     }
 
-    fn draw_as_opponent(&self, ui: &mut egui::Ui) {
+    fn draw_as_opponent(self, ui: &mut egui::Ui) {
         ui.label("Wild angreifen");
-        let text = match self.0 {
-            true => "Ja",
-            false => "Nein",
-        };
+        let text = if self.0 { "Ja" } else { "Nein" };
         let _ = ui.button(text);
     }
 }

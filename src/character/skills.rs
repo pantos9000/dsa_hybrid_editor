@@ -129,7 +129,7 @@ impl ValueSelector for Skill {
 }
 
 impl Skill {
-    pub fn wild_die_sides(&self) -> u8 {
+    pub fn wild_die_sides(self) -> u8 {
         match self {
             Self::Master => 10,
             _ => 6,

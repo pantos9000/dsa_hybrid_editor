@@ -20,10 +20,10 @@ impl<const SECONDARY: bool> Default for Weapon<SECONDARY> {
     fn default() -> Self {
         Self {
             active: !SECONDARY,
-            damage: Default::default(),
-            bonus_damage: Default::default(),
-            piercing: Default::default(),
-            reach: Default::default(),
+            damage: Damage::default(),
+            bonus_damage: IntStat::default(),
+            piercing: IntStat::default(),
+            reach: IntStat::default(),
         }
     }
 }
@@ -82,9 +82,10 @@ impl<const SECONDARY: bool> Weapon<SECONDARY> {
     }
 
     fn damage_name(&self) -> DamageName {
-        match SECONDARY {
-            false => DamageName::Primary,
-            true => DamageName::Secondary,
+        if SECONDARY {
+            DamageName::Secondary
+        } else {
+            DamageName::Primary
         }
     }
 
@@ -116,10 +117,7 @@ impl<const SECONDARY: bool> Weapon<SECONDARY> {
 
     fn draw_active_as_opponent(&mut self, ui: &mut egui::Ui) {
         ui.label("Aktiv");
-        let active = match self.active {
-            true => "Ja",
-            false => "Nein",
-        };
+        let active = if self.active { "Ja" } else { "Nein" };
         let _ = ui.button(active);
     }
 }

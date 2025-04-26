@@ -76,11 +76,11 @@ impl Card {
         (0..=52).map(Card::new).chain(std::iter::once(Card::JOKER))
     }
 
-    pub fn is_joker(&self) -> bool {
+    pub fn is_joker(self) -> bool {
         self.0 == 52
     }
 
-    pub fn suit(&self) -> Suit {
+    pub fn suit(self) -> Suit {
         match self.0 {
             0..4 => Suit::Two,
             4..8 => Suit::Three,

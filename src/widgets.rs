@@ -126,10 +126,11 @@ impl<const MIN: i8, const MAX: i8> From<IntStat<MIN, MAX>> for i8 {
 pub struct BoolStat(bool);
 
 impl BoolStat {
-    fn as_str(&self) -> &'static str {
-        match self.0 {
-            true => "Ja",
-            false => "Nein",
+    fn as_str(self) -> &'static str {
+        if self.0 {
+            "Ja"
+        } else {
+            "Nein"
         }
     }
 
@@ -145,11 +146,11 @@ impl BoolStat {
         self.0 = value.0;
     }
 
-    pub fn is_set(&self) -> bool {
+    pub fn is_set(self) -> bool {
         self.0
     }
 
-    fn toggled(&self) -> Self {
+    fn toggled(self) -> Self {
         Self(!self.0)
     }
 

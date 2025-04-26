@@ -33,7 +33,7 @@ impl App {
         }
 
         log::info!("creating new app context");
-        Default::default()
+        Self::default()
     }
 }
 
@@ -52,7 +52,7 @@ impl eframe::App for App {
             match response {
                 crate::io::IoResponse::CharLoaded(character) => {
                     self.char = character;
-                    log::info!("character successfully loaded")
+                    log::info!("character successfully loaded");
                 }
                 crate::io::IoResponse::OpponentLoaded(character) => {
                     self.opponent = character;

@@ -41,7 +41,7 @@ impl std::ops::Sub for Total {
 impl Total {
     pub const NONE: Self = Total(None);
 
-    pub fn draw(&self, max_size: impl Into<egui::Vec2>, ui: &mut egui::Ui) {
+    pub fn draw(self, max_size: impl Into<egui::Vec2>, ui: &mut egui::Ui) {
         match self.0 {
             None => {
                 ui.add_sized(max_size, egui::widgets::Spinner::new());
@@ -74,7 +74,7 @@ impl TryFrom<i8> for Gradient {
 impl Gradient {
     pub const NONE: Self = Gradient { value: None };
 
-    pub fn draw(&self, ui: &mut egui::Ui) {
+    pub fn draw(self, ui: &mut egui::Ui) {
         match self.value {
             None => {
                 ui.spinner();

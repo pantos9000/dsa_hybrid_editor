@@ -50,7 +50,7 @@ impl Roller {
         result + modifier
     }
 
-    /// return `None`` on crit fail
+    /// return `None` on crit fail
     fn roll_additional_wild_die(&self, old_result: Roll, sides: u8) -> Option<Roll> {
         let wild_die = self.roll_die(sides, 0);
         if old_result.as_u8() < 2 && wild_die.as_u8() < 2 {
@@ -68,7 +68,7 @@ impl Roller {
         self.roll_die_nonexploding(6) + self.roll_die_nonexploding(6)
     }
 
-    pub fn roll_attribute_without_wild_die(&self, attribute: &Attribute) -> Roll {
+    pub fn roll_attribute_without_wild_die(&self, attribute: Attribute) -> Roll {
         let (sides, modifier) = match attribute {
             Attribute::W4 => (4, 0),
             Attribute::W6 => (6, 0),
@@ -83,7 +83,7 @@ impl Roller {
     }
 
     /// returns `None` on crit fail
-    pub fn roll_attribute(&self, attribute: &Attribute) -> Option<Roll> {
+    pub fn roll_attribute(&self, attribute: Attribute) -> Option<Roll> {
         let mut roll = self.roll_attribute_without_wild_die(attribute);
         roll = self.roll_additional_wild_die(roll, attribute.wild_die_sides())?;
         Some(roll)
@@ -91,7 +91,7 @@ impl Roller {
 
     pub fn roll_skill_with_n_dice(
         &self,
-        skill: &Skill,
+        skill: Skill,
         n: usize,
         fail_on_one: bool,
     ) -> Option<Vec<Roll>> {

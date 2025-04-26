@@ -8,7 +8,7 @@ use super::Drawable;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Bennies {
-    pub(crate) num_bennies: IntStat<0, 10>,
+    pub(crate) count: IntStat<0, 10>,
     pub(crate) use_for_unshake: BoolStat,
     pub(crate) use_for_attack: BoolStat,
     pub(crate) use_for_damage: BoolStat,
@@ -20,7 +20,7 @@ impl Drawable for Bennies {
 
         ui.heading("Bennies");
         grid.show(ui, |ui| {
-            self.num_bennies.draw(NumBennies, sim, ui);
+            self.count.draw(NumBennies, sim, ui);
             ui.end_row();
             self.use_for_unshake.draw(UsageInfo::Unshake, sim, ui);
             ui.end_row();
@@ -36,7 +36,7 @@ impl Drawable for Bennies {
 
         ui.heading("Bennies");
         grid.show(ui, |ui| {
-            self.num_bennies.draw_as_opponent(NumBennies, ui);
+            self.count.draw_as_opponent(NumBennies, ui);
             ui.end_row();
             self.use_for_unshake
                 .draw_as_opponent(UsageInfo::Unshake, ui);
@@ -58,15 +58,15 @@ impl<const MIN: i8, const MAX: i8> DrawInfo<IntStat<MIN, MAX>> for NumBennies {
     }
 
     fn mod_dec(&self) -> CharModification {
-        Box::new(|c| c.bennies.num_bennies.decrement())
+        Box::new(|c| c.bennies.count.decrement())
     }
 
     fn mod_inc(&self) -> CharModification {
-        Box::new(|c| c.bennies.num_bennies.increment())
+        Box::new(|c| c.bennies.count.increment())
     }
 
     fn mod_set(&self, value: IntStat<MIN, MAX>) -> CharModification {
-        Box::new(move |c| c.bennies.num_bennies.set(value.into()))
+        Box::new(move |c| c.bennies.count.set(value.into()))
     }
 }
 

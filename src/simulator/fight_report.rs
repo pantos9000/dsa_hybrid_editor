@@ -103,7 +103,7 @@ impl From<u32> for Stat {
 impl Stat {
     const NONE: Self = Self(None);
 
-    fn draw(&self, max_size: impl Into<egui::Vec2>, ui: &mut egui::Ui) {
+    fn draw(self, max_size: impl Into<egui::Vec2>, ui: &mut egui::Ui) {
         let Some(value) = self.0 else {
             ui.add_sized(max_size, egui::widgets::Spinner::new());
             return;
@@ -232,7 +232,7 @@ impl FightStats {
     }
 
     pub fn add_round(&mut self) {
-        self.rounds += 1
+        self.rounds += 1;
     }
 
     pub fn add_hits_dealt(&mut self, count: u8) {

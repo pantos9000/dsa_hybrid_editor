@@ -123,7 +123,7 @@ impl Character {
             io.request(request);
         }
         if reset.clicked() {
-            *self = Default::default();
+            *self = Self::default();
         }
     }
 }

@@ -3,7 +3,6 @@ use std::{fs, sync::mpsc, thread};
 use anyhow::{Context, Result};
 
 use super::character::Character;
-use crate::util::LogError as _;
 
 pub struct IoThread {
     thread: Option<thread::JoinHandle<()>>,
@@ -64,8 +63,11 @@ impl IoThread {
             match request.recv() {
                 Err(_) => break 'thread_loop,
                 Ok(IoRequest::Save(character)) => {
-                    Self::save(character).or_log_err("failed to save character");
-                    log::debug!("character saved");
+                    if let Err(err) = Self::save(character) {
+                        log::error!("failed to save character: {err}");
+                    } else {
+                        log::debug!("character saved");
+                    }
                 }
                 Ok(IoRequest::LoadChar) => {
                     let new_char = match Self::load() {

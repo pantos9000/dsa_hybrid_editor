@@ -1,7 +1,6 @@
 use super::{Character, Drawable};
-use crate::app::widgets::{DrawInfo, IntStat, ValueSlider as _};
+use crate::app::widgets::{self, DrawInfo, IntStat, ValueSlider as _};
 use crate::simulator::{CharModification, Simulator};
-use crate::util;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct PassiveModifiers {
@@ -62,7 +61,7 @@ impl WildAttack {
 impl Drawable for PassiveModifiers {
     fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
         let name = "Modifikatoren";
-        let grid = util::create_grid(name);
+        let grid = widgets::create_grid(name);
         ui.heading(name);
         grid.show(ui, |ui| {
             self.life.draw(PassiveModifier::Life, sim, ui);
@@ -80,7 +79,7 @@ impl Drawable for PassiveModifiers {
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
         let name = "Gegner Modifikatoren";
-        let grid = util::create_grid(name);
+        let grid = widgets::create_grid(name);
         ui.heading(name);
         grid.show(ui, |ui| {
             self.life.draw_as_opponent(PassiveModifier::Life, ui);
@@ -199,7 +198,7 @@ impl PassiveStats {
     }
 
     fn draw_stats(&self, grid_name: &str, ui: &mut egui::Ui) {
-        let grid = crate::util::create_grid(grid_name);
+        let grid = widgets::create_grid(grid_name);
 
         ui.heading("Passive Werte");
         grid.show(ui, |ui| {

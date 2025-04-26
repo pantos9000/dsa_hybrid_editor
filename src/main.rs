@@ -2,7 +2,6 @@
 
 mod app;
 mod simulator;
-mod util;
 
 fn init_logging() {
     let default_level = if cfg!(debug_assertions) {

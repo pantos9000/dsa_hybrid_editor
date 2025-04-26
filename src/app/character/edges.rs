@@ -1,6 +1,5 @@
-use crate::app::widgets::{BoolStat, DrawInfo, ValueSelector};
+use crate::app::widgets::{self, BoolStat, DrawInfo, ValueSelector};
 use crate::simulator::{CharModification, Simulator};
-use crate::util;
 
 use super::Drawable;
 
@@ -54,7 +53,7 @@ impl Edges {
 
 impl Drawable for Edges {
     fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
-        let grid = util::create_grid("Edges");
+        let grid = widgets::create_grid("Edges");
 
         ui.heading("Edges");
         grid.show(ui, |ui| {
@@ -70,7 +69,7 @@ impl Drawable for Edges {
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let grid = util::create_grid("GegnerEdges");
+        let grid = widgets::create_grid("GegnerEdges");
 
         ui.heading("Edges");
         grid.show(ui, |ui| {

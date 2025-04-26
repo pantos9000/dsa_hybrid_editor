@@ -18,10 +18,12 @@ pub use passive_stats::PassiveStats;
 pub use skills::{Skill, Skills};
 pub use weapon::Weapon;
 
-use super::io::{IoRequest, IoThread};
+use super::{
+    io::{IoRequest, IoThread},
+    widgets,
+};
 
 use crate::simulator::Simulator;
-use crate::util;
 
 /// Represents a drawable element of a char
 trait Drawable {
@@ -58,14 +60,14 @@ impl Character {
     }
 
     pub fn draw(&mut self, sim: &Simulator, io: &IoThread, ui: &mut egui::Ui) {
-        util::create_frame(ui).show(ui, |ui| {
+        widgets::create_frame(ui).show(ui, |ui| {
             ui.with_layout(egui::Layout::top_down_justified(egui::Align::Min), |ui| {
                 ui.horizontal(|ui| {
                     self.draw_buttons(io, ui, false);
                 });
 
                 let mut draw = |drawable: &mut dyn Drawable| {
-                    util::create_frame(ui).show(ui, |ui| {
+                    widgets::create_frame(ui).show(ui, |ui| {
                         drawable.draw(sim, ui);
                     });
                 };
@@ -83,14 +85,14 @@ impl Character {
     }
 
     pub fn draw_as_opponent(&mut self, io: &IoThread, ui: &mut egui::Ui) {
-        util::create_frame(ui).show(ui, |ui| {
+        widgets::create_frame(ui).show(ui, |ui| {
             ui.with_layout(egui::Layout::top_down_justified(egui::Align::Min), |ui| {
                 ui.horizontal(|ui| {
                     self.draw_buttons(io, ui, true);
                 });
 
                 let mut draw = |drawable: &mut dyn Drawable| {
-                    util::create_frame(ui).show(ui, |ui| {
+                    widgets::create_frame(ui).show(ui, |ui| {
                         drawable.draw_as_opponent(ui);
                     });
                 };
@@ -109,9 +111,9 @@ impl Character {
 
     fn draw_buttons(&mut self, io: &IoThread, ui: &mut egui::Ui, is_opponent: bool) {
         let button_size = 40.0;
-        let save = util::create_menu_button("💾", "Save", button_size, ui);
-        let open = util::create_menu_button("🗁", "Open", button_size, ui);
-        let reset = util::create_menu_button("❌", "Reset", button_size, ui);
+        let save = widgets::create_menu_button("💾", "Save", button_size, ui);
+        let open = widgets::create_menu_button("🗁", "Open", button_size, ui);
+        let reset = widgets::create_menu_button("❌", "Reset", button_size, ui);
         if save.clicked() {
             io.request(IoRequest::Save(self.clone()));
         }

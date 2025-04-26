@@ -1,4 +1,4 @@
-use crate::app::widgets::{DrawInfo, ValueSelector};
+use crate::app::widgets::{self, DrawInfo, ValueSelector};
 use crate::simulator::{CharModification, Simulator};
 
 use super::Drawable;
@@ -14,7 +14,7 @@ pub struct Attributes {
 
 impl Drawable for Attributes {
     fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
-        let grid = crate::util::create_grid("Attribute");
+        let grid = widgets::create_grid("Attribute");
 
         ui.heading("Attribute");
         grid.show(ui, |ui| {
@@ -32,7 +32,7 @@ impl Drawable for Attributes {
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let grid = crate::util::create_grid("GegnerAttribute");
+        let grid = widgets::create_grid("GegnerAttribute");
 
         ui.heading("Attribute");
         grid.show(ui, |ui| {

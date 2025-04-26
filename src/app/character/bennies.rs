@@ -1,6 +1,5 @@
-use crate::app::widgets::{BoolStat, DrawInfo, IntStat, ValueSlider as _};
+use crate::app::widgets::{self, BoolStat, DrawInfo, IntStat, ValueSlider as _};
 use crate::simulator::CharModification;
-use crate::util;
 
 use super::Drawable;
 
@@ -14,7 +13,7 @@ pub struct Bennies {
 
 impl Drawable for Bennies {
     fn draw(&mut self, sim: &crate::simulator::Simulator, ui: &mut egui::Ui) {
-        let grid = util::create_grid("Bennies");
+        let grid = widgets::create_grid("Bennies");
 
         ui.heading("Bennies");
         grid.show(ui, |ui| {
@@ -30,7 +29,7 @@ impl Drawable for Bennies {
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let grid = util::create_grid("GegnerBennies");
+        let grid = widgets::create_grid("GegnerBennies");
 
         ui.heading("Bennies");
         grid.show(ui, |ui| {

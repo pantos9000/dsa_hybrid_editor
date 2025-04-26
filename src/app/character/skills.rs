@@ -1,6 +1,6 @@
 use strum::IntoEnumIterator;
 
-use crate::app::widgets::{DrawInfo, ValueSelector};
+use crate::app::widgets::{self, DrawInfo, ValueSelector};
 use crate::simulator::{CharModification, Simulator};
 
 use super::Drawable;
@@ -12,7 +12,7 @@ pub struct Skills {
 
 impl Drawable for Skills {
     fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
-        let grid = crate::util::create_grid("Fähigkeiten");
+        let grid = widgets::create_grid("Fähigkeiten");
 
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {
@@ -22,7 +22,7 @@ impl Drawable for Skills {
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let grid = crate::util::create_grid("GegnerFähigkeiten");
+        let grid = widgets::create_grid("GegnerFähigkeiten");
 
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {

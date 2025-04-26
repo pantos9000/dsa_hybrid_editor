@@ -1,6 +1,6 @@
 use strum::IntoEnumIterator;
 
-use crate::app::widgets::{DrawInfo, IntStat, ValueSelector, ValueSlider};
+use crate::app::widgets::{self, DrawInfo, IntStat, ValueSelector, ValueSlider};
 use crate::simulator::{CharModification, Simulator};
 
 use super::Drawable;
@@ -29,7 +29,7 @@ impl<const SECONDARY: bool> Default for Weapon<SECONDARY> {
 impl<const SECONDARY: bool> Drawable for Weapon<SECONDARY> {
     fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
         let heading = self.heading(false);
-        let grid = crate::util::create_grid(heading);
+        let grid = widgets::create_grid(heading);
         ui.heading(heading);
         grid.show(ui, |ui| {
             self.draw_active(sim, ui);
@@ -49,7 +49,7 @@ impl<const SECONDARY: bool> Drawable for Weapon<SECONDARY> {
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
         let heading = self.heading(true);
-        let grid = crate::util::create_grid(heading);
+        let grid = widgets::create_grid(heading);
         ui.heading(heading);
         grid.show(ui, |ui| {
             self.draw_active_as_opponent(ui);

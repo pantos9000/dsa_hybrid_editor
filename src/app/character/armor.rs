@@ -1,5 +1,4 @@
-use crate::app::widgets::{DrawInfo, IntStat, ValueSlider as _};
-use crate::util;
+use crate::app::widgets::{self, DrawInfo, IntStat, ValueSlider as _};
 
 use super::Drawable;
 
@@ -10,7 +9,7 @@ pub struct Armor {
 
 impl Drawable for Armor {
     fn draw(&mut self, sim: &crate::simulator::Simulator, ui: &mut egui::Ui) {
-        let grid = util::create_grid("Rüstung");
+        let grid = widgets::create_grid("Rüstung");
 
         ui.heading("Rüstung");
         grid.show(ui, |ui| {
@@ -20,7 +19,7 @@ impl Drawable for Armor {
     }
 
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let grid = util::create_grid("GegnerRüstung");
+        let grid = widgets::create_grid("GegnerRüstung");
 
         ui.heading("Rüstung");
         grid.show(ui, |ui| {

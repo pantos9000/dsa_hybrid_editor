@@ -4,8 +4,8 @@ mod fight_report;
 mod fighter;
 mod roller;
 
-use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::thread;
 use std::time::Duration;
 
@@ -22,6 +22,9 @@ pub type CharModification = Box<dyn FnOnce(&mut Character)>;
 
 /// Holds all total results
 type DataMap = DashMap<CharData, FightReport, FxBuildHasher>;
+
+const COUNT_FIGHTS: u32 = 5000;
+const MAX_ROUNDS: u32 = 100;
 
 pub struct Simulator {
     thread: Option<thread::JoinHandle<()>>,
@@ -122,7 +125,7 @@ impl Simulator {
             };
 
             // do the calculation and store the result if needed
-            let report = arena::simulate_fights(&char_data);
+            let report = arena::simulate_fights(&char_data, COUNT_FIGHTS, MAX_ROUNDS);
             gradient_map.insert(char_data, report);
 
             // update progress

@@ -6,6 +6,9 @@ pub struct InvalidGradientValue;
 #[derive(Debug, Default, Copy, Clone)]
 pub struct InvalidTotalValue;
 
+#[derive(Debug, Default, Copy, Clone)]
+pub struct MissingTotalValue;
+
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Total(Option<i8>);
 
@@ -18,6 +21,14 @@ impl TryFrom<i8> for Total {
             101.. => Err(InvalidTotalValue),
             value => Ok(Self(Some(value))),
         }
+    }
+}
+
+impl TryFrom<Total> for i8 {
+    type Error = MissingTotalValue;
+
+    fn try_from(value: Total) -> Result<Self, Self::Error> {
+        value.0.ok_or(MissingTotalValue)
     }
 }
 
@@ -39,7 +50,7 @@ impl std::ops::Sub for Total {
 }
 
 impl Total {
-    pub const NONE: Self = Total(None);
+    pub const NONE: Self = Self(None);
 
     pub fn draw(self, max_size: impl Into<egui::Vec2>, ui: &mut egui::Ui) {
         match self.0 {

@@ -1,23 +1,20 @@
+use super::CharData;
 use super::cards::{Card, CardDeck};
 use super::fight_report::{FightOutcome, FightReport, ReportBuilder};
 use super::fighter::Fighter;
-use super::CharData;
 
-const COUNT_FIGHTS: u32 = 5000;
-const MAX_ROUNDS: u32 = 100;
-
-pub fn simulate_fights(char_data: &CharData) -> FightReport {
+pub fn simulate_fights(char_data: &CharData, count_fights: u32, max_rounds: u32) -> FightReport {
     let mut report = ReportBuilder::new();
-    for _ in 0..COUNT_FIGHTS {
-        let outcome = calc_fight(char_data);
+    for _ in 0..count_fights {
+        let outcome = calc_fight(char_data, max_rounds);
         report.add_fight(outcome);
     }
     report.build()
 }
 
-fn calc_fight(char_data: &CharData) -> FightOutcome {
+fn calc_fight(char_data: &CharData, max_rounds: u32) -> FightOutcome {
     let mut arena = Arena::new(char_data);
-    'fight: for _ in 0..MAX_ROUNDS {
+    'fight: for _ in 0..max_rounds {
         if matches!(arena.round(), Err(FightIsOver)) {
             break 'fight;
         }
@@ -122,33 +119,38 @@ mod tests {
 
     #[test]
     fn test_probability_for_same_chars_is_around_50() {
-        for _ in 0..20 {
-            let char1 = Character::default();
-            let char2 = Character::default();
-            let data1 = CharData {
-                character: char1.clone(),
-                opponent: char2.clone(),
-            };
-            let data2 = CharData {
-                character: char2,
-                opponent: char1,
-            };
+        let count_fights = 10000;
+        let max_rounds = 100;
 
-            let prob1: Option<i8> = simulate_fights(&data1).total().into();
-            let prob2: Option<i8> = simulate_fights(&data2).total().into();
-            let prob1 = prob1.unwrap();
-            let prob2 = prob2.unwrap();
+        let char1 = Character::default();
+        let char2 = Character::default();
+        let data1 = CharData {
+            character: char1.clone(),
+            opponent: char2.clone(),
+        };
+        let data2 = CharData {
+            character: char2,
+            opponent: char1,
+        };
 
-            eprintln!("prob1 = {prob1}");
-            eprintln!("prob2 = {prob1}");
-            assert!(
-                (48..=52).contains(&prob1),
-                "{prob1} is too far away from 50"
-            );
-            assert!(
-                (48..=52).contains(&prob2),
-                "{prob2} is too far away from 50"
-            );
-        }
+        let prob1: i8 = simulate_fights(&data1, count_fights, max_rounds)
+            .total()
+            .try_into()
+            .unwrap();
+        let prob2: i8 = simulate_fights(&data2, count_fights, max_rounds)
+            .total()
+            .try_into()
+            .unwrap();
+
+        eprintln!("prob1 = {prob1}");
+        eprintln!("prob2 = {prob1}");
+        assert!(
+            (48..=52).contains(&prob1),
+            "{prob1} is too far away from 50"
+        );
+        assert!(
+            (48..=52).contains(&prob2),
+            "{prob2} is too far away from 50"
+        );
     }
 }

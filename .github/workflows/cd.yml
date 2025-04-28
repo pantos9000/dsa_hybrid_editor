@@ -1,7 +1,7 @@
 # Shamelessly stole a lot of this logic from the awesome ripgrep:
 # https://github.com/BurntSushi/ripgrep/blob/master/.github/workflows/release.yml
 
-name: cd-pipeline
+name: release
 
 on:
   push:

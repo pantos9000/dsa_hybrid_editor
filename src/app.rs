@@ -123,18 +123,18 @@ impl App {
         let size = 60.0;
         ui.horizontal(|ui| {
             let copy_char_button =
-                widgets::create_menu_button("➡", "Copy char to opponent", size, ui);
+                widgets::create_menu_button("➡", "Char zu Gegner kopieren", size, ui);
             if copy_char_button.clicked() {
                 self.opponent = self.char.clone();
             }
 
-            let switch_button = widgets::create_menu_button("↔", "Switch chars", size, ui);
+            let switch_button = widgets::create_menu_button("↔", "Chars vertauschen", size, ui);
             if switch_button.clicked() {
                 std::mem::swap(&mut self.char, &mut self.opponent);
             }
 
             let copy_opponent_button =
-                widgets::create_menu_button("⬅", "Copy opponent to char", size, ui);
+                widgets::create_menu_button("⬅", "Gegner zu Char kopieren", size, ui);
             if copy_opponent_button.clicked() {
                 self.char = self.opponent.clone();
             }

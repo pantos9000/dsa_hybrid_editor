@@ -156,57 +156,57 @@ impl FightReport {
         ui.vertical(|ui| {
             egui::Grid::new("FightReport")
                 .num_columns(10) // +1 for each empty space to left and right and between
-                .min_col_width(60.0)
+                .min_col_width(50.0)
                 .spacing([4.0, 1.0])
                 .striped(true)
                 .show(ui, |ui| {
                     ui.label("");
 
-                    ui.label("chance to win");
+                    ui.label("Gewinnchance");
                     self.prob_win.draw(Self::STAT_SIZE, ui);
 
                     ui.label("");
 
-                    ui.label("avg hits");
+                    ui.label("Ø Treffer / Runde");
                     self.avg_hits_dealt.draw(Self::STAT_SIZE, ui);
 
                     ui.label("");
 
-                    ui.label("avg rcvd hits");
+                    ui.label("Ø erh. Treffer");
                     self.avg_hits_received.draw(Self::STAT_SIZE, ui);
 
                     ui.label("");
                     ui.end_row();
                     ui.label("");
 
-                    ui.label("chance to draw");
+                    ui.label("Chance Unentsch.");
                     self.prob_draw.draw(Self::STAT_SIZE, ui);
 
                     ui.label("");
 
-                    ui.label("avg dmg hits");
+                    ui.label("Ø Treffer m. Schaden");
                     self.avg_dmg_hits_dealt.draw(Self::STAT_SIZE, ui);
 
                     ui.label("");
 
-                    ui.label("avg rcvd dmg hits");
+                    ui.label("Ø erh. Treffer m. Schaden");
                     self.avg_dmg_hits_received.draw(Self::STAT_SIZE, ui);
 
                     ui.label("");
                     ui.end_row();
                     ui.label("");
 
-                    ui.label("avg rounds");
+                    ui.label("Ø Runden");
                     self.avg_rounds.draw(Self::STAT_SIZE, ui);
 
                     ui.label("");
 
-                    ui.label("avg dmg");
+                    ui.label("Ø Schaden / Schlag");
                     self.avg_damage_dealt.draw(Self::STAT_SIZE, ui);
 
                     ui.label("");
 
-                    ui.label("avg rcvd dmg");
+                    ui.label("Ø erh. Schaden / Schlag");
                     self.avg_damage_received.draw(Self::STAT_SIZE, ui);
 
                     ui.label("");

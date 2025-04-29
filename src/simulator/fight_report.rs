@@ -50,7 +50,7 @@ impl ReportBuilder {
 
     pub fn build(self) -> FightReport {
         if self.count_fights == 0 {
-            return FightReport::NONE; // TODO return something else... ZERO?
+            return FightReport::ZERO;
         }
 
         let calc_prob = |count: u32| -> Total {
@@ -102,6 +102,7 @@ impl From<u32> for Stat {
 
 impl Stat {
     const NONE: Self = Self(None);
+    const ZERO: Self = Self(Some(0));
 
     fn draw(self, max_size: impl Into<egui::Vec2>, ui: &mut egui::Ui) {
         let Some(value) = self.0 else {
@@ -144,6 +145,17 @@ impl FightReport {
         avg_hits_received: Stat::NONE,
         avg_dmg_hits_received: Stat::NONE,
         avg_damage_received: Stat::NONE,
+    };
+    pub const ZERO: Self = Self {
+        prob_win: Total::ZERO,
+        prob_draw: Total::ZERO,
+        avg_rounds: Stat::ZERO,
+        avg_hits_dealt: Stat::ZERO,
+        avg_dmg_hits_dealt: Stat::ZERO,
+        avg_damage_dealt: Stat::ZERO,
+        avg_hits_received: Stat::ZERO,
+        avg_dmg_hits_received: Stat::ZERO,
+        avg_damage_received: Stat::ZERO,
     };
 
     const STAT_SIZE: [f32; 2] = [30.0, 20.0];

@@ -51,6 +51,7 @@ impl std::ops::Sub for Total {
 
 impl Total {
     pub const NONE: Self = Self(None);
+    pub const ZERO: Self = Self(Some(0));
 
     pub fn draw(self, max_size: impl Into<egui::Vec2>, ui: &mut egui::Ui) {
         match self.0 {

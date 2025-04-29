@@ -165,6 +165,12 @@ impl FightReport {
     }
 
     pub fn draw(&self, ui: &mut egui::Ui) {
+        let highlight_color = if ui.visuals().dark_mode {
+            egui::Color32::CYAN
+        } else {
+            egui::Color32::BLUE
+        };
+
         ui.vertical(|ui| {
             egui::Grid::new("FightReport")
                 .num_columns(10) // +1 for each empty space to left and right and between
@@ -174,8 +180,10 @@ impl FightReport {
                 .show(ui, |ui| {
                     ui.label("");
 
+                    ui.visuals_mut().override_text_color = Some(highlight_color);
                     ui.label("Gewinnchance");
                     self.prob_win.draw(Self::STAT_SIZE, ui);
+                    ui.visuals_mut().override_text_color = None;
 
                     ui.label("");
 

@@ -322,11 +322,9 @@ impl Fighter {
         false
     }
 
+    /// return `true` if bennie was used
     fn unshake_with_bennie(&mut self) -> bool {
-        if !self.shaken {
-            return true;
-        }
-        if self.bennies == 0 {
+        if !self.shaken || self.bennies == 0 {
             return false;
         }
         self.bennies -= 1;

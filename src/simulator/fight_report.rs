@@ -187,7 +187,7 @@ impl FightReport {
 
                     ui.label("");
 
-                    ui.label("Ø Treffer / Runde");
+                    ui.label("Ø Treffer / Kampf");
                     self.avg_hits_dealt.draw(Self::STAT_SIZE, ui);
 
                     ui.label("");
@@ -216,7 +216,7 @@ impl FightReport {
                     ui.end_row();
                     ui.label("");
 
-                    ui.label("Ø Runden");
+                    ui.label("Ø Runden / Kampf");
                     self.avg_rounds.draw(Self::STAT_SIZE, ui);
 
                     ui.label("");

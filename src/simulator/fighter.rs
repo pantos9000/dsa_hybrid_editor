@@ -141,8 +141,13 @@ impl Fighter {
         }
 
         // take a step back to ready erstschlag if we have a weapon with reach or if opponent is shaken
-        if i8::from(self.character.weapon.reach) > 0 || opponent.shaken {
+        if i8::from(self.character.weapon.reach) > 0 {
             self.erstschlag_ready = true;
+        } else {
+            opponent.unshake_against_erstschlag();
+            if opponent.shaken {
+                self.erstschlag_ready = true;
+            }
         }
     }
 
@@ -311,11 +316,22 @@ impl Fighter {
         if has_action {
             return true;
         }
-        if self.character.bennies.use_for_unshake.is_set() && self.bennies > 0 {
-            self.bennies -= 1;
-            return true;
+        if self.character.bennies.use_for_unshake.is_set() {
+            return self.unshake_with_bennie();
         }
         false
+    }
+
+    fn unshake_with_bennie(&mut self) -> bool {
+        if !self.shaken {
+            return true;
+        }
+        if self.bennies == 0 {
+            return false;
+        }
+        self.bennies -= 1;
+        self.shaken = false;
+        true
     }
 
     fn unshake_without_bennie(&mut self) -> bool {
@@ -343,6 +359,13 @@ impl Fighter {
                 true
             }
         }
+    }
+
+    fn unshake_against_erstschlag(&mut self) {
+        if !self.character.bennies.use_against_erstschlag.is_set() {
+            return;
+        }
+        self.unshake_with_bennie();
     }
 
     fn try_to_hit(

@@ -141,12 +141,14 @@ impl Fighter {
         }
 
         // take a step back to ready erstschlag if we have a weapon with reach or if opponent is shaken
-        if i8::from(self.character.weapon.reach) > 0 {
-            self.erstschlag_ready = true;
-        } else {
-            opponent.unshake_against_erstschlag();
-            if opponent.shaken {
+        if self.character.edges.erstschlag.is_set() {
+            if i8::from(self.character.weapon.reach) > 0 {
                 self.erstschlag_ready = true;
+            } else {
+                opponent.unshake_against_erstschlag();
+                if opponent.shaken {
+                    self.erstschlag_ready = true;
+                }
             }
         }
     }

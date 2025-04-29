@@ -8,9 +8,17 @@ simulating a simple duel between the two. Apart from displaying different Probab
 (e.g. to win), the editor also displays the probability gradient for each possible change, i.e.
 how the win chance will be affected when increasing or decreasing a value.
 
-## Installation
+[![Build status](https://github.com/pantos9000/dsa_hybrid_editor/actions/workflows/ci.yml/badge.svg?label=build%20status)](https://github.com/pantos9000/dsa_hybrid_editor/actions)
 
-TODO
+[![GitHub Release](https://img.shields.io/github/v/release/pantos9000/dsa_hybrid_editor?label=latest%20version)](https://github.com/pantos9000/dsa_hybrid_editor/releases)
+
+
+## Installation/Usage
+
+* Navigate to the [release page](https://github.com/pantos9000/dsa_hybrid_editor/releases)
+* Download the archive for your platform, e.g. `x86_64-pc-windows-msvc`
+* (Optional) Check the sha256 sum of your download
+* Unpack the archive and run the executable
 
 ## Building
 

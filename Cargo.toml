@@ -1,6 +1,6 @@
 [package]
 name = "dsa_hybrid_editor"
-version = "0.1.2"
+version = "1.0.0"
 authors = ["Pantos <pantos+github@akk.org>"]
 edition = "2024"
 publish = false

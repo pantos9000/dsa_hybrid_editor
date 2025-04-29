@@ -8,7 +8,7 @@ simulating a simple duel between the two. Apart from displaying different Probab
 (e.g. to win), the editor also displays the probability gradient for each possible change, i.e.
 how the win chance will be affected when increasing or decreasing a value.
 
-[![Build status](https://github.com/pantos9000/dsa_hybrid_editor/actions/workflows/ci.yml/badge.svg?label=build%20status)](https://github.com/pantos9000/dsa_hybrid_editor/actions)
+[![Build status](https://github.com/pantos9000/dsa_hybrid_editor/actions/workflows/ci.yml/badge.svg)](https://github.com/pantos9000/dsa_hybrid_editor/actions)
 
 [![GitHub Release](https://img.shields.io/github/v/release/pantos9000/dsa_hybrid_editor?label=latest%20version)](https://github.com/pantos9000/dsa_hybrid_editor/releases)
 

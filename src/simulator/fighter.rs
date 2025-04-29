@@ -22,7 +22,7 @@ pub struct Fighter {
     weapon_lost: bool,
     berserker: bool,
     riposte_done: bool,
-    erstschlag_done: bool,
+    erstschlag_ready: bool,
     attacked_wild: bool,
 }
 
@@ -49,7 +49,7 @@ impl Fighter {
             weapon_lost: false,
             berserker,
             riposte_done: false,
-            erstschlag_done: false,
+            erstschlag_ready: true,
             attacked_wild: false,
         }
     }
@@ -81,9 +81,6 @@ impl Fighter {
         let card = self.draw_card(cards);
         self.joker = card.is_joker();
         self.riposte_done = false;
-        if i8::from(self.character.weapon.reach) > 0 {
-            self.erstschlag_done = false;
-        }
         card
     }
 
@@ -141,6 +138,11 @@ impl Fighter {
                 attacks.next().is_none(),
                 "attacks should only contain single attack"
             );
+        }
+
+        // take a step back to ready erstschlag if we have a weapon with reach or if opponent is shaken
+        if i8::from(self.character.weapon.reach) > 0 || opponent.shaken {
+            self.erstschlag_ready = true;
         }
     }
 
@@ -287,13 +289,12 @@ impl Fighter {
         if !self.character.edges.erstschlag.is_set()
             || i8::from(opponent.character.weapon.reach) > 0
             || self.shaken
-            || self.erstschlag_done
+            || !self.erstschlag_ready
         {
             return;
         }
 
-        self.erstschlag_done = true;
-
+        self.erstschlag_ready = false;
         self.do_special_attack(opponent);
     }
 

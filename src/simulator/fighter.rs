@@ -335,12 +335,22 @@ impl Fighter {
     fn trigger_erstschlag(&mut self, opponent: &mut Self) {
         if !self.character.edges.erstschlag.is_set()
             || i8::from(opponent.character.weapon.reach) > 0
-            || self.shaken
             || !self.distance.base_contact()
         {
             return;
         }
 
+        if self.character.bennies.use_for_erstschlag.is_set() {
+            // if we would be able to do erstschlag, try to unshake if necessary
+            self.unshake_with_bennie();
+        }
+
+        if self.shaken {
+            // if still shaken, don't attack
+            return;
+        }
+
+        // do erstschlag
         self.do_special_attack(opponent);
     }
 

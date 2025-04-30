@@ -1,4 +1,5 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
 
 use crate::app::character::{Character, Edge3, PassiveStats};
 use crate::simulator::fight_report::FightStats;
@@ -7,6 +8,29 @@ use super::{
     cards::{Card, CardDeck, Suit},
     roller::{Roll, RollResult, roller},
 };
+
+#[derive(Debug, Default, Clone)]
+pub struct Distance {
+    base_contact: Cell<bool>,
+}
+
+impl Distance {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn close_in(&self) {
+        self.base_contact.set(true);
+    }
+
+    pub fn back_off(&self) {
+        self.base_contact.set(false);
+    }
+
+    pub fn base_contact(&self) -> bool {
+        self.base_contact.get()
+    }
+}
 
 #[allow(clippy::struct_excessive_bools)] // lots of yes/no state
 #[derive(Debug, Clone)]
@@ -22,18 +46,12 @@ pub struct Fighter {
     weapon_lost: bool,
     berserker: bool,
     riposte_done: bool,
-    erstschlag_ready: bool,
     attacked_wild: bool,
-}
-
-impl Default for Fighter {
-    fn default() -> Self {
-        Self::new(Character::default())
-    }
+    distance: Rc<Distance>,
 }
 
 impl Fighter {
-    pub fn new(character: Character) -> Self {
+    pub fn new(character: Character, distance: Rc<Distance>) -> Self {
         let passive_stats = PassiveStats::new(&character);
         let berserker = character.edges.berserker == Edge3::Improved;
         let bennies = i8::from(character.bennies.count).try_into().unwrap();
@@ -49,8 +67,8 @@ impl Fighter {
             weapon_lost: false,
             berserker,
             riposte_done: false,
-            erstschlag_ready: true,
             attacked_wild: false,
+            distance,
         }
     }
 
@@ -76,6 +94,10 @@ impl Fighter {
         card
     }
 
+    fn weapon_has_reach(&self) -> bool {
+        i8::from(self.character.weapon.reach) > 0
+    }
+
     pub fn new_round(&mut self, cards: &mut CardDeck) -> Card {
         self.fight_stats.borrow_mut().add_round();
         let card = self.draw_card(cards);
@@ -87,6 +109,33 @@ impl Fighter {
     pub fn is_dead(&self) -> bool {
         let threshold = if self.berserker { 0 } else { 5 };
         self.passive_stats.life <= threshold
+    }
+
+    fn step_forward(&mut self, opponent: &mut Fighter) {
+        if self.weapon_has_reach() || self.distance.base_contact() {
+            // don't step forward if not needed
+            return;
+        }
+        self.distance.close_in();
+        opponent.trigger_erstschlag(self);
+    }
+
+    fn step_back(&mut self, opponent: &mut Fighter) {
+        if !self.character.edges.erstschlag.is_set() {
+            // if we don't have erstschlag, don't step back
+            return;
+        }
+        if self.weapon_has_reach() {
+            // always step back if opponent can't hit us
+            self.distance.back_off();
+            return;
+        }
+        opponent.unshake_against_erstschlag();
+        if !opponent.shaken {
+            // don't step back if opponent could hit us
+            return;
+        }
+        self.distance.back_off();
     }
 
     fn do_full_attack(&mut self, opponent: &mut Fighter) {
@@ -139,18 +188,6 @@ impl Fighter {
                 "attacks should only contain single attack"
             );
         }
-
-        // take a step back to ready erstschlag if we have a weapon with reach or if opponent is shaken
-        if self.character.edges.erstschlag.is_set() {
-            if i8::from(self.character.weapon.reach) > 0 {
-                self.erstschlag_ready = true;
-            } else {
-                opponent.unshake_against_erstschlag();
-                if opponent.shaken {
-                    self.erstschlag_ready = true;
-                }
-            }
-        }
     }
 
     fn do_special_attack(&mut self, opponent: &mut Fighter) {
@@ -189,13 +226,16 @@ impl Fighter {
             return;
         }
 
-        opponent.trigger_erstschlag(self);
+        self.step_forward(opponent);
         if self.shaken {
             // we were interrupted by first strike, return without doing anything
             return;
         }
 
         self.do_full_attack(opponent);
+
+        // take a step back to ready erstschlag
+        self.step_back(opponent);
     }
 
     fn apply_wound_penalty(&self, roll: &mut Roll) {
@@ -296,12 +336,11 @@ impl Fighter {
         if !self.character.edges.erstschlag.is_set()
             || i8::from(opponent.character.weapon.reach) > 0
             || self.shaken
-            || !self.erstschlag_ready
+            || !self.distance.base_contact()
         {
             return;
         }
 
-        self.erstschlag_ready = false;
         self.do_special_attack(opponent);
     }
 

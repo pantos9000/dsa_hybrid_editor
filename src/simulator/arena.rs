@@ -1,7 +1,9 @@
+use std::rc::Rc;
+
 use super::CharData;
 use super::cards::{Card, CardDeck};
 use super::fight_report::{FightOutcome, FightReport, ReportBuilder};
-use super::fighter::Fighter;
+use super::fighter::{Distance, Fighter};
 
 pub fn simulate_fights(char_data: &CharData, count_fights: u32, max_rounds: u32) -> FightReport {
     let mut report = ReportBuilder::new();
@@ -25,7 +27,7 @@ fn calc_fight(char_data: &CharData, max_rounds: u32) -> FightOutcome {
 struct FightIsOver;
 type FightResult = Result<(), FightIsOver>;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct Arena {
     cards: CardDeck,
     fighter: Fighter,
@@ -35,8 +37,9 @@ struct Arena {
 impl Arena {
     fn new(char_data: &CharData) -> Self {
         let cards = CardDeck::new();
-        let fighter = Fighter::new(char_data.character.clone());
-        let opponent = Fighter::new(char_data.opponent.clone());
+        let distance = Rc::new(Distance::new());
+        let fighter = Fighter::new(char_data.character.clone(), Rc::clone(&distance));
+        let opponent = Fighter::new(char_data.opponent.clone(), distance);
         Self {
             cards,
             fighter,

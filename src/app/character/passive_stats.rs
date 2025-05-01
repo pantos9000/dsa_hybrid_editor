@@ -9,34 +9,40 @@ pub struct PassiveModifiers {
     pub(crate) robustness: IntStat<-4, 4>,
     pub(crate) attack: IntStat<-4, 4>,
     pub(crate) attack_wild: BoolStat,
+    pub(crate) attack_head: BoolStat,
 }
 
 enum StrategyInfo {
     AttackWild,
+    AttackHead,
 }
 
 impl DrawInfo<BoolStat> for StrategyInfo {
     fn as_str(&self) -> &'static str {
         match self {
             Self::AttackWild => "Wild angreifen",
+            Self::AttackHead => "Auf Kopf zielen",
         }
     }
 
     fn mod_dec(&self) -> CharModification {
         match self {
             Self::AttackWild => Box::new(|c| c.passive_modifiers.attack_wild.decrement()),
+            Self::AttackHead => Box::new(|c| c.passive_modifiers.attack_head.decrement()),
         }
     }
 
     fn mod_inc(&self) -> CharModification {
         match self {
             Self::AttackWild => Box::new(|c| c.passive_modifiers.attack_wild.increment()),
+            Self::AttackHead => Box::new(|c| c.passive_modifiers.attack_head.increment()),
         }
     }
 
     fn mod_set(&self, value: BoolStat) -> CharModification {
         match self {
             Self::AttackWild => Box::new(move |c| c.passive_modifiers.attack_wild.set(value)),
+            Self::AttackHead => Box::new(move |c| c.passive_modifiers.attack_head.set(value)),
         }
     }
 }
@@ -57,6 +63,8 @@ impl Drawable for PassiveModifiers {
             ui.end_row();
             self.attack_wild.draw(StrategyInfo::AttackWild, sim, ui);
             ui.end_row();
+            self.attack_head.draw(StrategyInfo::AttackHead, sim, ui);
+            ui.end_row();
         });
     }
 
@@ -76,6 +84,9 @@ impl Drawable for PassiveModifiers {
             ui.end_row();
             self.attack_wild
                 .draw_as_opponent(StrategyInfo::AttackWild, ui);
+            ui.end_row();
+            self.attack_head
+                .draw_as_opponent(StrategyInfo::AttackHead, ui);
             ui.end_row();
         });
     }
@@ -175,7 +186,6 @@ impl PassiveStats {
 
     fn calc_robustness(character: &Character) -> u8 {
         let mut robustness = 2 + u8::from(character.attributes.kon) / 2;
-        robustness = robustness.saturating_add_signed(character.armor.torso.into());
         robustness =
             robustness.saturating_add_signed(character.passive_modifiers.robustness.into());
         robustness

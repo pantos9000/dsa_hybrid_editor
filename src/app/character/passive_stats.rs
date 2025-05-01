@@ -1,5 +1,5 @@
 use super::{Character, Drawable};
-use crate::app::widgets::{self, DrawInfo, IntStat, ValueSlider as _};
+use crate::app::widgets::{self, BoolStat, DrawInfo, IntStat, ValueSlider as _};
 use crate::simulator::{CharModification, Simulator};
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
@@ -8,53 +8,36 @@ pub struct PassiveModifiers {
     pub(crate) parry: IntStat<-4, 4>,
     pub(crate) robustness: IntStat<-4, 4>,
     pub(crate) attack: IntStat<-4, 4>,
-    pub(crate) attack_wild: WildAttack,
+    pub(crate) attack_wild: BoolStat,
 }
 
-#[derive(
-    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
-)]
-pub struct WildAttack(bool);
+enum StrategyInfo {
+    AttackWild,
+}
 
-impl WildAttack {
-    pub fn is_set(self) -> bool {
-        self.0
+impl DrawInfo<BoolStat> for StrategyInfo {
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::AttackWild => "Wild angreifen",
+        }
     }
 
-    fn decrement(&mut self) {
-        self.0 = false;
+    fn mod_dec(&self) -> CharModification {
+        match self {
+            Self::AttackWild => Box::new(|c| c.passive_modifiers.attack_wild.decrement()),
+        }
     }
 
-    fn increment(&mut self) {
-        self.0 = true;
+    fn mod_inc(&self) -> CharModification {
+        match self {
+            Self::AttackWild => Box::new(|c| c.passive_modifiers.attack_wild.increment()),
+        }
     }
 
-    fn toggle(&mut self) {
-        self.0 = !self.0;
-    }
-
-    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
-        let mod_toggle: CharModification = Box::new(|c| c.passive_modifiers.attack_wild.toggle());
-        let mod_dec: CharModification = Box::new(|c| c.passive_modifiers.attack_wild.decrement());
-        let mod_inc: CharModification = Box::new(|c| c.passive_modifiers.attack_wild.increment());
-
-        ui.checkbox(&mut self.0, "Wild angreifen")
-            .on_hover_ui(|ui| {
-                ui.horizontal(|ui| {
-                    sim.gradient(mod_toggle).draw(ui);
-                });
-            });
-
-        ui.horizontal(|ui| {
-            sim.gradient(mod_dec).draw(ui);
-            sim.gradient(mod_inc).draw(ui);
-        });
-    }
-
-    fn draw_as_opponent(self, ui: &mut egui::Ui) {
-        ui.label("Wild angreifen");
-        let text = if self.0 { "Ja" } else { "Nein" };
-        let _ = ui.button(text);
+    fn mod_set(&self, value: BoolStat) -> CharModification {
+        match self {
+            Self::AttackWild => Box::new(move |c| c.passive_modifiers.attack_wild.set(value)),
+        }
     }
 }
 
@@ -72,7 +55,7 @@ impl Drawable for PassiveModifiers {
             ui.end_row();
             self.attack.draw(PassiveModifier::Attack, sim, ui);
             ui.end_row();
-            self.attack_wild.draw(sim, ui);
+            self.attack_wild.draw(StrategyInfo::AttackWild, sim, ui);
             ui.end_row();
         });
     }
@@ -91,7 +74,8 @@ impl Drawable for PassiveModifiers {
             ui.end_row();
             self.attack.draw_as_opponent(PassiveModifier::Attack, ui);
             ui.end_row();
-            self.attack_wild.draw_as_opponent(ui);
+            self.attack_wild
+                .draw_as_opponent(StrategyInfo::AttackWild, ui);
             ui.end_row();
         });
     }

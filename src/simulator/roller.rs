@@ -161,6 +161,16 @@ impl Roll {
     pub fn as_u8(self) -> u8 {
         self.into()
     }
+
+    pub fn as_i8(self) -> i8 {
+        self.into()
+    }
+}
+
+impl From<Roll> for i8 {
+    fn from(value: Roll) -> Self {
+        value.0
+    }
 }
 
 impl From<Roll> for u8 {
@@ -243,6 +253,20 @@ impl std::ops::AddAssign<i8> for Roll {
     }
 }
 
+impl std::ops::Sub<i8> for Roll {
+    type Output = Self;
+
+    fn sub(self, rhs: i8) -> Self::Output {
+        Roll(self.0.saturating_sub(rhs))
+    }
+}
+
+impl std::ops::SubAssign<i8> for Roll {
+    fn sub_assign(&mut self, rhs: i8) {
+        *self = *self - rhs;
+    }
+}
+
 impl std::ops::Add<Roll> for u8 {
     type Output = Self;
 
@@ -309,5 +333,50 @@ mod tests {
         assert_eq!(Roll(11).eval_against(8), RollResult::Success);
         assert_eq!(Roll(12).eval_against(8), RollResult::Raise);
         assert_eq!(Roll(13).eval_against(8), RollResult::Raise);
+    }
+
+    #[test]
+    fn test_roll_arithmetic_assign() {
+        let mut roll = Roll(2);
+        roll += 1_u8;
+        assert_eq!(roll.0, 3);
+        roll += 1_i8;
+        assert_eq!(roll.0, 4);
+        roll -= 1_u8;
+        assert_eq!(roll.0, 3);
+        roll -= 1_i8;
+        assert_eq!(roll.0, 2);
+    }
+
+    #[test]
+    fn test_roll_arithmetic() {
+        let roll = Roll(3);
+        assert_eq!(roll + 2_u8, Roll(5));
+        assert_eq!(roll + 2_i8, Roll(5));
+        assert_eq!(roll - 2_u8, Roll(1));
+        assert_eq!(roll - 2_i8, Roll(1));
+    }
+
+    #[test]
+    fn test_roll_arithmetic_around_zero() {
+        assert_eq!(Roll(1) - 2_u8, Roll(-1));
+        assert_eq!(Roll(1) - 2_i8, Roll(-1));
+        assert_eq!(Roll(1) + (-2_i8), Roll(-1));
+        assert_eq!(Roll(-1) + (2_u8), Roll(1));
+        assert_eq!(Roll(-1) + (2_i8), Roll(1));
+        assert_eq!(Roll(-1) - (-2_i8), Roll(1));
+    }
+
+    #[test]
+    fn test_roll_arithmetic_assign_around_zero() {
+        let mut roll = Roll(1);
+        roll -= 2_u8;
+        assert_eq!(roll.0, -1);
+        roll += 2_u8;
+        assert_eq!(roll.0, 1);
+        roll -= 2_i8;
+        assert_eq!(roll.0, -1);
+        roll += 2_i8;
+        assert_eq!(roll.0, 1);
     }
 }

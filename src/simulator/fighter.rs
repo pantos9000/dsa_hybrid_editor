@@ -242,7 +242,7 @@ impl Fighter {
         if self.berserker {
             return;
         }
-        let wound_penalty = match self.passive_stats.life {
+        let wound_penalty: i8 = match self.passive_stats.life {
             0..=10 => 3,
             11..=20 => 1,
             21.. => 0,
@@ -453,17 +453,23 @@ impl Fighter {
             self.apply_wild(&mut roll);
             roll
         };
+        let apply_attack_head = |roll| {
+            if self.character.passive_modifiers.attack_head.is_set() {
+                roll - 4_u8
+            } else {
+                roll
+            }
+        };
         let apply_tuchfühlung = |mut roll| {
             self.apply_tuchfühlung_to_attack(opponent, &mut roll);
             roll
         };
         let check_hit = |mut roll: Roll| -> AttackResult {
-            roll += 1_u8; // add 1 to be able to check against 0 later
             roll -= opponent_parry;
-            match roll.as_u8() {
-                0 => AttackResult::Miss,
-                1..=4 => AttackResult::Hit,
-                5.. => AttackResult::Raise,
+            match roll.as_i8() {
+                ..0 => AttackResult::Miss,
+                0..4 => AttackResult::Hit,
+                4.. => AttackResult::Raise,
             }
         };
         let mut num_hits: u8 = 0;
@@ -486,6 +492,7 @@ impl Fighter {
             .map(apply_joker)
             .map(apply_berserker_attack)
             .map(apply_wild_attack)
+            .map(apply_attack_head)
             .map(apply_tuchfühlung)
             .map(check_hit)
             .map(check_fails)
@@ -502,6 +509,15 @@ impl Fighter {
                 .add_hits_received(num_hits);
             Some(hits)
         }
+    }
+
+    fn apply_opponents_armor(&self, opponent: &Self, damage: &mut Roll) {
+        let armor = if self.character.passive_modifiers.attack_head.is_set() {
+            opponent.character.armor.head
+        } else {
+            opponent.character.armor.torso
+        };
+        *damage -= i8::from(armor);
     }
 
     fn do_damage(
@@ -543,6 +559,9 @@ impl Fighter {
             damage += 4_u8;
         }
         self.apply_wild(&mut damage);
+        if self.character.passive_modifiers.attack_head.is_set() {
+            damage += 6_u8;
+        }
         self.apply_joker_to_damage(&mut damage);
         if u8::from(damage) < opponent.passive_stats.robustness {
             if self.character.bennies.use_for_damage.is_set() && self.bennies > 0 {
@@ -553,6 +572,7 @@ impl Fighter {
         }
 
         damage -= opponent.passive_stats.robustness;
+        self.apply_opponents_armor(opponent, &mut damage);
         opponent.passive_stats.life -= damage;
         opponent.shaken = true;
         opponent.enable_berserker();
@@ -626,7 +646,7 @@ enum CriticalFailResult {
 
 impl CriticalFailResult {
     fn short_range() -> Self {
-        match roller().roll_critical_fail_result().into() {
+        match roller().roll_critical_fail_result().as_u8() {
             0..=1 => unreachable!(),
             13.. => unreachable!(),
             2 => Self::WeaponDestroyed,
@@ -640,7 +660,7 @@ impl CriticalFailResult {
 
     #[allow(dead_code)]
     fn long_range() -> Self {
-        match roller().roll_critical_fail_result().into() {
+        match roller().roll_critical_fail_result().as_u8() {
             0..=1 => unreachable!(),
             13.. => unreachable!(),
             2..=3 => Self::WeaponDestroyed,

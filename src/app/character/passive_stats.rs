@@ -4,7 +4,7 @@ use crate::simulator::{CharModification, Simulator};
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct PassiveModifiers {
-    pub(crate) life: IntStat<-20, 20>,
+    pub(crate) life: IntStat<-40, 40>,
     pub(crate) parry: IntStat<-4, 4>,
     pub(crate) robustness: IntStat<-4, 4>,
     pub(crate) attack: IntStat<-4, 4>,

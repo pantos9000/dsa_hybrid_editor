@@ -33,12 +33,19 @@ impl Roller {
 
     fn roll_die_nonexploding(&self, sides: u8) -> Roll {
         use rand::Rng as _; // for random_range()
+        if sides == 0 {
+            return Roll(0);
+        }
         let result = self.rng.borrow_mut().random_range(1..=sides);
         let result = result.try_into().unwrap_or(i8::MAX);
         Roll(result)
     }
 
     fn roll_die(&self, sides: u8, modifier: i8) -> Roll {
+        assert!(sides != 1, "side can't be 1, the result would be infinite");
+        if sides == 0 {
+            return Roll(0);
+        }
         let mut result = Roll(0);
         loop {
             let roll = self.roll_die_nonexploding(sides);

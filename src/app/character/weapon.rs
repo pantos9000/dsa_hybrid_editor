@@ -14,6 +14,12 @@ pub struct Weapon<const SECONDARY: bool> {
     pub(crate) reach: IntStat<0, 2>,
 }
 
+impl<const SECONDARY: bool> Weapon<SECONDARY> {
+    pub fn unarmed(&self) -> bool {
+        self.damage == Damage::None
+    }
+}
+
 impl<const SECONDARY: bool> Default for Weapon<SECONDARY> {
     fn default() -> Self {
         Self {
@@ -166,6 +172,7 @@ impl DrawInfo<Damage> for DamageName {
 )]
 pub enum Damage {
     #[default]
+    None,
     W4,
     W6,
     W8,
@@ -176,6 +183,7 @@ pub enum Damage {
 impl From<Damage> for u8 {
     fn from(value: Damage) -> Self {
         match value {
+            Damage::None => 0,
             Damage::W4 => 4,
             Damage::W6 => 6,
             Damage::W8 => 8,
@@ -194,6 +202,7 @@ impl ValueSelector for Damage {
 
     fn as_str(&self, _info: &Self::Info) -> &'static str {
         match self {
+            Damage::None => "---",
             Damage::W4 => "W4",
             Damage::W6 => "W6",
             Damage::W8 => "W8",
@@ -206,7 +215,8 @@ impl ValueSelector for Damage {
 impl Damage {
     fn decrement(&mut self) {
         let new = match self {
-            Self::W4 => Self::W4,
+            Self::None => Self::None,
+            Self::W4 => Self::None,
             Self::W6 => Self::W4,
             Self::W8 => Self::W6,
             Self::W10 => Self::W8,
@@ -217,6 +227,7 @@ impl Damage {
 
     fn increment(&mut self) {
         let new = match self {
+            Self::None => Self::W4,
             Self::W4 => Self::W6,
             Self::W6 => Self::W8,
             Self::W8 => Self::W10,

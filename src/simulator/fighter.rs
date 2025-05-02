@@ -563,7 +563,13 @@ impl Fighter {
 
         damage += roller().roll_attribute_without_wild_die(self.character.attributes.sta);
         if raise {
-            damage += roller().roll_raise();
+            let more_crit = primary_weapon && self.character.weapon.more_crit.is_set()
+                || !primary_weapon && self.character.secondary_weapon.more_crit.is_set();
+            damage += if more_crit {
+                roller().roll_raise_d10()
+            } else {
+                roller().roll_raise()
+            };
         }
         self.apply_piercing(opponent, &mut damage);
         self.apply_berserker_damage(&mut damage);

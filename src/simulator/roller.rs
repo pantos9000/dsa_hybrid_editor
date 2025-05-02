@@ -70,6 +70,10 @@ impl Roller {
         self.roll_die(6, 0)
     }
 
+    pub fn roll_raise_d10(&self) -> Roll {
+        self.roll_die(10, 0)
+    }
+
     /// non-exploding 2d6
     pub fn roll_critical_fail_result(&self) -> Roll {
         self.roll_die_nonexploding(6) + self.roll_die_nonexploding(6)

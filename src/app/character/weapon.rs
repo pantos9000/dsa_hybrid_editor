@@ -1,6 +1,6 @@
 use strum::IntoEnumIterator;
 
-use crate::app::widgets::{self, DrawInfo, IntStat, ValueSelector, ValueSlider};
+use crate::app::widgets::{self, BoolStat, DrawInfo, IntStat, ValueSelector, ValueSlider};
 use crate::simulator::{CharModification, Simulator};
 
 use super::Drawable;
@@ -12,6 +12,8 @@ pub struct Weapon<const SECONDARY: bool> {
     pub(crate) bonus_damage: IntStat<-2, 2>,
     pub(crate) piercing: IntStat<0, 3>,
     pub(crate) reach: IntStat<0, 2>,
+    #[serde(default)]
+    pub(crate) more_crit: BoolStat,
 }
 
 impl<const SECONDARY: bool> Weapon<SECONDARY> {
@@ -28,6 +30,7 @@ impl<const SECONDARY: bool> Default for Weapon<SECONDARY> {
             bonus_damage: IntStat::default(),
             piercing: IntStat::default(),
             reach: IntStat::default(),
+            more_crit: BoolStat::default(),
         }
     }
 }
@@ -43,12 +46,14 @@ impl<const SECONDARY: bool> Drawable for Weapon<SECONDARY> {
             self.damage.draw(self.damage_name(), sim, ui);
             ui.end_row();
             self.bonus_damage
-                .draw(ModifierName::<SECONDARY>::BonusDamage, sim, ui);
+                .draw(ModifierInfo::<SECONDARY>::BonusDamage, sim, ui);
             ui.end_row();
             self.piercing
-                .draw(ModifierName::<SECONDARY>::Piercing, sim, ui);
+                .draw(ModifierInfo::<SECONDARY>::Piercing, sim, ui);
             ui.end_row();
-            self.reach.draw(ModifierName::<SECONDARY>::Reach, sim, ui);
+            self.reach.draw(ModifierInfo::<SECONDARY>::Reach, sim, ui);
+            ui.end_row();
+            self.more_crit.draw(MoreCritInfo::<SECONDARY>, sim, ui);
             ui.end_row();
         });
     }
@@ -63,13 +68,16 @@ impl<const SECONDARY: bool> Drawable for Weapon<SECONDARY> {
             self.damage.draw_as_opponent(self.damage_name(), ui);
             ui.end_row();
             self.bonus_damage
-                .draw_as_opponent(ModifierName::<SECONDARY>::BonusDamage, ui);
+                .draw_as_opponent(ModifierInfo::<SECONDARY>::BonusDamage, ui);
             ui.end_row();
             self.piercing
-                .draw_as_opponent(ModifierName::<SECONDARY>::Piercing, ui);
+                .draw_as_opponent(ModifierInfo::<SECONDARY>::Piercing, ui);
             ui.end_row();
             self.reach
-                .draw_as_opponent(ModifierName::<SECONDARY>::Reach, ui);
+                .draw_as_opponent(ModifierInfo::<SECONDARY>::Reach, ui);
+            ui.end_row();
+            self.more_crit
+                .draw_as_opponent(MoreCritInfo::<SECONDARY>, ui);
             ui.end_row();
         });
     }
@@ -239,20 +247,20 @@ impl Damage {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ModifierName<const SECONDARY: bool> {
+enum ModifierInfo<const SECONDARY: bool> {
     BonusDamage,
     Piercing,
     Reach,
 }
 
 impl<const SECONDARY: bool, const MIN: i8, const MAX: i8> DrawInfo<IntStat<MIN, MAX>>
-    for ModifierName<SECONDARY>
+    for ModifierInfo<SECONDARY>
 {
     fn as_str(&self) -> &'static str {
         match self {
-            ModifierName::BonusDamage => "Bonusschaden",
-            ModifierName::Piercing => "Panzerbrechend",
-            ModifierName::Reach => "Reichweite",
+            Self::BonusDamage => "Bonusschaden",
+            Self::Piercing => "Panzerbrechend",
+            Self::Reach => "Reichweite",
         }
     }
 
@@ -289,6 +297,38 @@ impl<const SECONDARY: bool, const MIN: i8, const MAX: i8> DrawInfo<IntStat<MIN, 
             }
             (true, Self::Piercing) => Box::new(move |c| c.secondary_weapon.piercing.set(value)),
             (true, Self::Reach) => Box::new(move |c| c.secondary_weapon.reach.set(value)),
+        }
+    }
+}
+
+struct MoreCritInfo<const SECONDARY: bool>;
+
+impl<const SECONDARY: bool> DrawInfo<BoolStat> for MoreCritInfo<SECONDARY> {
+    fn as_str(&self) -> &'static str {
+        "W10 statt W6 bei Steigerung"
+    }
+
+    fn mod_dec(&self) -> CharModification {
+        if SECONDARY {
+            Box::new(|c| c.secondary_weapon.more_crit.decrement())
+        } else {
+            Box::new(|c| c.weapon.more_crit.decrement())
+        }
+    }
+
+    fn mod_inc(&self) -> CharModification {
+        if SECONDARY {
+            Box::new(|c| c.secondary_weapon.more_crit.increment())
+        } else {
+            Box::new(|c| c.weapon.more_crit.increment())
+        }
+    }
+
+    fn mod_set(&self, value: BoolStat) -> CharModification {
+        if SECONDARY {
+            Box::new(move |c| c.secondary_weapon.more_crit.set(value))
+        } else {
+            Box::new(move |c| c.weapon.more_crit.set(value))
         }
     }
 }

@@ -86,6 +86,7 @@ jobs:
           mkdir -p "$ARCHIVE"
           cp "$BIN" "$ARCHIVE"/
           cp {README.md,COPYING,UNLICENSE,LICENSE-MIT} "$ARCHIVE"/
+          cp -r chars "$ARCHIVE"/
 
       - name: Build archive (Windows)
         shell: bash

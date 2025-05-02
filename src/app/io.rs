@@ -1,6 +1,6 @@
-use std::{fs, sync::mpsc, thread};
+use std::{env, fs, path::PathBuf, sync::mpsc, thread};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 
 use super::character::Character;
 
@@ -104,7 +104,12 @@ impl IoThread {
         let char_serialized = serde_json::to_vec_pretty(&character)
             .context("failed to convert character to JSON format")?;
 
-        let Some(path) = rfd::FileDialog::new().save_file() else {
+        let file_name = format!("{}.json", character.name.as_str());
+        let Some(path) = create_file_dialog()
+            .set_title("Char speichern")
+            .set_file_name(file_name)
+            .save_file()
+        else {
             log::debug!("save file dialog was canceled");
             return Ok(());
         };
@@ -113,7 +118,7 @@ impl IoThread {
     }
 
     fn load() -> Result<Option<Character>> {
-        let Some(path) = rfd::FileDialog::new().pick_file() else {
+        let Some(path) = create_file_dialog().set_title("Char laden").pick_file() else {
             log::debug!("load file dialog was canceled");
             return Ok(None);
         };
@@ -134,4 +139,30 @@ pub enum IoRequest {
 pub enum IoResponse {
     CharLoaded(Character),
     OpponentLoaded(Character),
+}
+
+fn get_char_dir() -> Result<PathBuf> {
+    let mut path = env::current_exe().context("failed to get current exe path")?;
+
+    path.pop();
+    path.push("chars");
+
+    if !path.exists() {
+        bail!("char dir '{path:?}' does not exist");
+    }
+
+    if !path.is_dir() {
+        bail!("char dir path '{path:?}' exists, but is not a directory");
+    }
+
+    Ok(path)
+}
+
+fn create_file_dialog() -> rfd::FileDialog {
+    let mut dialog = rfd::FileDialog::new();
+    match get_char_dir() {
+        Ok(char_dir) => dialog = dialog.set_directory(char_dir),
+        Err(err) => log::warn!("failed to retrieve char dir: {err}"),
+    }
+    dialog.add_filter("json", &["json"]).add_filter("*", &["*"])
 }

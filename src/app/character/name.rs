@@ -5,6 +5,12 @@ use super::Drawable;
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Name(String);
 
+impl Name {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
 impl Default for Name {
     fn default() -> Self {
         Self(String::from("Hans Dampf"))

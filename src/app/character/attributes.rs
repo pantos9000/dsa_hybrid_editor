@@ -6,8 +6,8 @@ use super::Drawable;
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Attributes {
     pub(crate) ges: Attribute,
-    pub(crate) sta: Attribute,
     pub(crate) kon: Attribute,
+    pub(crate) sta: Attribute,
     pub(crate) int: Attribute,
     pub(crate) wil: Attribute,
 }
@@ -20,9 +20,9 @@ impl Drawable for Attributes {
         grid.show(ui, |ui| {
             self.ges.draw(AttrName::Ges, sim, ui);
             ui.end_row();
-            self.sta.draw(AttrName::Stä, sim, ui);
-            ui.end_row();
             self.kon.draw(AttrName::Kon, sim, ui);
+            ui.end_row();
+            self.sta.draw(AttrName::Stä, sim, ui);
             ui.end_row();
             self.int.draw(AttrName::Int, sim, ui);
             ui.end_row();
@@ -38,9 +38,9 @@ impl Drawable for Attributes {
         grid.show(ui, |ui| {
             self.ges.draw_as_opponent(AttrName::Ges, ui);
             ui.end_row();
-            self.sta.draw_as_opponent(AttrName::Stä, ui);
-            ui.end_row();
             self.kon.draw_as_opponent(AttrName::Kon, ui);
+            ui.end_row();
+            self.sta.draw_as_opponent(AttrName::Stä, ui);
             ui.end_row();
             self.int.draw_as_opponent(AttrName::Int, ui);
             ui.end_row();
@@ -65,7 +65,7 @@ impl DrawInfo<Attribute> for AttrName {
             AttrName::Ges => "Ges",
             AttrName::Stä => "Stä",
             AttrName::Kon => "Kon",
-            AttrName::Int => "Int",
+            AttrName::Int => "Ver",
             AttrName::Wil => "Wil",
         }
     }

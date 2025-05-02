@@ -175,10 +175,9 @@ impl PassiveStats {
     fn calc_parry(character: &Character) -> u8 {
         let mut parry = 2 + u8::from(character.skills.kampfen) / 2;
         parry = parry.saturating_add_signed(character.passive_modifiers.parry.into());
-        if character.edges.beidhandig.is_set()
-            && character.weapon.active
-            && character.secondary_weapon.active
-        {
+        if character.edges.beidhandig.is_set() {
+            // it is hard to represent "using" another weapon without necessarily attacking
+            // with it, so just assume there is one if the edge is present
             parry += 1;
         }
         parry

@@ -37,9 +37,9 @@ pub struct Character {
     pub(crate) passive_modifiers: PassiveModifiers,
     pub(crate) attributes: Attributes,
     pub(crate) skills: Skills,
+    pub(crate) armor: Armor,
     pub(crate) weapon: Weapon<false>,
     pub(crate) secondary_weapon: Weapon<true>,
-    pub(crate) armor: Armor,
     pub(crate) edges: Edges,
     pub(crate) bennies: Bennies,
 }
@@ -50,9 +50,9 @@ impl Character {
             &mut self.attributes as _,
             &mut self.skills as _,
             &mut self.passive_modifiers as _,
+            &mut self.armor as _,
             &mut self.weapon as _,
             &mut self.secondary_weapon as _,
-            &mut self.armor as _,
             &mut self.edges as _,
             &mut self.bennies as _,
         ]

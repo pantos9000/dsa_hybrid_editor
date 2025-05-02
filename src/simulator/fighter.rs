@@ -417,6 +417,18 @@ impl Fighter {
         self.unshake_with_bennie();
     }
 
+    fn unarmed(&self, opponent: &Self) -> bool {
+        if self.character.edges.kampfkunstler.is_set() {
+            return false;
+        }
+        if self.weapon_lost {
+            return true;
+        }
+        self.character.weapon.unarmed()
+            && !opponent.character.weapon.unarmed()
+            && !opponent.weapon_lost
+    }
+
     fn try_to_hit(
         &mut self,
         opponent: &Fighter,
@@ -426,7 +438,7 @@ impl Fighter {
         let opponent_fell_modifier: u8 = if opponent.fell { 2 } else { 0 };
         let opponent_berserker_modifier: u8 = if opponent.berserker { 2 } else { 0 };
         let opponent_wild_modifier: u8 = if opponent.attacked_wild { 2 } else { 0 };
-        let opponent_weapon_lost_modifier: u8 = if opponent.weapon_lost { 2 } else { 0 };
+        let opponent_weapon_lost_modifier: u8 = if opponent.unarmed(self) { 2 } else { 0 };
         let mut opponent_parry = opponent.passive_stats.parry;
         opponent_parry = opponent_parry.saturating_sub(opponent_fell_modifier);
         opponent_parry = opponent_parry.saturating_sub(opponent_berserker_modifier);

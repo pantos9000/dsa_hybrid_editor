@@ -1,0 +1,64 @@
+{
+  "name": "Meisterfechter Rahjoprast Rosenkron",
+  "passive_modifiers": {
+    "life": 0,
+    "parry": 2,
+    "robustness": 0,
+    "attack": 0,
+    "attack_wild": false,
+    "attack_head": false
+  },
+  "attributes": {
+    "ges": "W10",
+    "kon": "W6",
+    "sta": "W6",
+    "int": "W8",
+    "wil": "W8"
+  },
+  "skills": {
+    "kampfen": "W12"
+  },
+  "weapon": {
+    "active": true,
+    "damage": "W8",
+    "bonus_damage": 1,
+    "piercing": 0,
+    "reach": 0
+  },
+  "secondary_weapon": {
+    "active": true,
+    "damage": "None",
+    "bonus_damage": 0,
+    "piercing": 0,
+    "reach": 0
+  },
+  "armor": {
+    "torso": 0,
+    "head": 0
+  },
+  "edges": {
+    "lebenskraft": "None",
+    "blitzhieb": "None",
+    "berserker": "None",
+    "riposte": "Improved",
+    "tuchfuhlung": "None",
+    "kampfreflexe": true,
+    "erstschlag": true,
+    "beidhandiger_kampf": true,
+    "beidhandig": true,
+    "ubertolpeln": false,
+    "erbarmungslos": false,
+    "machtiger_hieb": false,
+    "schnell": true,
+    "kampfkunstler": false,
+    "kuhler_kopf": "None"
+  },
+  "bennies": {
+    "count": 0,
+    "use_for_unshake": false,
+    "use_for_erstschlag": false,
+    "use_against_erstschlag": false,
+    "use_for_attack": false,
+    "use_for_damage": false
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "name": "Ork Stammeskrieger (Gruufhai)",
+  "passive_modifiers": {
+    "life": 0,
+    "parry": 0,
+    "robustness": 0,
+    "attack": 0,
+    "attack_wild": false,
+    "attack_head": false
+  },
+  "attributes": {
+    "ges": "W6",
+    "kon": "W8",
+    "sta": "W8",
+    "int": "W4",
+    "wil": "W8"
+  },
+  "skills": {
+    "kampfen": "W8"
+  },
+  "armor": {
+    "torso": 1,
+    "head": 0
+  },
+  "weapon": {
+    "active": true,
+    "damage": "W8",
+    "bonus_damage": 1,
+    "piercing": 2,
+    "reach": 0
+  },
+  "secondary_weapon": {
+    "active": false,
+    "damage": "None",
+    "bonus_damage": 0,
+    "piercing": 0,
+    "reach": 0
+  },
+  "edges": {
+    "lebenskraft": "None",
+    "blitzhieb": "None",
+    "berserker": "None",
+    "riposte": "None",
+    "tuchfuhlung": "None",
+    "kampfreflexe": false,
+    "erstschlag": false,
+    "beidhandiger_kampf": false,
+    "beidhandig": false,
+    "ubertolpeln": false,
+    "erbarmungslos": false,
+    "machtiger_hieb": false,
+    "schnell": false,
+    "kampfkunstler": true,
+    "kuhler_kopf": "None"
+  },
+  "bennies": {
+    "count": 0,
+    "use_for_unshake": false,
+    "use_for_erstschlag": false,
+    "use_against_erstschlag": false,
+    "use_for_attack": false,
+    "use_for_damage": false
+  }
+}

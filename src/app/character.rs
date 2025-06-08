@@ -27,7 +27,7 @@ use crate::simulator::Simulator;
 
 /// Represents a drawable element of a char
 trait Drawable {
-    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui);
+    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui);
     fn draw_as_opponent(&mut self, ui: &mut egui::Ui);
 }
 
@@ -59,7 +59,7 @@ impl Character {
         .into_iter()
     }
 
-    pub fn draw(&mut self, sim: &Simulator, io: &IoThread, ui: &mut egui::Ui) {
+    pub fn draw(&mut self, sim: &mut Simulator, io: &IoThread, ui: &mut egui::Ui) {
         widgets::create_frame(ui).show(ui, |ui| {
             ui.with_layout(egui::Layout::top_down_justified(egui::Align::Min), |ui| {
                 ui.horizontal(|ui| {

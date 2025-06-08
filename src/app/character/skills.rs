@@ -11,7 +11,7 @@ pub struct Skills {
 }
 
 impl Drawable for Skills {
-    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
         let grid = widgets::create_grid("Fähigkeiten");
 
         ui.heading("Fähigkeiten");

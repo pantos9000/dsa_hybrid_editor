@@ -18,7 +18,7 @@ impl Default for Name {
 }
 
 impl Drawable for Name {
-    fn draw(&mut self, _sim: &Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, _sim: &mut Simulator, ui: &mut egui::Ui) {
         self.draw_as_opponent(ui);
     }
 

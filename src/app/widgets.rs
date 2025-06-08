@@ -13,7 +13,7 @@ pub trait ValueSelector: Sized + Copy + Eq {
     fn possible_values() -> impl Iterator<Item = Self>;
     fn as_str(&self, info: &Self::Info) -> &'static str;
 
-    fn draw(&mut self, info: Self::Info, sim: &Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, info: Self::Info, sim: &mut Simulator, ui: &mut egui::Ui) {
         ui.label(info.as_str());
 
         ui.horizontal(|ui| {
@@ -73,7 +73,7 @@ pub trait ValueSlider: Sized {
         *self.inner_mut() = new;
     }
 
-    fn draw(&mut self, info: impl DrawInfo<Self>, sim: &Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, info: impl DrawInfo<Self>, sim: &mut Simulator, ui: &mut egui::Ui) {
         ui.label(info.as_str());
 
         let slider = egui::Slider::new(self.inner_mut(), Self::min()..=Self::max());
@@ -150,7 +150,7 @@ impl BoolStat {
         Self(!self.0)
     }
 
-    pub fn draw(&mut self, info: impl DrawInfo<Self>, sim: &Simulator, ui: &mut egui::Ui) {
+    pub fn draw(&mut self, info: impl DrawInfo<Self>, sim: &mut Simulator, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.0, info.as_str()).on_hover_ui(|ui| {
             ui.horizontal(|ui| {
                 sim.gradient(info.mod_set(self.toggled())).draw(ui);

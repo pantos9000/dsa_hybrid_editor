@@ -98,7 +98,7 @@ impl eframe::App for App {
                     .spacing([10.0, 4.0])
                     .striped(false)
                     .show(ui, |ui| {
-                        self.char.draw(&self.simulator, &self.io, ui);
+                        self.char.draw(&mut self.simulator, &self.io, ui);
                         self.opponent.draw_as_opponent(&self.io, ui);
                         ui.end_row();
                     });

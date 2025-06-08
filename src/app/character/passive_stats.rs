@@ -48,7 +48,7 @@ impl DrawInfo<BoolStat> for StrategyInfo {
 }
 
 impl Drawable for PassiveModifiers {
-    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
         let name = "Modifikatoren";
         let grid = widgets::create_grid(name);
         ui.heading(name);
@@ -212,7 +212,7 @@ impl PassiveStats {
 }
 
 impl Drawable for PassiveStats {
-    fn draw(&mut self, _sim: &Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, _sim: &mut Simulator, ui: &mut egui::Ui) {
         self.draw_stats("PassiveWerte", ui);
     }
 

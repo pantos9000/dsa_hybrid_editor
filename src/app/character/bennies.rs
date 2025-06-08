@@ -1,5 +1,5 @@
 use crate::app::widgets::{self, BoolStat, DrawInfo, IntStat, ValueSlider as _};
-use crate::simulator::CharModification;
+use crate::simulator::{CharModification, Simulator};
 
 use super::Drawable;
 
@@ -15,7 +15,7 @@ pub struct Bennies {
 }
 
 impl Drawable for Bennies {
-    fn draw(&mut self, sim: &crate::simulator::Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
         let grid = widgets::create_grid("Bennies");
 
         ui.heading("Bennies");

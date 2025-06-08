@@ -36,7 +36,7 @@ impl<const SECONDARY: bool> Default for Weapon<SECONDARY> {
 }
 
 impl<const SECONDARY: bool> Drawable for Weapon<SECONDARY> {
-    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
         let heading = self.heading(false);
         let grid = widgets::create_grid(heading);
         ui.heading(heading);
@@ -101,7 +101,7 @@ impl<const SECONDARY: bool> Weapon<SECONDARY> {
         }
     }
 
-    fn draw_active(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+    fn draw_active(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
         let mod_dec: CharModification;
         let mod_inc: CharModification;
         let mod_toggle: CharModification;

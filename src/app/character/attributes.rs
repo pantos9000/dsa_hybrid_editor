@@ -13,7 +13,7 @@ pub struct Attributes {
 }
 
 impl Drawable for Attributes {
-    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
         let grid = widgets::create_grid("Attribute");
 
         ui.heading("Attribute");

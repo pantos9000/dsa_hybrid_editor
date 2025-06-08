@@ -52,7 +52,7 @@ impl Edges {
 }
 
 impl Drawable for Edges {
-    fn draw(&mut self, sim: &Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
         let grid = widgets::create_grid("Edges");
 
         ui.heading("Edges");

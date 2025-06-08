@@ -1,4 +1,4 @@
-use rand_xoshiro::Xoshiro256PlusPlus as Rng;
+use biski64::Biski64Rng as Rng;
 
 #[derive(Debug)]
 pub struct CardDeck {

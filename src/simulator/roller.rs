@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use rand_xoshiro::Xoshiro256PlusPlus as Rng;
+use biski64::Biski64Rng as Rng;
 
 use crate::app::character::{Attribute, Skill, Weapon};
 

@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use rand_xoshiro::Xoshiro256PlusPlus;
+use rand_xoshiro::Xoshiro256PlusPlus as Rng;
 
 use crate::app::character::{Attribute, Skill, Weapon};
 
@@ -13,7 +13,7 @@ pub fn roller() -> Rc<Roller> {
 }
 
 pub struct Roller {
-    rng: RefCell<Xoshiro256PlusPlus>,
+    rng: RefCell<Rng>,
 }
 
 impl Default for Roller {
@@ -25,7 +25,7 @@ impl Default for Roller {
 impl Roller {
     pub fn new() -> Self {
         use rand::SeedableRng as _;
-        let rng = Xoshiro256PlusPlus::seed_from_u64(rand::random());
+        let rng = Rng::seed_from_u64(rand::random());
         Self {
             rng: RefCell::new(rng),
         }

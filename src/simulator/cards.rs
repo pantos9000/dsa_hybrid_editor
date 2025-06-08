@@ -1,10 +1,10 @@
-use rand_xoshiro::Xoshiro256PlusPlus;
+use rand_xoshiro::Xoshiro256PlusPlus as Rng;
 
 #[derive(Debug)]
 pub struct CardDeck {
     cards: Vec<Card>,
     last_drawn: Vec<Card>,
-    rng: Xoshiro256PlusPlus,
+    rng: Rng,
 }
 
 impl Default for CardDeck {
@@ -19,7 +19,7 @@ impl CardDeck {
         use rand::seq::SliceRandom as _; // for shuffle()
 
         let last_drawn = Vec::new();
-        let mut rng = Xoshiro256PlusPlus::seed_from_u64(rand::random());
+        let mut rng = Rng::seed_from_u64(rand::random());
         let mut cards: Vec<_> = Card::deck_iter().collect();
         cards.shuffle(&mut rng);
         Self {

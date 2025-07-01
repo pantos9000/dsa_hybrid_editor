@@ -418,9 +418,9 @@ dependencies = [
 
 [[package]]
 name = "biski64"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07bae79d1e56ffa41fbe91150bc663245f895effa19a8c10ce7a187d1d39c443"
+checksum = "edac6861ccc0a838d8851bd557be3a3821185b49816f50c11ade7cf8c83afe7e"
 dependencies = [
  "rand_core",
 ]

@@ -34,7 +34,7 @@ strum_macros = "0.27"
 threadpool = "1.8.1"
 crossbeam = "0.8.4"
 fxhash = "0.2.1"
-rand = "0.9.0"
+rand = "0.9.2"
 biski64 = "0.3.2"
 
 #

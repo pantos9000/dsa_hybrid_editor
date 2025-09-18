@@ -57,30 +57,6 @@ impl<const SECONDARY: bool> Drawable for Weapon<SECONDARY> {
             ui.end_row();
         });
     }
-
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let heading = self.heading(true);
-        let grid = widgets::create_grid(heading);
-        ui.heading(heading);
-        grid.show(ui, |ui| {
-            self.draw_active_as_opponent(ui);
-            ui.end_row();
-            self.damage.draw_as_opponent(self.damage_name(), ui);
-            ui.end_row();
-            self.bonus_damage
-                .draw_as_opponent(ModifierInfo::<SECONDARY>::BonusDamage, ui);
-            ui.end_row();
-            self.piercing
-                .draw_as_opponent(ModifierInfo::<SECONDARY>::Piercing, ui);
-            ui.end_row();
-            self.reach
-                .draw_as_opponent(ModifierInfo::<SECONDARY>::Reach, ui);
-            ui.end_row();
-            self.more_crit
-                .draw_as_opponent(MoreCritInfo::<SECONDARY>, ui);
-            ui.end_row();
-        });
-    }
 }
 
 impl<const SECONDARY: bool> Weapon<SECONDARY> {
@@ -125,12 +101,6 @@ impl<const SECONDARY: bool> Weapon<SECONDARY> {
             sim.gradient(mod_dec).draw(ui);
             sim.gradient(mod_inc).draw(ui);
         });
-    }
-
-    fn draw_active_as_opponent(&mut self, ui: &mut egui::Ui) {
-        ui.label("Aktiv");
-        let active = if self.active { "Ja" } else { "Nein" };
-        let _ = ui.button(active);
     }
 }
 

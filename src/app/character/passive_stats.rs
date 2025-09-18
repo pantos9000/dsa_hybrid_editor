@@ -67,29 +67,6 @@ impl Drawable for PassiveModifiers {
             ui.end_row();
         });
     }
-
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let name = "Gegner Modifikatoren";
-        let grid = widgets::create_grid(name);
-        ui.heading(name);
-        grid.show(ui, |ui| {
-            self.life.draw_as_opponent(PassiveModifier::Life, ui);
-            ui.end_row();
-            self.parry.draw_as_opponent(PassiveModifier::Parry, ui);
-            ui.end_row();
-            self.robustness
-                .draw_as_opponent(PassiveModifier::Robustness, ui);
-            ui.end_row();
-            self.attack.draw_as_opponent(PassiveModifier::Attack, ui);
-            ui.end_row();
-            self.attack_wild
-                .draw_as_opponent(StrategyInfo::AttackWild, ui);
-            ui.end_row();
-            self.attack_head
-                .draw_as_opponent(StrategyInfo::AttackHead, ui);
-            ui.end_row();
-        });
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -220,9 +197,5 @@ impl PassiveStats {
 impl Drawable for PassiveStats {
     fn draw(&mut self, _sim: &mut Simulator, ui: &mut egui::Ui) {
         self.draw_stats("PassiveWerte", ui);
-    }
-
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        self.draw_stats("GegnerPassiveWerte", ui);
     }
 }

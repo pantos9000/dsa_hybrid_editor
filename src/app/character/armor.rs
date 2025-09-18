@@ -24,18 +24,6 @@ impl Drawable for Armor {
             ui.end_row();
         });
     }
-
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let grid = widgets::create_grid("GegnerRüstung");
-
-        ui.heading("Rüstung");
-        grid.show(ui, |ui| {
-            self.torso.draw_as_opponent(ArmorInfo::Torso, ui);
-            ui.end_row();
-            self.head.draw_as_opponent(ArmorInfo::Head, ui);
-            ui.end_row();
-        });
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, strum_macros::Display)]

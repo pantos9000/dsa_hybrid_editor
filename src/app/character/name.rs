@@ -9,6 +9,10 @@ impl Name {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
 }
 
 impl Default for Name {
@@ -19,17 +23,7 @@ impl Default for Name {
 
 impl Drawable for Name {
     fn draw(&mut self, _sim: &mut Simulator, ui: &mut egui::Ui) {
-        self.draw_as_opponent(ui);
-    }
-
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
         ui.heading("Heldenname");
         ui.text_edit_singleline(&mut self.0);
-    }
-}
-
-impl Name {
-    pub fn clear(&mut self) {
-        self.0.clear();
     }
 }

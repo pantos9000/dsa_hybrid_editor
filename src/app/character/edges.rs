@@ -67,22 +67,6 @@ impl Drawable for Edges {
             }
         });
     }
-
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let grid = widgets::create_grid("GegnerEdges");
-
-        ui.heading("Edges");
-        grid.show(ui, |ui| {
-            for (edge, info) in self.edge3_iter() {
-                edge.draw_as_opponent(info, ui);
-                ui.end_row();
-            }
-            for (edge, info) in self.edge2_iter() {
-                edge.draw_as_opponent(info, ui);
-                ui.end_row();
-            }
-        });
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

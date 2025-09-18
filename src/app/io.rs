@@ -2,6 +2,8 @@ use std::{env, fs, path::PathBuf, sync::mpsc, thread};
 
 use anyhow::{Context, Result, bail};
 
+use crate::app::GroupId;
+
 use super::character::Character;
 
 pub struct IoThread {
@@ -69,7 +71,7 @@ impl IoThread {
                         log::debug!("character saved");
                     }
                 }
-                Ok(IoRequest::LoadChar) => {
+                Ok(IoRequest::Load(group_id)) => {
                     let new_char = match Self::load() {
                         Ok(Some(new_char)) => new_char,
                         Ok(None) => continue 'thread_loop,
@@ -78,20 +80,7 @@ impl IoThread {
                             continue 'thread_loop;
                         }
                     };
-                    let Ok(()) = response.send(IoResponse::CharLoaded(new_char)) else {
-                        break 'thread_loop;
-                    };
-                }
-                Ok(IoRequest::LoadOpponent) => {
-                    let new_opp = match Self::load() {
-                        Ok(Some(new_opp)) => new_opp,
-                        Ok(None) => continue 'thread_loop,
-                        Err(err) => {
-                            log::error!("failed to load opponent: {err}");
-                            continue 'thread_loop;
-                        }
-                    };
-                    let Ok(()) = response.send(IoResponse::OpponentLoaded(new_opp)) else {
+                    let Ok(()) = response.send(IoResponse::CharLoaded(group_id, new_char)) else {
                         break 'thread_loop;
                     };
                 }
@@ -132,13 +121,11 @@ impl IoThread {
 
 pub enum IoRequest {
     Save(Character),
-    LoadChar,
-    LoadOpponent,
+    Load(GroupId),
 }
 
 pub enum IoResponse {
-    CharLoaded(Character),
-    OpponentLoaded(Character),
+    CharLoaded(GroupId, Character),
 }
 
 fn get_char_dir() -> Result<PathBuf> {

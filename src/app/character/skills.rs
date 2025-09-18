@@ -20,16 +20,6 @@ impl Drawable for Skills {
             ui.end_row();
         });
     }
-
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let grid = widgets::create_grid("GegnerFähigkeiten");
-
-        ui.heading("Fähigkeiten");
-        grid.show(ui, |ui| {
-            self.kampfen.draw_as_opponent(SkillName::Kämpfen, ui);
-            ui.end_row();
-        });
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, strum_macros::Display)]

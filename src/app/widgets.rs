@@ -32,18 +32,12 @@ pub trait ValueSelector: Sized + Copy + Eq {
             sim.gradient(info.mod_inc()).draw(ui);
         });
     }
-
-    fn draw_as_opponent(&mut self, info: Self::Info, ui: &mut egui::Ui) {
-        ui.label(info.as_str());
-        let _ = ui.button(self.as_str(&info));
-    }
 }
 
 pub trait ValueSlider: Sized {
     fn min() -> i8;
     fn max() -> i8;
     fn inner_mut(&mut self) -> &mut i8;
-    fn as_string(&self) -> String;
 
     fn set(&mut self, value: i8) {
         *self.inner_mut() = value.clamp(Self::min(), Self::max());
@@ -84,11 +78,6 @@ pub trait ValueSlider: Sized {
             sim.gradient(info.mod_inc()).draw(ui);
         });
     }
-
-    fn draw_as_opponent(&mut self, info: impl DrawInfo<Self>, ui: &mut egui::Ui) {
-        ui.label(info.as_str());
-        let _ = ui.button(self.as_string());
-    }
 }
 
 #[derive(
@@ -108,10 +97,6 @@ impl<const MIN: i8, const MAX: i8> ValueSlider for IntStat<MIN, MAX> {
     fn inner_mut(&mut self) -> &mut i8 {
         &mut self.0
     }
-
-    fn as_string(&self) -> String {
-        format!("{}", self.0)
-    }
 }
 
 impl<const MIN: i8, const MAX: i8> From<IntStat<MIN, MAX>> for i8 {
@@ -126,10 +111,6 @@ impl<const MIN: i8, const MAX: i8> From<IntStat<MIN, MAX>> for i8 {
 pub struct BoolStat(bool);
 
 impl BoolStat {
-    fn as_str(self) -> &'static str {
-        if self.0 { "Ja" } else { "Nein" }
-    }
-
     pub fn decrement(&mut self) {
         self.0 = false;
     }
@@ -161,11 +142,6 @@ impl BoolStat {
             sim.gradient(info.mod_dec()).draw(ui);
             sim.gradient(info.mod_inc()).draw(ui);
         });
-    }
-
-    pub fn draw_as_opponent(&mut self, info: impl DrawInfo<Self>, ui: &mut egui::Ui) {
-        ui.label(info.as_str());
-        let _ = ui.button(self.as_str());
     }
 }
 

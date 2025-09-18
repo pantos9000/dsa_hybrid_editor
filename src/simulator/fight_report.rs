@@ -1,6 +1,6 @@
 use egui::{Button, Color32};
 
-use crate::app::gradient::Total;
+use crate::app::{self, gradient::Total};
 
 #[derive(Debug, Default)]
 pub struct ReportBuilder {
@@ -167,72 +167,74 @@ impl FightReport {
     }
 
     pub fn draw(&self, ui: &mut egui::Ui) {
+        const NUM_TABLES: f32 = 3.0;
+        const TABLE_WIDTH: f32 = app::EDITOR_WIDTH / (NUM_TABLES * 1.1);
+
+        fn draw_table(ui: &mut egui::Ui, id: &str, add_contents: impl FnOnce(&mut egui::Ui)) {
+            ui.group(|ui| {
+                ui.set_width(TABLE_WIDTH);
+                // add extra vertical() to work around grid alignment issues
+                ui.vertical(|ui| {
+                    egui::Grid::new(id).striped(true).show(ui, add_contents);
+                });
+            });
+        }
+
         let highlight_color = if ui.visuals().dark_mode {
             egui::Color32::CYAN
         } else {
             egui::Color32::BLUE
         };
 
-        ui.vertical(|ui| {
-            egui::Grid::new("FightReport")
-                .num_columns(10) // +1 for each empty space to left and right and between
-                .min_col_width(50.0)
-                .spacing([4.0, 1.0])
-                .striped(true)
-                .show(ui, |ui| {
-                    ui.label("");
+        ui.group(|ui| {
+            // required for centering
+            ui.set_width(app::EDITOR_WIDTH);
 
+            ui.horizontal(|ui| {
+                draw_table(ui, "results1", |ui| {
                     ui.visuals_mut().override_text_color = Some(highlight_color);
                     ui.label("Gewinnchance");
                     self.prob_win.draw(Self::STAT_SIZE, ui);
                     ui.visuals_mut().override_text_color = None;
-
-                    ui.label("");
-
-                    ui.label("Ø Treffer / Kampf");
-                    self.avg_hits_dealt.draw(Self::STAT_SIZE, ui);
-
-                    ui.label("");
-
-                    ui.label("Ø erh. Treffer");
-                    self.avg_hits_received.draw(Self::STAT_SIZE, ui);
-
-                    ui.label("");
                     ui.end_row();
-                    ui.label("");
 
                     ui.label("Chance Unentsch.");
                     self.prob_draw.draw(Self::STAT_SIZE, ui);
-
-                    ui.label("");
-
-                    ui.label("Ø Treffer m. Schaden");
-                    self.avg_dmg_hits_dealt.draw(Self::STAT_SIZE, ui);
-
-                    ui.label("");
-
-                    ui.label("Ø erh. Treffer m. Schaden");
-                    self.avg_dmg_hits_received.draw(Self::STAT_SIZE, ui);
-
-                    ui.label("");
                     ui.end_row();
-                    ui.label("");
 
                     ui.label("Ø Runden / Kampf");
                     self.avg_rounds.draw(Self::STAT_SIZE, ui);
+                    ui.end_row();
+                });
 
-                    ui.label("");
+                draw_table(ui, "results2", |ui| {
+                    ui.label("Ø Treffer / Kampf");
+                    self.avg_hits_dealt.draw(Self::STAT_SIZE, ui);
+                    ui.end_row();
+
+                    ui.label("Ø Treffer m. Schaden");
+                    self.avg_dmg_hits_dealt.draw(Self::STAT_SIZE, ui);
+                    ui.end_row();
 
                     ui.label("Ø Schaden / Schlag");
                     self.avg_damage_dealt.draw(Self::STAT_SIZE, ui);
+                    ui.end_row();
+                });
 
-                    ui.label("");
+                draw_table(ui, "results3", |ui| {
+                    ui.label("Ø erh. Treffer");
+                    self.avg_hits_received.draw(Self::STAT_SIZE, ui);
+                    ui.end_row();
+
+                    ui.label("Ø erh. Treffer m. Schaden");
+                    self.avg_dmg_hits_received.draw(Self::STAT_SIZE, ui);
+                    ui.end_row();
 
                     ui.label("Ø erh. Schaden / Schlag");
                     self.avg_damage_received.draw(Self::STAT_SIZE, ui);
-
-                    ui.label("");
+                    ui.end_row();
                 });
+            });
         });
     }
 }

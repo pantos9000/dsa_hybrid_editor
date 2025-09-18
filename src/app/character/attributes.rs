@@ -30,24 +30,6 @@ impl Drawable for Attributes {
             ui.end_row();
         });
     }
-
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let grid = widgets::create_grid("GegnerAttribute");
-
-        ui.heading("Attribute");
-        grid.show(ui, |ui| {
-            self.ges.draw_as_opponent(AttrName::Ges, ui);
-            ui.end_row();
-            self.kon.draw_as_opponent(AttrName::Kon, ui);
-            ui.end_row();
-            self.sta.draw_as_opponent(AttrName::Stä, ui);
-            ui.end_row();
-            self.int.draw_as_opponent(AttrName::Int, ui);
-            ui.end_row();
-            self.wil.draw_as_opponent(AttrName::Wil, ui);
-            ui.end_row();
-        });
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

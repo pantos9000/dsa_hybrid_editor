@@ -1,23 +1,34 @@
 pub mod character;
 pub mod gradient;
 
+mod group;
 mod io;
 mod widgets;
 
 use egui::{Align, Layout};
 
-use character::Character;
 use io::{IoResponse, IoThread};
 
-use crate::simulator::Simulator;
+use crate::{
+    app::{
+        character::Character,
+        group::{CharIndex, Group, GroupAction},
+        io::IoRequest,
+    },
+    simulator::Simulator,
+};
+
+pub const EDITOR_WIDTH: f32 = 650.0;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 #[derive(Default)]
 pub struct App {
-    char: Character,
-    opponent: Character,
+    chars_left: Group,
+    chars_right: Group,
+    #[serde(skip)]
+    selection: Option<CharSelection>,
 
     #[serde(skip)]
     simulator: Simulator,
@@ -54,60 +65,124 @@ impl eframe::App for App {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
 
-        for response in self.io.poll_iter() {
-            match response {
-                IoResponse::CharLoaded(character) => {
-                    self.char = character;
+        for io_response in self.io.poll_iter() {
+            match io_response {
+                IoResponse::CharLoaded(group_id, new_char) => {
+                    let group = match group_id {
+                        GroupId::Left => &mut self.chars_left,
+                        GroupId::Right => &mut self.chars_right,
+                    };
+                    group.add_char(new_char);
                     log::info!("character successfully loaded");
-                }
-                IoResponse::OpponentLoaded(character) => {
-                    self.opponent = character;
-                    log::info!("opponent successfully loaded");
                 }
             }
         }
 
-        self.simulator
-            .update_characters(self.char.clone(), self.opponent.clone());
+        if let Some(char) = self.chars_left.first()
+            && let Some(opponent) = self.chars_right.first()
+        {
+            self.simulator
+                .update_characters(char.clone(), opponent.clone());
+        }
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.heading("DSA Hybrid Char Editor");
-                Self::quit_button(ui, ctx);
+                ui.vertical_centered(|ui| {
+                    ui.heading("DSA Hybrid Char Editor");
+                });
+                ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
+                    Self::quit_button(ui, ctx);
+                    self.help_button(ui);
+                });
             });
+            ui.add_space(2.0);
         });
 
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-            self.progress_bar(ui);
-            egui::widgets::global_theme_preference_buttons(ui);
-            egui::warn_if_debug_build(ui);
+            ui.vertical(|ui| {
+                ui.add_space(8.0);
+                self.progress_bar(ui);
+                egui::widgets::global_theme_preference_buttons(ui);
+                egui::warn_if_debug_build(ui);
+            });
         });
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding other panels - has to come last
-
-            ui.horizontal(|ui| {
-                self.menu_buttons(ui);
-                ui.separator();
-                self.simulator.report().draw(ui);
+        egui::SidePanel::left("left_panel")
+            .resizable(false)
+            .show(ctx, |ui| {
+                self.draw_group(GroupId::Left, ui);
             });
-            ui.separator();
-            egui::containers::ScrollArea::both().show(ui, |ui| {
-                egui::Grid::new("CharCols")
-                    .num_columns(3)
-                    .spacing([10.0, 4.0])
-                    .striped(false)
-                    .show(ui, |ui| {
-                        self.char.draw(&mut self.simulator, &self.io, ui);
-                        self.opponent.draw_as_opponent(&self.io, ui);
-                        ui.end_row();
-                    });
+
+        egui::SidePanel::right("right_panel")
+            .resizable(false)
+            .show(ctx, |ui| {
+                self.draw_group(GroupId::Right, ui);
+            });
+
+        // The central panel the region left after adding other panels - has to come last
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.vertical_centered(|ui| {
+                self.simulator.report().draw(ui);
+                ui.add_space(8.0);
+                self.draw_char_editor(ui);
             });
         });
     }
 }
 
 impl App {
+    fn draw_char_editor(&mut self, ui: &mut egui::Ui) {
+        let Some(selection) = self.selection else {
+            Character::draw_help(ui);
+            return;
+        };
+
+        // unwrap is fine, selection should always be valid and exist
+        let char = match selection {
+            CharSelection::Left(i) => self.chars_left.get_char_mut(i).unwrap(),
+            CharSelection::Right(i) => self.chars_right.get_char_mut(i).unwrap(),
+        };
+
+        char.draw_editor(&mut self.simulator, &self.io, ui);
+    }
+
+    fn draw_group(&mut self, group_id: GroupId, ui: &mut egui::Ui) {
+        let group = match group_id {
+            GroupId::Left => &mut self.chars_left,
+            GroupId::Right => &mut self.chars_right,
+        };
+
+        ui.add_space(4.0);
+        let Some(action) = group.draw(&mut self.simulator, ui) else {
+            return;
+        };
+
+        match action {
+            GroupAction::New => group.add_char(Character::default()),
+            GroupAction::Load => self.io.request(IoRequest::Load(group_id)),
+            GroupAction::Clear => group.clear(),
+            GroupAction::Select(i) => self.selection = Some(CharSelection::new(group_id, i)),
+            GroupAction::Delete(i) => group.delete_char(i),
+        }
+
+        self.adjust_selection_index(group_id, action);
+    }
+
+    fn adjust_selection_index(&mut self, affected_group: GroupId, action: GroupAction) {
+        let selected = match (&mut self.selection, affected_group) {
+            (Some(CharSelection::Left(i)), GroupId::Left) => i,
+            (Some(CharSelection::Right(i)), GroupId::Right) => i,
+            _ => return,
+        };
+
+        match action {
+            GroupAction::Clear => self.selection = None,
+            GroupAction::Delete(i) if i == *selected => self.selection = None,
+            GroupAction::Delete(i) if i < *selected => selected.decrement(),
+            _ => (),
+        }
+    }
+
     fn progress_bar(&mut self, ui: &mut egui::Ui) {
         let progress = self.simulator.progress();
         if progress >= 100 {
@@ -119,24 +194,18 @@ impl App {
         ui.add(progress_bar);
     }
 
-    fn menu_buttons(&mut self, ui: &mut egui::Ui) {
-        let size = 60.0;
-        ui.horizontal(|ui| {
-            let copy_char_button =
-                widgets::create_menu_button("➡", "Char zu Gegner kopieren", size, ui);
-            if copy_char_button.clicked() {
-                self.opponent = self.char.clone();
-            }
-
-            let switch_button = widgets::create_menu_button("↔", "Chars vertauschen", size, ui);
-            if switch_button.clicked() {
-                std::mem::swap(&mut self.char, &mut self.opponent);
-            }
-
-            let copy_opponent_button =
-                widgets::create_menu_button("⬅", "Gegner zu Char kopieren", size, ui);
-            if copy_opponent_button.clicked() {
-                self.char = self.opponent.clone();
+    fn help_button(&mut self, ui: &mut egui::Ui) {
+        ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
+            let text = egui::RichText::new("❓").size(24.0);
+            let button = egui::Button::new(text).corner_radius(5.0);
+            let response = ui.add_sized([32.0, 32.0], button).on_hover_ui(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Hilfe anzeigen");
+                });
+            });
+            if response.clicked() {
+                log::info!("help button clicked");
+                self.selection = None;
             }
         });
     }
@@ -147,18 +216,38 @@ impl App {
             return;
         }
 
-        ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
-            let text = egui::RichText::new("❌").size(24.0);
-            let button = egui::Button::new(text).corner_radius(5.0);
-            let response = ui.add_sized([32.0, 32.0], button).on_hover_ui(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label("Quit");
-                });
+        let text = egui::RichText::new("❌").size(24.0);
+        let button = egui::Button::new(text).corner_radius(5.0);
+        let response = ui.add_sized([32.0, 32.0], button).on_hover_ui(|ui| {
+            ui.horizontal(|ui| {
+                ui.label("Quit");
             });
-            if response.clicked() {
-                log::info!("quit button clicked, exiting...");
-                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-            }
         });
+        if response.clicked() {
+            log::info!("quit button clicked, exiting...");
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        }
     }
+}
+
+/// Contains information from which team a char is selected, and which index in the team
+#[derive(Debug, Clone, Copy)]
+enum CharSelection {
+    Left(CharIndex),
+    Right(CharIndex),
+}
+
+impl CharSelection {
+    fn new(id: GroupId, index: CharIndex) -> Self {
+        match id {
+            GroupId::Left => Self::Left(index),
+            GroupId::Right => Self::Right(index),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GroupId {
+    Left,
+    Right,
 }

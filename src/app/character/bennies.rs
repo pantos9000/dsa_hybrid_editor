@@ -36,29 +36,6 @@ impl Drawable for Bennies {
             ui.end_row();
         });
     }
-
-    fn draw_as_opponent(&mut self, ui: &mut egui::Ui) {
-        let grid = widgets::create_grid("GegnerBennies");
-
-        ui.heading("Bennies");
-        grid.show(ui, |ui| {
-            self.count.draw_as_opponent(NumBennies, ui);
-            ui.end_row();
-            self.use_for_unshake
-                .draw_as_opponent(UsageInfo::Unshake, ui);
-            ui.end_row();
-            self.use_for_erstschlag
-                .draw_as_opponent(UsageInfo::ForErstschlag, ui);
-            ui.end_row();
-            self.use_against_erstschlag
-                .draw_as_opponent(UsageInfo::AgainstErstschlag, ui);
-            ui.end_row();
-            self.use_for_attack.draw_as_opponent(UsageInfo::Attack, ui);
-            ui.end_row();
-            self.use_for_damage.draw_as_opponent(UsageInfo::Damage, ui);
-            ui.end_row();
-        });
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

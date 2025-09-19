@@ -197,15 +197,21 @@ impl PassiveStats {
         grid.show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label("LeP");
-                let _ = ui.button(self.life.to_string());
+                ui.add_enabled_ui(false, |ui| {
+                    let _ = ui.button(self.life.to_string());
+                });
             });
             ui.horizontal(|ui| {
                 ui.label("PA");
-                let _ = ui.button(self.parry.to_string());
+                ui.add_enabled_ui(false, |ui| {
+                    let _ = ui.button(self.parry.to_string());
+                });
             });
             ui.horizontal(|ui| {
                 ui.label("ROB");
-                let _ = ui.button(self.robustness.to_string());
+                ui.add_enabled_ui(false, |ui| {
+                    let _ = ui.button(self.robustness.to_string());
+                });
             });
         });
     }

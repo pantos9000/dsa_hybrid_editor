@@ -105,10 +105,11 @@ fn draw_value(
     draw_sign: bool,
     color: bool,
 ) -> impl egui::Widget + use<> {
-    let dark = ui.visuals().dark_mode;
-    let dark_gray = Color32::from_rgb(64, 64, 64);
     let sign = if draw_sign && value > 0 { "+" } else { "" };
     let text = format!("{sign}{value}");
+
+    let dark = ui.visuals().dark_mode;
+    let dark_gray = Color32::from_rgb(64, 64, 64);
     let color = match (color, dark, value) {
         // colors disabled
         (false, true, _) => dark_gray,
@@ -122,7 +123,8 @@ fn draw_value(
         (true, false, -2..=2) => Color32::LIGHT_GRAY,
         (true, false, 3..) => Color32::LIGHT_GREEN,
     };
-    Button::new(text).frame(false).fill(color)
+
+    Button::new(text).frame(true).fill(color)
 }
 
 #[cfg(test)]

@@ -117,7 +117,9 @@ impl Stat {
             Color32::LIGHT_GRAY
         };
         let text = format!("{value}",);
-        ui.add_sized(max_size, Button::new(text).frame(false).fill(color));
+        ui.add_enabled_ui(false, |ui| {
+            ui.add_sized(max_size, Button::new(text).frame(false).fill(color));
+        });
     }
 }
 

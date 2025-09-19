@@ -60,7 +60,9 @@ impl Total {
             }
             Some(value) => {
                 let drawable = draw_value(value, ui, false, false);
-                ui.add_sized(max_size, drawable);
+                ui.add_enabled_ui(false, |ui| {
+                    ui.add_sized(max_size, drawable);
+                });
             }
         }
     }
@@ -93,7 +95,7 @@ impl Gradient {
             }
             Some(value) => {
                 let drawable = draw_value(value, ui, true, true);
-                ui.add(drawable);
+                ui.add_enabled(false, drawable);
             }
         }
     }

@@ -1,5 +1,5 @@
 use crate::{
-    app::{character::Character, widgets},
+    app::{character::Character, dnd, widgets},
     simulator::Simulator,
 };
 
@@ -10,7 +10,12 @@ pub struct Group {
 
 impl Group {
     #[must_use]
-    pub fn draw(&mut self, simulator: &mut Simulator, ui: &mut egui::Ui) -> Option<GroupAction> {
+    pub fn draw(
+        &mut self,
+        simulator: &mut Simulator,
+        drag_ctx: dnd::DragContext,
+        ui: &mut egui::Ui,
+    ) -> Option<GroupAction> {
         // user can only click on one thing each frame, so overwriting the
         // previous action should be ok
         let mut action = None;
@@ -23,7 +28,7 @@ impl Group {
 
                 ui.add_space(15.0);
 
-                if let Some(char_action) = self.draw_chars(simulator, ui) {
+                if let Some(char_action) = self.draw_chars(simulator, drag_ctx, ui) {
                     action = Some(char_action);
                 }
             });
@@ -32,23 +37,38 @@ impl Group {
         action
     }
 
-    fn draw_chars(&mut self, simulator: &mut Simulator, ui: &mut egui::Ui) -> Option<GroupAction> {
+    fn draw_chars(
+        &mut self,
+        simulator: &mut Simulator,
+        drag_ctx: dnd::DragContext,
+        ui: &mut egui::Ui,
+    ) -> Option<GroupAction> {
         let mut action = None;
 
-        for (index, char) in self.chars.iter_mut().enumerate() {
-            ui.horizontal(|ui| {
-                let char_button = char.draw_as_button(simulator, ui);
-                if char_button.clicked() {
-                    action = Some(GroupAction::Select(CharIndex::from_usize(index)));
-                }
+        if self.chars.is_empty() {
+            drag_ctx.create_empty_drop_area(ui);
+        }
 
-                let rm_size = 15.0;
-                let rm_help = "Diesen Char von der Gruppe entfernen";
-                let rm_text = "❌";
-                let rm_button = widgets::create_menu_button(rm_text, rm_help, rm_size, ui);
-                if rm_button.clicked() {
-                    action = Some(GroupAction::Delete(CharIndex::from_usize(index)));
-                }
+        for (index, char) in self.chars.iter_mut().enumerate() {
+            let index = CharIndex::from_usize(index);
+            drag_ctx.create_drop_area(index, ui, |ui| {
+                ui.horizontal(|ui| {
+                    let drag_size = 15.0;
+                    drag_ctx.draw_drag_button(drag_size, index, ui);
+
+                    let char_button = char.draw_as_button(simulator, ui);
+                    if char_button.clicked() {
+                        action = Some(GroupAction::Select(index));
+                    }
+
+                    let rm_size = 15.0;
+                    let rm_help = "Diesen Char von der Gruppe entfernen";
+                    let rm_text = "❌";
+                    let rm_button = widgets::create_menu_button(rm_text, rm_help, rm_size, ui);
+                    if rm_button.clicked() {
+                        action = Some(GroupAction::Delete(index));
+                    }
+                });
             });
         }
 
@@ -83,6 +103,14 @@ impl Group {
         self.chars.push(character);
     }
 
+    pub fn insert_char(&mut self, index: CharIndex, character: Character) {
+        self.chars.insert(index.into_usize(), character);
+    }
+
+    pub fn take_char(&mut self, index: CharIndex) -> Character {
+        self.chars.remove(index.into_usize())
+    }
+
     pub fn delete_char(&mut self, index: CharIndex) {
         self.chars.remove(index.into_usize());
     }
@@ -110,13 +138,17 @@ pub enum GroupAction {
     Delete(CharIndex),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CharIndex(usize);
 
 impl CharIndex {
-    pub fn decrement(&mut self) {
+    pub fn increment(self) -> Self {
+        Self(self.0 + 1)
+    }
+
+    pub fn decrement(self) -> Self {
         assert_ne!(self.0, 0, "can't decrement 0");
-        self.0 -= 1;
+        Self(self.0 - 1)
     }
 
     fn from_usize(index: usize) -> Self {

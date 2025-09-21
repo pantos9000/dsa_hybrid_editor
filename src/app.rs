@@ -1,6 +1,7 @@
 pub mod character;
 pub mod gradient;
 
+mod dnd;
 mod group;
 mod io;
 mod widgets;
@@ -12,6 +13,7 @@ use io::{IoResponse, IoThread};
 use crate::{
     app::{
         character::Character,
+        dnd::DragOperation,
         group::{CharIndex, Group, GroupAction},
         io::IoRequest,
     },
@@ -27,14 +29,15 @@ pub const EDITOR_WIDTH: f32 = 650.0;
 pub struct App {
     chars_left: Group,
     chars_right: Group,
+
     #[serde(skip)]
     selection: Option<CharSelection>,
-
     #[serde(skip)]
     simulator: Simulator,
-
     #[serde(skip)]
     io: IoThread,
+    #[serde(skip)]
+    dnd: dnd::DragHandler,
 }
 
 impl App {
@@ -76,6 +79,10 @@ impl eframe::App for App {
                     log::info!("character successfully loaded");
                 }
             }
+        }
+
+        if let Some(dnd) = self.dnd.operation() {
+            self.handle_dnd(dnd);
         }
 
         if let Some(char) = self.chars_left.first()
@@ -131,6 +138,71 @@ impl eframe::App for App {
 }
 
 impl App {
+    fn handle_dnd(&mut self, dnd: DragOperation) {
+        log::debug!("drag and drop detected: {dnd:?}");
+
+        let DragOperation { from, to } = dnd;
+
+        let same_group = from.group == to.group;
+        let same_index = Some(from.index) == to.index();
+
+        if same_group && same_index {
+            return;
+        }
+
+        let from_group = match from.group {
+            GroupId::Left => &mut self.chars_left,
+            GroupId::Right => &mut self.chars_right,
+        };
+        let moved_char = from_group.take_char(from.index);
+        log::debug!("moving char: {}", moved_char.name.as_str());
+
+        let to_group = match to.group {
+            GroupId::Left => &mut self.chars_left,
+            GroupId::Right => &mut self.chars_right,
+        };
+
+        let to_index = to.index().unwrap_or_default();
+        let moved_down = same_group && to_index > from.index;
+        let to_index = if moved_down {
+            // we removed a char, so index has to be adjusted
+            to_index.decrement()
+        } else {
+            to_index
+        };
+
+        to_group.insert_char(to_index, moved_char);
+
+        // adjust selection
+        if let Some(selection) = self.selection.as_mut() {
+            Self::adjust_selection_after_dnd(selection, from.group, to.group, from.index, to_index);
+        }
+    }
+
+    fn adjust_selection_after_dnd(
+        selection: &mut CharSelection,
+        from_group: GroupId,
+        to_group: GroupId,
+        from_index: CharIndex,
+        to_index: CharIndex,
+    ) {
+        let move_selection =
+            selection.group_id() == from_group && selection.char_index() == from_index;
+        if move_selection {
+            *selection = CharSelection::new(to_group, to_index);
+            return;
+        }
+
+        let decrement = selection.group_id() == from_group && selection.char_index() > from_index;
+        let increment = selection.group_id() == to_group && selection.char_index() >= to_index;
+        match (increment, decrement) {
+            (true, true) => (),
+            (true, false) => selection.increment_index(),
+            (false, true) => selection.decrement_index(),
+            (false, false) => (),
+        }
+    }
+
     fn draw_char_editor(&mut self, ui: &mut egui::Ui) {
         let Some(selection) = self.selection else {
             Character::draw_help(ui);
@@ -151,9 +223,10 @@ impl App {
             GroupId::Left => &mut self.chars_left,
             GroupId::Right => &mut self.chars_right,
         };
+        let draw_ctx = self.dnd.create_context(group_id);
 
         ui.add_space(4.0);
-        let Some(action) = group.draw(&mut self.simulator, ui) else {
+        let Some(action) = group.draw(&mut self.simulator, draw_ctx, ui) else {
             return;
         };
 
@@ -169,6 +242,7 @@ impl App {
     }
 
     fn adjust_selection_index(&mut self, affected_group: GroupId, action: GroupAction) {
+        // TODO: bei drag & drop!
         let selected = match (&mut self.selection, affected_group) {
             (Some(CharSelection::Left(i)), GroupId::Left) => i,
             (Some(CharSelection::Right(i)), GroupId::Right) => i,
@@ -178,7 +252,7 @@ impl App {
         match action {
             GroupAction::Clear => self.selection = None,
             GroupAction::Delete(i) if i == *selected => self.selection = None,
-            GroupAction::Delete(i) if i < *selected => selected.decrement(),
+            GroupAction::Delete(i) if i < *selected => *selected = selected.decrement(),
             _ => (),
         }
     }
@@ -244,9 +318,37 @@ impl CharSelection {
             GroupId::Right => Self::Right(index),
         }
     }
+
+    fn group_id(self) -> GroupId {
+        match self {
+            Self::Left(_) => GroupId::Left,
+            Self::Right(_) => GroupId::Right,
+        }
+    }
+
+    fn char_index(self) -> CharIndex {
+        match self {
+            Self::Left(char_index) => char_index,
+            Self::Right(char_index) => char_index,
+        }
+    }
+
+    fn increment_index(&mut self) {
+        *self = match self {
+            Self::Left(char_index) => Self::Left(char_index.increment()),
+            Self::Right(char_index) => Self::Right(char_index.increment()),
+        };
+    }
+
+    fn decrement_index(&mut self) {
+        *self = match self {
+            Self::Left(char_index) => Self::Left(char_index.decrement()),
+            Self::Right(char_index) => Self::Right(char_index.decrement()),
+        };
+    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GroupId {
     Left,
     Right,

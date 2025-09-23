@@ -3,12 +3,16 @@ use crate::{
     simulator::Simulator,
 };
 
-#[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Default, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Group {
     chars: Vec<Character>,
 }
 
 impl Group {
+    pub fn into_vec(self) -> Vec<Character> {
+        self.chars
+    }
+
     #[must_use]
     pub fn draw(
         &mut self,

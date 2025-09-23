@@ -85,12 +85,10 @@ impl eframe::App for App {
             self.handle_dnd(dnd);
         }
 
-        if let Some(char) = self.chars_left.first()
-            && let Some(opponent) = self.chars_right.first()
-        {
-            self.simulator
-                .update_characters(char.clone(), opponent.clone());
-        }
+        self.simulator.update_characters(
+            self.chars_left.clone().into_vec(),
+            self.chars_right.clone().into_vec(),
+        );
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {

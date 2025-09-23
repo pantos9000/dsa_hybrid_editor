@@ -25,11 +25,11 @@ impl ReportBuilder {
     pub fn add_fight(&mut self, outcome: FightOutcome) {
         self.count_fights += 1;
         let stats = match outcome {
-            FightOutcome::FighterWon(stats) => {
+            FightOutcome::LeftWon(stats) => {
                 self.count_wins += 1;
                 stats
             }
-            FightOutcome::OpponentWon(stats) => {
+            FightOutcome::RightWon(stats) => {
                 self.count_losses += 1;
                 stats
             }
@@ -280,7 +280,7 @@ impl FightStats {
 
 #[derive(Debug, Clone)]
 pub enum FightOutcome {
-    FighterWon(FightStats),
-    OpponentWon(FightStats),
+    LeftWon(FightStats),
+    RightWon(FightStats),
     Draw(FightStats),
 }

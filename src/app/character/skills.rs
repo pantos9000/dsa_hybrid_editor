@@ -1,7 +1,8 @@
 use strum::IntoEnumIterator;
 
+use crate::app;
 use crate::app::widgets::{self, DrawInfo, ValueSelector};
-use crate::simulator::{CharModification, Simulator};
+use crate::simulator::{self, CharModification, Simulator};
 
 use super::Drawable;
 
@@ -11,12 +12,12 @@ pub struct Skills {
 }
 
 impl Drawable for Skills {
-    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, selection: app::CharSelection, sim: &mut Simulator, ui: &mut egui::Ui) {
         let grid = widgets::create_grid("Fähigkeiten");
 
         ui.heading("Fähigkeiten");
         grid.show(ui, |ui| {
-            self.kampfen.draw(SkillName::Kämpfen, sim, ui);
+            self.kampfen.draw(SkillName::Kämpfen, selection, sim, ui);
             ui.end_row();
         });
     }
@@ -34,22 +35,25 @@ impl DrawInfo<Skill> for SkillName {
         }
     }
 
-    fn mod_dec(&self) -> CharModification {
-        match self {
+    fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             SkillName::Kämpfen => Box::new(|c| c.skills.kampfen.decrement()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_inc(&self) -> CharModification {
-        match self {
+    fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             SkillName::Kämpfen => Box::new(|c| c.skills.kampfen.increment()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_set(&self, value: Skill) -> CharModification {
-        match self {
+    fn mod_set(&self, selection: app::CharSelection, value: Skill) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             SkillName::Kämpfen => Box::new(move |c| c.skills.kampfen = value),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 }
 

@@ -27,7 +27,7 @@ use crate::{app, simulator::Simulator};
 
 /// Represents a drawable element of a char
 trait Drawable {
-    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui);
+    fn draw(&mut self, selection: app::CharSelection, sim: &mut Simulator, ui: &mut egui::Ui);
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
@@ -58,7 +58,13 @@ impl Character {
         .into_iter()
     }
 
-    pub fn draw_editor(&mut self, sim: &mut Simulator, io: &IoThread, ui: &mut egui::Ui) {
+    pub fn draw_editor(
+        &mut self,
+        selection: app::CharSelection,
+        sim: &mut Simulator,
+        io: &IoThread,
+        ui: &mut egui::Ui,
+    ) {
         ui.group(|ui| {
             ui.set_width(app::EDITOR_WIDTH);
             ui.set_height(ui.available_height());
@@ -69,7 +75,7 @@ impl Character {
                     let mut draw = |drawable: &mut dyn Drawable| {
                         widgets::create_frame(ui).show(ui, |ui| {
                             ui.set_width(app::EDITOR_WIDTH * 0.9);
-                            drawable.draw(sim, ui);
+                            drawable.draw(selection, sim, ui);
                         });
                     };
 

@@ -1,4 +1,4 @@
-use crate::simulator::Simulator;
+use crate::{app, simulator::Simulator};
 
 use super::Drawable;
 
@@ -22,7 +22,7 @@ impl Default for Name {
 }
 
 impl Drawable for Name {
-    fn draw(&mut self, _sim: &mut Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, _selection: app::CharSelection, _sim: &mut Simulator, ui: &mut egui::Ui) {
         ui.heading("Heldenname");
         ui.text_edit_singleline(&mut self.0);
     }

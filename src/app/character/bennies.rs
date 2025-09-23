@@ -1,5 +1,6 @@
 use crate::app::widgets::{self, BoolStat, DrawInfo, IntStat, ValueSlider as _};
 use crate::simulator::{CharModification, Simulator};
+use crate::{app, simulator};
 
 use super::Drawable;
 
@@ -15,24 +16,27 @@ pub struct Bennies {
 }
 
 impl Drawable for Bennies {
-    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, selection: app::CharSelection, sim: &mut Simulator, ui: &mut egui::Ui) {
         let grid = widgets::create_grid("Bennies");
 
         ui.heading("Bennies");
         grid.show(ui, |ui| {
-            self.count.draw(NumBennies, sim, ui);
+            self.count.draw(NumBennies, selection, sim, ui);
             ui.end_row();
-            self.use_for_unshake.draw(UsageInfo::Unshake, sim, ui);
+            self.use_for_unshake
+                .draw(UsageInfo::Unshake, selection, sim, ui);
             ui.end_row();
             self.use_for_erstschlag
-                .draw(UsageInfo::ForErstschlag, sim, ui);
+                .draw(UsageInfo::ForErstschlag, selection, sim, ui);
             ui.end_row();
             self.use_against_erstschlag
-                .draw(UsageInfo::AgainstErstschlag, sim, ui);
+                .draw(UsageInfo::AgainstErstschlag, selection, sim, ui);
             ui.end_row();
-            self.use_for_attack.draw(UsageInfo::Attack, sim, ui);
+            self.use_for_attack
+                .draw(UsageInfo::Attack, selection, sim, ui);
             ui.end_row();
-            self.use_for_damage.draw(UsageInfo::Damage, sim, ui);
+            self.use_for_damage
+                .draw(UsageInfo::Damage, selection, sim, ui);
             ui.end_row();
         });
     }
@@ -46,16 +50,20 @@ impl<const MIN: i8, const MAX: i8> DrawInfo<IntStat<MIN, MAX>> for NumBennies {
         "Anzahl Bennies"
     }
 
-    fn mod_dec(&self) -> CharModification {
-        Box::new(|c| c.bennies.count.decrement())
+    fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = Box::new(|c| c.bennies.count.decrement());
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_inc(&self) -> CharModification {
-        Box::new(|c| c.bennies.count.increment())
+    fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = Box::new(|c| c.bennies.count.increment());
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_set(&self, value: IntStat<MIN, MAX>) -> CharModification {
-        Box::new(move |c| c.bennies.count.set(value.into()))
+    fn mod_set(&self, selection: app::CharSelection, value: IntStat<MIN, MAX>) -> CharModification {
+        let modification: simulator::CharModFunc =
+            Box::new(move |c| c.bennies.count.set(value.into()));
+        simulator::CharModification::new(selection, modification)
     }
 }
 
@@ -79,28 +87,30 @@ impl DrawInfo<BoolStat> for UsageInfo {
         }
     }
 
-    fn mod_dec(&self) -> CharModification {
-        match self {
+    fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::Unshake => Box::new(|c| c.bennies.use_for_unshake.decrement()),
             Self::ForErstschlag => Box::new(|c| c.bennies.use_for_erstschlag.decrement()),
             Self::AgainstErstschlag => Box::new(|c| c.bennies.use_against_erstschlag.decrement()),
             Self::Attack => Box::new(|c| c.bennies.use_for_attack.decrement()),
             Self::Damage => Box::new(|c| c.bennies.use_for_damage.decrement()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_inc(&self) -> CharModification {
-        match self {
+    fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::Unshake => Box::new(|c| c.bennies.use_for_unshake.increment()),
             Self::ForErstschlag => Box::new(|c| c.bennies.use_for_erstschlag.increment()),
             Self::AgainstErstschlag => Box::new(|c| c.bennies.use_against_erstschlag.increment()),
             Self::Attack => Box::new(|c| c.bennies.use_for_attack.increment()),
             Self::Damage => Box::new(|c| c.bennies.use_for_damage.increment()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_set(&self, value: BoolStat) -> CharModification {
-        match self {
+    fn mod_set(&self, selection: app::CharSelection, value: BoolStat) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::Unshake => Box::new(move |c| c.bennies.use_for_unshake.set(value)),
             Self::ForErstschlag => Box::new(move |c| c.bennies.use_for_erstschlag.set(value)),
             Self::AgainstErstschlag => {
@@ -108,6 +118,7 @@ impl DrawInfo<BoolStat> for UsageInfo {
             }
             Self::Attack => Box::new(move |c| c.bennies.use_for_attack.set(value)),
             Self::Damage => Box::new(move |c| c.bennies.use_for_damage.set(value)),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 }

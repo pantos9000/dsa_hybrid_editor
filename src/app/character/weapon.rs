@@ -2,6 +2,7 @@ use strum::IntoEnumIterator;
 
 use crate::app::widgets::{self, BoolStat, DrawInfo, IntStat, ValueSelector, ValueSlider};
 use crate::simulator::{CharModification, Simulator};
+use crate::{app, simulator};
 
 use super::Drawable;
 
@@ -36,24 +37,26 @@ impl<const SECONDARY: bool> Default for Weapon<SECONDARY> {
 }
 
 impl<const SECONDARY: bool> Drawable for Weapon<SECONDARY> {
-    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, selection: app::CharSelection, sim: &mut Simulator, ui: &mut egui::Ui) {
         let heading = self.heading(false);
         let grid = widgets::create_grid(heading);
         ui.heading(heading);
         grid.show(ui, |ui| {
-            self.draw_active(sim, ui);
+            self.draw_active(selection, sim, ui);
             ui.end_row();
-            self.damage.draw(self.damage_name(), sim, ui);
+            self.damage.draw(self.damage_name(), selection, sim, ui);
             ui.end_row();
             self.bonus_damage
-                .draw(ModifierInfo::<SECONDARY>::BonusDamage, sim, ui);
+                .draw(ModifierInfo::<SECONDARY>::BonusDamage, selection, sim, ui);
             ui.end_row();
             self.piercing
-                .draw(ModifierInfo::<SECONDARY>::Piercing, sim, ui);
+                .draw(ModifierInfo::<SECONDARY>::Piercing, selection, sim, ui);
             ui.end_row();
-            self.reach.draw(ModifierInfo::<SECONDARY>::Reach, sim, ui);
+            self.reach
+                .draw(ModifierInfo::<SECONDARY>::Reach, selection, sim, ui);
             ui.end_row();
-            self.more_crit.draw(MoreCritInfo::<SECONDARY>, sim, ui);
+            self.more_crit
+                .draw(MoreCritInfo::<SECONDARY>, selection, sim, ui);
             ui.end_row();
         });
     }
@@ -77,10 +80,15 @@ impl<const SECONDARY: bool> Weapon<SECONDARY> {
         }
     }
 
-    fn draw_active(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
-        let mod_dec: CharModification;
-        let mod_inc: CharModification;
-        let mod_toggle: CharModification;
+    fn draw_active(
+        &mut self,
+        selection: app::CharSelection,
+        sim: &mut Simulator,
+        ui: &mut egui::Ui,
+    ) {
+        let mod_dec: simulator::CharModFunc;
+        let mod_inc: simulator::CharModFunc;
+        let mod_toggle: simulator::CharModFunc;
 
         if SECONDARY {
             mod_dec = Box::new(|c| c.secondary_weapon.active = false);
@@ -91,6 +99,11 @@ impl<const SECONDARY: bool> Weapon<SECONDARY> {
             mod_inc = Box::new(|c| c.weapon.active = true);
             mod_toggle = Box::new(|c| c.weapon.active = !c.weapon.active);
         }
+
+        let mod_dec = simulator::CharModification::new(selection, mod_dec);
+        let mod_inc = simulator::CharModification::new(selection, mod_inc);
+        let mod_toggle = simulator::CharModification::new(selection, mod_toggle);
+
         ui.checkbox(&mut self.active, "Aktiv").on_hover_ui(|ui| {
             ui.horizontal(|ui| {
                 sim.gradient(mod_toggle).draw(ui);
@@ -114,25 +127,28 @@ impl DrawInfo<Damage> for DamageName {
         "Schaden"
     }
 
-    fn mod_dec(&self) -> CharModification {
-        match self {
+    fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             DamageName::Primary => Box::new(|c| c.weapon.damage.decrement()),
             DamageName::Secondary => Box::new(|c| c.secondary_weapon.damage.decrement()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_inc(&self) -> CharModification {
-        match self {
+    fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             DamageName::Primary => Box::new(|c| c.weapon.damage.increment()),
             DamageName::Secondary => Box::new(|c| c.secondary_weapon.damage.increment()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_set(&self, value: Damage) -> CharModification {
-        match self {
+    fn mod_set(&self, selection: app::CharSelection, value: Damage) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             DamageName::Primary => Box::new(move |c| c.weapon.damage = value),
             DamageName::Secondary => Box::new(move |c| c.secondary_weapon.damage = value),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 }
 
@@ -234,31 +250,33 @@ impl<const SECONDARY: bool, const MIN: i8, const MAX: i8> DrawInfo<IntStat<MIN, 
         }
     }
 
-    fn mod_dec(&self) -> CharModification {
-        match (SECONDARY, self) {
+    fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match (SECONDARY, self) {
             (false, Self::BonusDamage) => Box::new(|c| c.weapon.bonus_damage.decrement()),
             (false, Self::Piercing) => Box::new(|c| c.weapon.piercing.decrement()),
             (false, Self::Reach) => Box::new(|c| c.weapon.reach.decrement()),
             (true, Self::BonusDamage) => Box::new(|c| c.secondary_weapon.bonus_damage.decrement()),
             (true, Self::Piercing) => Box::new(|c| c.secondary_weapon.piercing.decrement()),
             (true, Self::Reach) => Box::new(|c| c.secondary_weapon.reach.decrement()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_inc(&self) -> CharModification {
-        match (SECONDARY, self) {
+    fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match (SECONDARY, self) {
             (false, Self::BonusDamage) => Box::new(|c| c.weapon.bonus_damage.increment()),
             (false, Self::Piercing) => Box::new(|c| c.weapon.piercing.increment()),
             (false, Self::Reach) => Box::new(|c| c.weapon.reach.increment()),
             (true, Self::BonusDamage) => Box::new(|c| c.secondary_weapon.bonus_damage.increment()),
             (true, Self::Piercing) => Box::new(|c| c.secondary_weapon.piercing.increment()),
             (true, Self::Reach) => Box::new(|c| c.secondary_weapon.reach.increment()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_set(&self, value: IntStat<MIN, MAX>) -> CharModification {
+    fn mod_set(&self, selection: app::CharSelection, value: IntStat<MIN, MAX>) -> CharModification {
         let value = value.into();
-        match (SECONDARY, self) {
+        let modification: simulator::CharModFunc = match (SECONDARY, self) {
             (false, Self::BonusDamage) => Box::new(move |c| c.weapon.bonus_damage.set(value)),
             (false, Self::Piercing) => Box::new(move |c| c.weapon.piercing.set(value)),
             (false, Self::Reach) => Box::new(move |c| c.weapon.reach.set(value)),
@@ -267,7 +285,8 @@ impl<const SECONDARY: bool, const MIN: i8, const MAX: i8> DrawInfo<IntStat<MIN, 
             }
             (true, Self::Piercing) => Box::new(move |c| c.secondary_weapon.piercing.set(value)),
             (true, Self::Reach) => Box::new(move |c| c.secondary_weapon.reach.set(value)),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 }
 
@@ -278,27 +297,30 @@ impl<const SECONDARY: bool> DrawInfo<BoolStat> for MoreCritInfo<SECONDARY> {
         "W10 statt W6 bei Steigerung"
     }
 
-    fn mod_dec(&self) -> CharModification {
-        if SECONDARY {
+    fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = if SECONDARY {
             Box::new(|c| c.secondary_weapon.more_crit.decrement())
         } else {
             Box::new(|c| c.weapon.more_crit.decrement())
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_inc(&self) -> CharModification {
-        if SECONDARY {
+    fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = if SECONDARY {
             Box::new(|c| c.secondary_weapon.more_crit.increment())
         } else {
             Box::new(|c| c.weapon.more_crit.increment())
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_set(&self, value: BoolStat) -> CharModification {
-        if SECONDARY {
+    fn mod_set(&self, selection: app::CharSelection, value: BoolStat) -> CharModification {
+        let modification: simulator::CharModFunc = if SECONDARY {
             Box::new(move |c| c.secondary_weapon.more_crit.set(value))
         } else {
             Box::new(move |c| c.weapon.more_crit.set(value))
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 }

@@ -1,5 +1,6 @@
+use crate::app;
 use crate::app::widgets::{self, DrawInfo, ValueSelector};
-use crate::simulator::{CharModification, Simulator};
+use crate::simulator::{self, CharModification, Simulator};
 
 use super::Drawable;
 
@@ -13,20 +14,20 @@ pub struct Attributes {
 }
 
 impl Drawable for Attributes {
-    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, selection: app::CharSelection, sim: &mut Simulator, ui: &mut egui::Ui) {
         let grid = widgets::create_grid("Attribute");
 
         ui.heading("Attribute");
         grid.show(ui, |ui| {
-            self.ges.draw(AttrName::Ges, sim, ui);
+            self.ges.draw(AttrName::Ges, selection, sim, ui);
             ui.end_row();
-            self.kon.draw(AttrName::Kon, sim, ui);
+            self.kon.draw(AttrName::Kon, selection, sim, ui);
             ui.end_row();
-            self.sta.draw(AttrName::Stä, sim, ui);
+            self.sta.draw(AttrName::Stä, selection, sim, ui);
             ui.end_row();
-            self.int.draw(AttrName::Int, sim, ui);
+            self.int.draw(AttrName::Int, selection, sim, ui);
             ui.end_row();
-            self.wil.draw(AttrName::Wil, sim, ui);
+            self.wil.draw(AttrName::Wil, selection, sim, ui);
             ui.end_row();
         });
     }
@@ -52,34 +53,37 @@ impl DrawInfo<Attribute> for AttrName {
         }
     }
 
-    fn mod_dec(&self) -> CharModification {
-        match self {
+    fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             AttrName::Ges => Box::new(|c| c.attributes.ges.decrement()),
             AttrName::Stä => Box::new(|c| c.attributes.sta.decrement()),
             AttrName::Kon => Box::new(|c| c.attributes.kon.decrement()),
             AttrName::Int => Box::new(|c| c.attributes.int.decrement()),
             AttrName::Wil => Box::new(|c| c.attributes.wil.decrement()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_inc(&self) -> CharModification {
-        match self {
+    fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             AttrName::Ges => Box::new(|c| c.attributes.ges.increment()),
             AttrName::Stä => Box::new(|c| c.attributes.sta.increment()),
             AttrName::Kon => Box::new(|c| c.attributes.kon.increment()),
             AttrName::Int => Box::new(|c| c.attributes.int.increment()),
             AttrName::Wil => Box::new(|c| c.attributes.wil.increment()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_set(&self, value: Attribute) -> CharModification {
-        match self {
+    fn mod_set(&self, selection: app::CharSelection, value: Attribute) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             AttrName::Ges => Box::new(move |c| c.attributes.ges = value),
             AttrName::Stä => Box::new(move |c| c.attributes.sta = value),
             AttrName::Kon => Box::new(move |c| c.attributes.kon = value),
             AttrName::Int => Box::new(move |c| c.attributes.int = value),
             AttrName::Wil => Box::new(move |c| c.attributes.wil = value),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 }
 

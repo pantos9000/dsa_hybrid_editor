@@ -1,4 +1,5 @@
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::app::character::{Character, Edge3, PassiveStats};
@@ -9,33 +10,18 @@ use super::{
     roller::{Roll, RollResult, roller},
 };
 
-#[derive(Debug, Default, Clone)]
-pub struct Distance {
-    base_contact: Cell<bool>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Group {
+    Left,
+    Right,
 }
 
-impl Distance {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn close_in(&self) {
-        self.base_contact.set(true);
-    }
-
-    pub fn back_off(&self) {
-        self.base_contact.set(false);
-    }
-
-    pub fn base_contact(&self) -> bool {
-        self.base_contact.get()
-    }
-}
-
-#[allow(clippy::struct_excessive_bools)] // lots of yes/no state
+#[allow(clippy::struct_excessive_bools, reason = "lots of yes/no state")]
 #[derive(Debug, Clone)]
 pub struct Fighter {
-    fight_stats: RefCell<FightStats>, // change stats even when self is immutable
+    group: Group,
+    fight_stats: Option<Rc<RefCell<FightStats>>>,
+    drawn_card: Option<Card>,
     character: Character,
     passive_stats: PassiveStats,
     bennies: u8,
@@ -47,16 +33,25 @@ pub struct Fighter {
     berserker: bool,
     riposte_done: bool,
     attacked_wild: bool,
-    distance: Rc<Distance>,
+    distance_map: Rc<RefCell<DistanceMap>>,
+    distance_id: u16,
 }
 
 impl Fighter {
-    pub fn new(character: Character, distance: Rc<Distance>) -> Self {
+    pub fn new(
+        character: Character,
+        group: Group,
+        distance_map: Rc<RefCell<DistanceMap>>,
+        stats: Option<Rc<RefCell<FightStats>>>,
+    ) -> Self {
         let passive_stats = PassiveStats::new(&character);
         let berserker = character.edges.berserker == Edge3::Improved;
         let bennies = i8::from(character.bennies.count).try_into().unwrap();
+        let distance_id = distance_map.borrow_mut().register_fighter(group);
         Self {
-            fight_stats: RefCell::new(FightStats::new()),
+            group,
+            fight_stats: stats,
+            drawn_card: None,
             character,
             passive_stats,
             bennies,
@@ -68,15 +63,16 @@ impl Fighter {
             berserker,
             riposte_done: false,
             attacked_wild: false,
-            distance,
+            distance_map,
+            distance_id,
         }
     }
 
-    pub fn finish(self) -> FightStats {
-        self.fight_stats.into_inner()
+    pub fn group(&self) -> Group {
+        self.group
     }
 
-    fn draw_card(&self, cards: &mut CardDeck) -> Card {
+    fn draw_card(&mut self, cards: &mut CardDeck) {
         let num_cards = match self.character.edges.kuhler_kopf {
             Edge3::None => 1,
             Edge3::Normal => 2,
@@ -91,19 +87,21 @@ impl Fighter {
             }
         }
 
-        card
+        self.drawn_card = Some(card);
+    }
+
+    pub fn drawn_card(&self) -> Card {
+        self.drawn_card.unwrap()
     }
 
     fn weapon_has_reach(&self) -> bool {
         i8::from(self.character.weapon.reach) > 0
     }
 
-    pub fn new_round(&mut self, cards: &mut CardDeck) -> Card {
-        self.fight_stats.borrow_mut().add_round();
-        let card = self.draw_card(cards);
-        self.joker = card.is_joker();
+    pub fn new_round(&mut self, cards: &mut CardDeck) {
+        self.draw_card(cards);
+        self.joker = self.drawn_card.unwrap().is_joker();
         self.riposte_done = false;
-        card
     }
 
     pub fn is_dead(&self) -> bool {
@@ -111,23 +109,30 @@ impl Fighter {
         self.passive_stats.life <= threshold
     }
 
+    /// take a step forward, but only toward our target
     fn step_forward(&mut self, opponent: &mut Fighter) {
-        if self.weapon_has_reach() || self.distance.base_contact() {
+        let mut distance_map = self.distance_map.borrow_mut();
+        let base_contact_to_target = distance_map.base_contact_mut(self, opponent);
+        if self.weapon_has_reach() || *base_contact_to_target {
             // don't step forward if not needed
             return;
         }
-        self.distance.close_in();
+        *base_contact_to_target = true;
+        drop(distance_map);
         opponent.trigger_erstschlag(self);
     }
 
+    /// take a step back from everybody
     fn step_back(&mut self, opponent: &mut Fighter) {
+        let mut distance_map = self.distance_map.borrow_mut();
+        let base_contact_to_target = distance_map.base_contact_mut(self, opponent);
         if !self.character.edges.erstschlag.is_set() {
             // if we don't have erstschlag, don't step back
             return;
         }
         if self.weapon_has_reach() {
             // always step back if opponent can't hit us
-            self.distance.back_off();
+            *base_contact_to_target = false;
             return;
         }
         opponent.unshake_against_erstschlag();
@@ -135,7 +140,7 @@ impl Fighter {
             // don't step back if opponent could hit us
             return;
         }
-        self.distance.back_off();
+        *base_contact_to_target = false;
     }
 
     fn do_full_attack(&mut self, opponent: &mut Fighter) {
@@ -227,6 +232,9 @@ impl Fighter {
         }
 
         self.step_forward(opponent);
+        if self.character.bennies.use_against_erstschlag.is_set() {
+            self.unshake_with_bennie();
+        }
         if self.shaken {
             // we were interrupted by first strike, return without doing anything
             return;
@@ -333,9 +341,13 @@ impl Fighter {
     }
 
     fn trigger_erstschlag(&mut self, opponent: &mut Self) {
+        let distance_map = self.distance_map.borrow_mut();
+        let base_contact_to_target = distance_map.base_contact(self, opponent);
+        drop(distance_map);
+
         if !self.character.edges.erstschlag.is_set()
             || i8::from(opponent.character.weapon.reach) > 0
-            || !self.distance.base_contact()
+            || !base_contact_to_target
         {
             return;
         }
@@ -514,11 +526,12 @@ impl Fighter {
             self.bennies -= 1;
             self.try_to_hit(opponent, num_skill_dice, modifier)
         } else {
-            self.fight_stats.borrow_mut().add_hits_dealt(num_hits);
-            opponent
-                .fight_stats
-                .borrow_mut()
-                .add_hits_received(num_hits);
+            if let Some(stats) = self.fight_stats.as_ref() {
+                stats.borrow_mut().add_hits_dealt(num_hits);
+            }
+            if let Some(stats) = opponent.fight_stats.as_ref() {
+                stats.borrow_mut().add_hits_received(num_hits);
+            }
             Some(hits)
         }
     }
@@ -595,13 +608,12 @@ impl Fighter {
         opponent.shaken = true;
         opponent.enable_berserker();
 
-        self.fight_stats
-            .borrow_mut()
-            .add_damage_dealt(damage.into());
-        opponent
-            .fight_stats
-            .borrow_mut()
-            .add_damage_received(damage.into());
+        if let Some(stats) = self.fight_stats.as_ref() {
+            stats.borrow_mut().add_damage_dealt(damage.into());
+        }
+        if let Some(stats) = opponent.fight_stats.as_ref() {
+            stats.borrow_mut().add_damage_received(damage.into());
+        }
 
         // instead of implementing interrupting logic, we can just assume that
         // damage done while holding a joker just interrupts the opponent.
@@ -685,5 +697,59 @@ impl CriticalFailResult {
             4..=10 => Self::WeaponLost, // actually it blocks or something, but for the sake of simplicity...
             11..=12 => Self::Injured,
         }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct DistanceMap {
+    ids_left: Vec<u16>,
+    ids_right: Vec<u16>,
+    next_id: u16,
+    map: HashMap<(u16, u16), bool>,
+}
+
+impl DistanceMap {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    fn get_key(fighter_group: Group, fighter_id: u16, opponent_id: u16) -> (u16, u16) {
+        match fighter_group {
+            Group::Left => (fighter_id, opponent_id),
+            Group::Right => (opponent_id, fighter_id),
+        }
+    }
+
+    fn register_fighter(&mut self, group: Group) -> u16 {
+        let fighter_id = self.next_id;
+        self.next_id += 1;
+
+        let (own_group, other_group) = match group {
+            Group::Left => (&mut self.ids_left, &mut self.ids_right),
+            Group::Right => (&mut self.ids_right, &mut self.ids_left),
+        };
+
+        own_group.push(fighter_id);
+        for other_id in other_group {
+            let key = Self::get_key(group, fighter_id, *other_id);
+            self.map.insert(key, false);
+        }
+
+        fighter_id
+    }
+
+    fn base_contact_mut(&mut self, fighter: &Fighter, opponent: &Fighter) -> &mut bool {
+        let key = Self::get_key(fighter.group(), fighter.distance_id, opponent.distance_id);
+        self.map
+            .get_mut(&key)
+            .expect("distance map entry should exist if fighter was registered")
+    }
+
+    fn base_contact(&self, fighter: &Fighter, opponent: &Fighter) -> bool {
+        let key = Self::get_key(fighter.group(), fighter.distance_id, opponent.distance_id);
+        *self
+            .map
+            .get(&key)
+            .expect("distance map entry should exist if fighter was registered")
     }
 }

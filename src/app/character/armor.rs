@@ -1,6 +1,9 @@
 use crate::{
-    app::widgets::{self, DrawInfo, IntStat, ValueSlider as _},
-    simulator::Simulator,
+    app::{
+        self,
+        widgets::{self, DrawInfo, IntStat, ValueSlider as _},
+    },
+    simulator::{self, Simulator},
 };
 
 use super::Drawable;
@@ -13,14 +16,14 @@ pub struct Armor {
 }
 
 impl Drawable for Armor {
-    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, selection: app::CharSelection, sim: &mut Simulator, ui: &mut egui::Ui) {
         let grid = widgets::create_grid("Rüstung");
 
         ui.heading("Rüstung");
         grid.show(ui, |ui| {
-            self.torso.draw(ArmorInfo::Torso, sim, ui);
+            self.torso.draw(ArmorInfo::Torso, selection, sim, ui);
             ui.end_row();
-            self.head.draw(ArmorInfo::Head, sim, ui);
+            self.head.draw(ArmorInfo::Head, selection, sim, ui);
             ui.end_row();
         });
     }
@@ -40,24 +43,31 @@ impl DrawInfo<IntStat<0, 5>> for ArmorInfo {
         }
     }
 
-    fn mod_dec(&self) -> crate::simulator::CharModification {
-        match self {
+    fn mod_dec(&self, selection: app::CharSelection) -> simulator::CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::Torso => Box::new(|c| c.armor.torso.decrement()),
             Self::Head => Box::new(|c| c.armor.head.decrement()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_inc(&self) -> crate::simulator::CharModification {
-        match self {
+    fn mod_inc(&self, selection: app::CharSelection) -> simulator::CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::Torso => Box::new(|c| c.armor.torso.increment()),
             Self::Head => Box::new(|c| c.armor.head.increment()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_set(&self, value: IntStat<0, 5>) -> crate::simulator::CharModification {
-        match self {
+    fn mod_set(
+        &self,
+        selection: app::CharSelection,
+        value: IntStat<0, 5>,
+    ) -> crate::simulator::CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::Torso => Box::new(move |c| c.armor.torso.set(value.into())),
             Self::Head => Box::new(move |c| c.armor.head.set(value.into())),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 }

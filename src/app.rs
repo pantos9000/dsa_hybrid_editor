@@ -1,8 +1,8 @@
 pub mod character;
 pub mod gradient;
+pub mod group;
 
 mod dnd;
-mod group;
 mod io;
 mod widgets;
 
@@ -85,12 +85,10 @@ impl eframe::App for App {
             self.handle_dnd(dnd);
         }
 
-        if let Some(char) = self.chars_left.first()
-            && let Some(opponent) = self.chars_right.first()
-        {
-            self.simulator
-                .update_characters(char.clone(), opponent.clone());
-        }
+        self.simulator.update(
+            self.chars_left.clone().into_vec(),
+            self.chars_right.clone().into_vec(),
+        );
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -215,7 +213,7 @@ impl App {
             CharSelection::Right(i) => self.chars_right.get_char_mut(i).unwrap(),
         };
 
-        char.draw_editor(&mut self.simulator, &self.io, ui);
+        char.draw_editor(selection, &mut self.simulator, &self.io, ui);
     }
 
     fn draw_group(&mut self, group_id: GroupId, ui: &mut egui::Ui) {
@@ -306,7 +304,7 @@ impl App {
 
 /// Contains information from which team a char is selected, and which index in the team
 #[derive(Debug, Clone, Copy)]
-enum CharSelection {
+pub enum CharSelection {
     Left(CharIndex),
     Right(CharIndex),
 }

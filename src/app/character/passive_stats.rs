@@ -1,6 +1,7 @@
 use super::{Character, Drawable};
 use crate::app::widgets::{self, BoolStat, DrawInfo, IntStat, ValueSlider as _};
 use crate::simulator::{CharModification, Simulator};
+use crate::{app, simulator};
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct PassiveModifiers {
@@ -25,45 +26,52 @@ impl DrawInfo<BoolStat> for StrategyInfo {
         }
     }
 
-    fn mod_dec(&self) -> CharModification {
-        match self {
+    fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::AttackWild => Box::new(|c| c.passive_modifiers.attack_wild.decrement()),
             Self::AttackHead => Box::new(|c| c.passive_modifiers.attack_head.decrement()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_inc(&self) -> CharModification {
-        match self {
+    fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::AttackWild => Box::new(|c| c.passive_modifiers.attack_wild.increment()),
             Self::AttackHead => Box::new(|c| c.passive_modifiers.attack_head.increment()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_set(&self, value: BoolStat) -> CharModification {
-        match self {
+    fn mod_set(&self, selection: app::CharSelection, value: BoolStat) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::AttackWild => Box::new(move |c| c.passive_modifiers.attack_wild.set(value)),
             Self::AttackHead => Box::new(move |c| c.passive_modifiers.attack_head.set(value)),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 }
 
 impl Drawable for PassiveModifiers {
-    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, selection: app::CharSelection, sim: &mut Simulator, ui: &mut egui::Ui) {
         let name = "Modifikatoren";
         let grid = widgets::create_grid(name);
         ui.heading(name);
         grid.show(ui, |ui| {
-            self.life.draw(PassiveModifier::Life, sim, ui);
+            self.life.draw(PassiveModifier::Life, selection, sim, ui);
             ui.end_row();
-            self.parry.draw(PassiveModifier::Parry, sim, ui);
+            self.parry.draw(PassiveModifier::Parry, selection, sim, ui);
             ui.end_row();
-            self.robustness.draw(PassiveModifier::Robustness, sim, ui);
+            self.robustness
+                .draw(PassiveModifier::Robustness, selection, sim, ui);
             ui.end_row();
-            self.attack.draw(PassiveModifier::Attack, sim, ui);
+            self.attack
+                .draw(PassiveModifier::Attack, selection, sim, ui);
             ui.end_row();
-            self.attack_wild.draw(StrategyInfo::AttackWild, sim, ui);
+            self.attack_wild
+                .draw(StrategyInfo::AttackWild, selection, sim, ui);
             ui.end_row();
-            self.attack_head.draw(StrategyInfo::AttackHead, sim, ui);
+            self.attack_head
+                .draw(StrategyInfo::AttackHead, selection, sim, ui);
             ui.end_row();
         });
     }
@@ -87,26 +95,28 @@ impl<const MIN: i8, const MAX: i8> DrawInfo<IntStat<MIN, MAX>> for PassiveModifi
         }
     }
 
-    fn mod_dec(&self) -> CharModification {
-        match self {
+    fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             PassiveModifier::Life => Box::new(|c| c.passive_modifiers.life.decrement()),
             PassiveModifier::Parry => Box::new(|c| c.passive_modifiers.parry.decrement()),
             PassiveModifier::Robustness => Box::new(|c| c.passive_modifiers.robustness.decrement()),
             PassiveModifier::Attack => Box::new(|c| c.passive_modifiers.attack.decrement()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_inc(&self) -> CharModification {
-        match self {
+    fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             PassiveModifier::Life => Box::new(|c| c.passive_modifiers.life.increment()),
             PassiveModifier::Parry => Box::new(|c| c.passive_modifiers.parry.increment()),
             PassiveModifier::Robustness => Box::new(|c| c.passive_modifiers.robustness.increment()),
             PassiveModifier::Attack => Box::new(|c| c.passive_modifiers.attack.increment()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_set(&self, value: IntStat<MIN, MAX>) -> CharModification {
-        match self {
+    fn mod_set(&self, selection: app::CharSelection, value: IntStat<MIN, MAX>) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             PassiveModifier::Life => Box::new(move |c| c.passive_modifiers.life.set(value.into())),
             PassiveModifier::Parry => {
                 Box::new(move |c| c.passive_modifiers.parry.set(value.into()))
@@ -117,7 +127,8 @@ impl<const MIN: i8, const MAX: i8> DrawInfo<IntStat<MIN, MAX>> for PassiveModifi
             PassiveModifier::Attack => {
                 Box::new(move |c| c.passive_modifiers.attack.set(value.into()))
             }
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 }
 
@@ -195,7 +206,7 @@ impl PassiveStats {
 }
 
 impl Drawable for PassiveStats {
-    fn draw(&mut self, _sim: &mut Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, _selection: app::CharSelection, _sim: &mut Simulator, ui: &mut egui::Ui) {
         self.draw_stats("PassiveWerte", ui);
     }
 }

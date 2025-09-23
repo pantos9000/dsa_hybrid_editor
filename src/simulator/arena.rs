@@ -1,11 +1,15 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
-use super::CharData;
-use super::cards::{Card, CardDeck};
-use super::fight_report::{FightOutcome, FightReport, ReportBuilder};
-use super::fighter::{Distance, Fighter};
+use crate::simulator::fight_report::FightStats;
+use crate::simulator::fighter::DistanceMap;
 
-pub fn simulate_fights(char_data: &CharData, count_fights: u32, max_rounds: u32) -> FightReport {
+use super::GroupData;
+use super::cards::CardDeck;
+use super::fight_report::{FightOutcome, FightReport, ReportBuilder};
+use super::fighter::{Fighter, Group};
+
+pub fn simulate_fights(char_data: &GroupData, count_fights: u32, max_rounds: u32) -> FightReport {
     let mut report = ReportBuilder::new();
     for _ in 0..count_fights {
         let outcome = calc_fight(char_data, max_rounds);
@@ -14,7 +18,7 @@ pub fn simulate_fights(char_data: &CharData, count_fights: u32, max_rounds: u32)
     report.build()
 }
 
-fn calc_fight(char_data: &CharData, max_rounds: u32) -> FightOutcome {
+fn calc_fight(char_data: &GroupData, max_rounds: u32) -> FightOutcome {
     let mut arena = Arena::new(char_data);
     'fight: for _ in 0..max_rounds {
         if matches!(arena.round(), Err(FightIsOver)) {
@@ -30,88 +34,142 @@ type FightResult = Result<(), FightIsOver>;
 #[derive(Debug)]
 struct Arena {
     cards: CardDeck,
-    fighter: Fighter,
-    opponent: Fighter,
+    stats: Rc<RefCell<FightStats>>,
+    group_left: Vec<Rc<RefCell<Fighter>>>,
+    group_right: Vec<Rc<RefCell<Fighter>>>,
 }
 
 impl Arena {
-    fn new(char_data: &CharData) -> Self {
+    fn new(group_data: &GroupData) -> Self {
         let cards = CardDeck::new();
-        let distance = Rc::new(Distance::new());
-        let fighter = Fighter::new(char_data.character.clone(), Rc::clone(&distance));
-        let opponent = Fighter::new(char_data.opponent.clone(), distance);
+        let stats = Rc::new(RefCell::new(FightStats::new()));
+        let distance_map = Rc::new(RefCell::new(DistanceMap::new()));
+        let group_left = group_data
+            .group_left
+            .iter()
+            .cloned()
+            .map(|char| {
+                Fighter::new(
+                    char,
+                    Group::Left,
+                    Rc::clone(&distance_map),
+                    Some(Rc::clone(&stats)),
+                )
+            })
+            .map(|fighter| Rc::new(RefCell::new(fighter)))
+            .collect();
+        let group_right = group_data
+            .group_right
+            .iter()
+            .cloned()
+            .map(|char| Fighter::new(char, Group::Right, Rc::clone(&distance_map), None))
+            .map(|fighter| Rc::new(RefCell::new(fighter)))
+            .collect();
         Self {
             cards,
-            fighter,
-            opponent,
+            stats,
+            group_left,
+            group_right,
         }
     }
 
+    fn get_punchbag(&self, fighter: &Rc<RefCell<Fighter>>) -> Option<Rc<RefCell<Fighter>>> {
+        let fighter = fighter.borrow();
+        let other_group = match fighter.group() {
+            Group::Left => &self.group_right,
+            Group::Right => &self.group_left,
+        };
+        other_group
+            .iter()
+            .find(|fighter| !fighter.borrow().is_dead())
+            .cloned()
+    }
+
     fn round(&mut self) -> FightResult {
+        self.stats.borrow_mut().add_round();
         self.cards.new_round();
+        self.group_left
+            .iter_mut()
+            .chain(self.group_right.iter_mut())
+            .for_each(|f| f.borrow_mut().new_round(&mut self.cards));
 
-        let fighter_card = self.fighter.new_round(&mut self.cards);
-        let opponent_card = self.opponent.new_round(&mut self.cards);
+        let initiative_list = self.initiative();
 
-        match self.initiative(fighter_card, opponent_card) {
-            Initiative::FighterFirst => {
-                self.fighter.action(&mut self.opponent);
-                self.check_end()?;
-                self.opponent.action(&mut self.fighter);
-                self.check_end()?;
+        for fighter in initiative_list {
+            if fighter.borrow().is_dead() {
+                continue;
             }
-            Initiative::OpponentFirst => {
-                self.opponent.action(&mut self.fighter);
-                self.check_end()?;
-                self.fighter.action(&mut self.opponent);
-                self.check_end()?;
-            }
+            let punchbag = self.get_punchbag(&fighter).ok_or(FightIsOver)?;
+
+            let mut punchbag = punchbag.borrow_mut();
+            let mut fighter = fighter.borrow_mut();
+            fighter.action(&mut punchbag);
         }
+
+        // filter out dead fighters
+        self.group_left
+            .retain(|fighter| !fighter.borrow().is_dead());
+        self.group_right
+            .retain(|fighter| !fighter.borrow().is_dead());
 
         Ok(())
     }
 
-    fn initiative(&mut self, fighter_card: Card, opponent_card: Card) -> Initiative {
-        match fighter_card.cmp(&opponent_card) {
-            std::cmp::Ordering::Less => return Initiative::OpponentFirst,
-            std::cmp::Ordering::Greater => return Initiative::FighterFirst,
-            std::cmp::Ordering::Equal => { /* contine */ }
-        }
+    fn initiative(&mut self) -> Vec<Rc<RefCell<Fighter>>> {
+        let mut initiative_list: Vec<_> = self
+            .group_left
+            .iter()
+            .chain(self.group_right.iter())
+            .cloned()
+            .collect();
+        initiative_list.sort_by_key(|a| a.borrow().drawn_card());
 
-        // both have joker, do a dex comparison until one wins
-        'dex_roll_loop: loop {
-            match self.fighter.dex_roll().cmp(&self.opponent.dex_roll()) {
-                std::cmp::Ordering::Less => return Initiative::OpponentFirst,
-                std::cmp::Ordering::Greater => return Initiative::FighterFirst,
-                std::cmp::Ordering::Equal => continue 'dex_roll_loop,
-            }
-        }
+        Self::initiative_jokers(&mut initiative_list);
+
+        initiative_list
     }
 
-    fn check_end(&self) -> FightResult {
-        match (self.fighter.is_dead(), self.opponent.is_dead()) {
-            (false, false) => Ok(()),
-            _ => Err(FightIsOver),
+    /// extra case if 2 have joker
+    fn initiative_jokers(initiative_list: &mut [Rc<RefCell<Fighter>>]) {
+        let Some(first) = initiative_list.first() else {
+            return;
+        };
+        let Some(second) = initiative_list.get(1) else {
+            return;
+        };
+        if !first.borrow().drawn_card().is_joker() {
+            return;
+        }
+        if !second.borrow().drawn_card().is_joker() {
+            return;
+        }
+        let swap = 'dex_roll_loop: loop {
+            match first.borrow().dex_roll().cmp(&second.borrow().dex_roll()) {
+                std::cmp::Ordering::Less => break 'dex_roll_loop true,
+                std::cmp::Ordering::Greater => break 'dex_roll_loop false,
+                std::cmp::Ordering::Equal => continue 'dex_roll_loop,
+            }
+        };
+        if swap {
+            initiative_list.swap(0, 1);
         }
     }
 
     fn finish(self) -> FightOutcome {
-        let fighter_dead = self.fighter.is_dead();
-        let opponent_dead = self.opponent.is_dead();
-        let stats = self.fighter.finish();
-        match (fighter_dead, opponent_dead) {
+        let left_dead = self.group_left.is_empty();
+        let right_dead = self.group_right.is_empty();
+        drop(self.group_left);
+        drop(self.group_right);
+        let stats = Rc::into_inner(self.stats)
+            .expect("other Rcs should be gone")
+            .into_inner();
+        match (left_dead, right_dead) {
             (true, true) => FightOutcome::Draw(stats),
-            (true, false) => FightOutcome::OpponentWon(stats),
-            (false, true) => FightOutcome::FighterWon(stats),
+            (true, false) => FightOutcome::RightWon(stats),
+            (false, true) => FightOutcome::LeftWon(stats),
             (false, false) => FightOutcome::Draw(stats),
         }
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Initiative {
-    FighterFirst,
-    OpponentFirst,
 }
 
 #[cfg(test)]
@@ -125,35 +183,18 @@ mod tests {
         let count_fights = 10000;
         let max_rounds = 100;
 
-        let char1 = Character::default();
-        let char2 = Character::default();
-        let data1 = CharData {
-            character: char1.clone(),
-            opponent: char2.clone(),
-        };
-        let data2 = CharData {
-            character: char2,
-            opponent: char1,
+        let character = Character::default();
+        let data = GroupData {
+            group_left: vec![character.clone()],
+            group_right: vec![character],
         };
 
-        let prob1: i8 = simulate_fights(&data1, count_fights, max_rounds)
-            .total()
-            .try_into()
-            .unwrap();
-        let prob2: i8 = simulate_fights(&data2, count_fights, max_rounds)
+        let prob: i8 = simulate_fights(&data, count_fights, max_rounds)
             .total()
             .try_into()
             .unwrap();
 
-        eprintln!("prob1 = {prob1}");
-        eprintln!("prob2 = {prob1}");
-        assert!(
-            (48..=52).contains(&prob1),
-            "{prob1} is too far away from 50"
-        );
-        assert!(
-            (48..=52).contains(&prob2),
-            "{prob2} is too far away from 50"
-        );
+        eprintln!("prob = {prob}");
+        assert!((48..=52).contains(&prob), "{prob} is too far away from 50");
     }
 }

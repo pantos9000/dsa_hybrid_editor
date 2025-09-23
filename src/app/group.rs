@@ -3,12 +3,16 @@ use crate::{
     simulator::Simulator,
 };
 
-#[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Default, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Group {
     chars: Vec<Character>,
 }
 
 impl Group {
+    pub fn into_vec(self) -> Vec<Character> {
+        self.chars
+    }
+
     #[must_use]
     pub fn draw(
         &mut self,
@@ -122,11 +126,6 @@ impl Group {
     pub fn get_char_mut(&mut self, index: CharIndex) -> Option<&mut Character> {
         self.chars.get_mut(index.into_usize())
     }
-
-    // TODO delete once the simulator can handle groups
-    pub fn first(&self) -> Option<&Character> {
-        self.chars.first()
-    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -155,7 +154,7 @@ impl CharIndex {
         Self(index)
     }
 
-    fn into_usize(self) -> usize {
+    pub fn into_usize(self) -> usize {
         self.0
     }
 }

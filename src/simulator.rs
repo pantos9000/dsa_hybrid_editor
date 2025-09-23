@@ -14,12 +14,34 @@ use threadpool::ThreadPool;
 use fight_report::FightReport;
 
 use crate::app::character::Character;
-use crate::app::gradient::{Gradient, Total};
+use crate::app::gradient::Gradient;
+use crate::app::group::CharIndex;
+use crate::app::{CharSelection, GroupId};
 
-pub type CharModification = Box<dyn FnOnce(&mut Character)>;
+pub type CharModFunc = Box<dyn FnOnce(&mut Character)>;
+
+pub struct CharModification {
+    group_id: GroupId,
+    index: CharIndex,
+    modification: CharModFunc,
+}
+
+impl CharModification {
+    pub fn new(selection: CharSelection, modification: CharModFunc) -> Self {
+        let (group_id, index) = match selection {
+            CharSelection::Left(char_index) => (GroupId::Left, char_index),
+            CharSelection::Right(char_index) => (GroupId::Right, char_index),
+        };
+        Self {
+            group_id,
+            index,
+            modification,
+        }
+    }
+}
 
 /// Holds all total results
-type DataMap = std::collections::HashMap<CharData, FightReport, FxBuildHasher>;
+type DataMap = std::collections::HashMap<GroupData, FightReport, FxBuildHasher>;
 
 const COUNT_FIGHTS: u32 = 5000;
 const MAX_ROUNDS: u32 = 100;
@@ -27,27 +49,32 @@ const MAX_ROUNDS: u32 = 100;
 pub struct Simulator {
     report_map: DataMap,
     workers: ThreadPool,
-    report_send: mpsc::Sender<(CharData, FightReport)>,
-    report_recv: mpsc::Receiver<(CharData, FightReport)>,
-    char_data: CharData,
+    report_send: mpsc::Sender<(GroupData, FightReport)>,
+    report_recv: mpsc::Receiver<(GroupData, FightReport)>,
+    group_data: GroupData,
     progress: ProgressTracker,
 }
 
 impl Default for Simulator {
     fn default() -> Self {
-        let character = Character::default();
-        let opponent = Character::default();
-        Self::new(character, opponent)
+        let group_left = Vec::default();
+        let group_right = Vec::default();
+        Self::new(group_left, group_right)
     }
 }
 
 impl Simulator {
-    fn new(mut character: Character, mut opponent: Character) -> Self {
-        character.name.clear();
-        opponent.name.clear();
-        let char_data = CharData {
-            character,
-            opponent,
+    fn new(mut group_left: Vec<Character>, mut group_right: Vec<Character>) -> Self {
+        for character in &mut group_left {
+            character.name.clear();
+        }
+        for character in &mut group_right {
+            character.name.clear();
+        }
+
+        let group_data = GroupData {
+            group_left,
+            group_right,
         };
         let report_map = DataMap::default();
         let workers = ThreadPool::with_name("simulator_worker".to_owned(), 4);
@@ -57,23 +84,27 @@ impl Simulator {
             workers,
             report_send,
             report_recv,
-            char_data,
+            group_data,
             progress: ProgressTracker::new(),
         }
     }
 
-    pub fn update_characters(&mut self, mut character: Character, mut opponent: Character) {
-        character.name.clear();
-        opponent.name.clear();
-        self.char_data = CharData {
-            character,
-            opponent,
+    pub fn update(&mut self, mut group_left: Vec<Character>, mut group_right: Vec<Character>) {
+        for c in &mut group_left {
+            c.name.clear();
+        }
+        for c in &mut group_right {
+            c.name.clear();
+        }
+        self.group_data = GroupData {
+            group_left,
+            group_right,
         };
     }
 
     fn update_report_map(&mut self) {
-        while let Ok((char_data, report)) = self.report_recv.try_recv() {
-            let old_val = self.report_map.insert(char_data, report);
+        while let Ok((group_data, report)) = self.report_recv.try_recv() {
+            let old_val = self.report_map.insert(group_data, report);
             assert!(old_val.is_some());
             self.progress.add_resolved();
         }
@@ -86,28 +117,29 @@ impl Simulator {
     }
 
     pub fn report(&mut self) -> FightReport {
-        self.request_report(self.char_data.clone())
+        self.request_report(self.group_data.clone())
     }
 
-    fn request_report(&mut self, char_data: CharData) -> FightReport {
+    fn request_report(&mut self, group_data: GroupData) -> FightReport {
         // update the map (should be done regularly, so this should come first)
         self.update_report_map();
 
         // return early if already in map
-        if let Some(report) = self.report_map.get(&char_data) {
+        if let Some(report) = self.report_map.get(&group_data) {
             return report.clone();
         }
 
         // otherwise insert a placeholder...
         // (so we don't enqueue jobs multiple times)
-        self.report_map.insert(char_data.clone(), FightReport::NONE);
+        self.report_map
+            .insert(group_data.clone(), FightReport::NONE);
 
         // ... and request that a result is calculated
         let report_send = self.report_send.clone();
         self.workers.execute(move || {
-            let report = arena::simulate_fights(&char_data, COUNT_FIGHTS, MAX_ROUNDS);
+            let report = arena::simulate_fights(&group_data, COUNT_FIGHTS, MAX_ROUNDS);
             report_send
-                .send((char_data, report))
+                .send((group_data, report))
                 .expect("simulator is gone");
         });
         self.progress.add_request();
@@ -116,17 +148,13 @@ impl Simulator {
     }
 
     pub fn gradient(&mut self, modification: CharModification) -> Gradient {
-        let mut char_data = self.char_data.clone();
-        modification(&mut char_data.character);
+        let mut modified_data = self.group_data.clone();
+        modified_data.apply_mod(modification);
 
-        let old_total = self.total(self.char_data.clone());
-        let new_total = self.total(char_data);
+        let old_total = self.request_report(self.group_data.clone()).total();
+        let new_total = self.request_report(modified_data).total();
 
         new_total - old_total
-    }
-
-    fn total(&mut self, char_data: CharData) -> Total {
-        self.request_report(char_data).total()
     }
 }
 
@@ -177,9 +205,27 @@ impl ProgressTracker {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
-struct CharData {
-    character: Character,
-    opponent: Character,
+struct GroupData {
+    group_left: Vec<Character>,
+    group_right: Vec<Character>,
+}
+
+impl GroupData {
+    fn apply_mod(&mut self, modification: CharModification) {
+        let CharModification {
+            group_id,
+            index,
+            modification,
+        } = modification;
+        let group = match group_id {
+            GroupId::Left => &mut self.group_left,
+            GroupId::Right => &mut self.group_right,
+        };
+        let char = group
+            .get_mut(index.into_usize())
+            .expect("index does not exist!");
+        modification(char);
+    }
 }
 
 #[cfg(test)]
@@ -189,8 +235,8 @@ mod tests {
     use std::thread;
 
     fn create_simulator() -> Simulator {
-        let char = Character::default();
-        Simulator::new(char.clone(), char)
+        let group = vec![Character::default()];
+        Simulator::new(group.clone(), group)
     }
 
     fn wait_until_done(simulator: &mut Simulator) {
@@ -216,24 +262,30 @@ mod tests {
 
     #[test]
     fn test_simulator_progress() {
-        let mod1 = |c: &mut Character| c.skills.kampfen.increment();
-        let mod2 = |c: &mut Character| c.attributes.sta.increment();
-        let mod1 = Box::new(mod1);
-        let mod2 = Box::new(mod2);
+        let mod1 = || CharModification {
+            group_id: GroupId::Left,
+            index: CharIndex::default(),
+            modification: Box::new(|c: &mut Character| c.skills.kampfen.increment()),
+        };
+        let mod2 = || CharModification {
+            group_id: GroupId::Right,
+            index: CharIndex::default(),
+            modification: Box::new(|c: &mut Character| c.attributes.sta.increment()),
+        };
         let mut simulator = create_simulator();
 
         assert_eq!(simulator.progress(), 100);
 
-        let gradient_1 = simulator.gradient(mod1.clone());
-        let gradient_2 = simulator.gradient(mod2.clone());
+        let gradient_1 = simulator.gradient(mod1());
+        let gradient_2 = simulator.gradient(mod2());
         assert_eq!(gradient_1, Gradient::NONE);
         assert_eq!(gradient_2, Gradient::NONE);
         assert_ne!(simulator.progress(), 100);
 
         wait_until_done(&mut simulator);
 
-        let gradient_1 = simulator.gradient(mod1.clone());
-        let gradient_2 = simulator.gradient(mod2.clone());
+        let gradient_1 = simulator.gradient(mod1());
+        let gradient_2 = simulator.gradient(mod2());
         assert_ne!(gradient_1, Gradient::NONE);
         assert_ne!(gradient_2, Gradient::NONE);
         assert_eq!(simulator.progress(), 100);

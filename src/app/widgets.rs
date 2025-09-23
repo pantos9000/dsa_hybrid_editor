@@ -1,10 +1,13 @@
-use crate::simulator::{CharModification, Simulator};
+use crate::{
+    app,
+    simulator::{CharModification, Simulator},
+};
 
 pub trait DrawInfo<Value> {
     fn as_str(&self) -> &'static str;
-    fn mod_dec(&self) -> CharModification;
-    fn mod_inc(&self) -> CharModification;
-    fn mod_set(&self, value: Value) -> CharModification;
+    fn mod_dec(&self, selection: app::CharSelection) -> CharModification;
+    fn mod_inc(&self, selection: app::CharSelection) -> CharModification;
+    fn mod_set(&self, selection: app::CharSelection, value: Value) -> CharModification;
 }
 
 pub trait ValueSelector: Sized + Copy + Eq {
@@ -13,7 +16,13 @@ pub trait ValueSelector: Sized + Copy + Eq {
     fn possible_values() -> impl Iterator<Item = Self>;
     fn as_str(&self, info: &Self::Info) -> &'static str;
 
-    fn draw(&mut self, info: Self::Info, sim: &mut Simulator, ui: &mut egui::Ui) {
+    fn draw(
+        &mut self,
+        info: Self::Info,
+        selection: app::CharSelection,
+        sim: &mut Simulator,
+        ui: &mut egui::Ui,
+    ) {
         ui.label(info.as_str());
 
         ui.horizontal(|ui| {
@@ -21,15 +30,15 @@ pub trait ValueSelector: Sized + Copy + Eq {
                 ui.selectable_value(self, val, val.as_str(&info))
                     .on_hover_ui(|ui| {
                         ui.horizontal(|ui| {
-                            sim.gradient(info.mod_set(val)).draw(ui);
+                            sim.gradient(info.mod_set(selection, val)).draw(ui);
                         });
                     });
             }
         });
 
         ui.horizontal(|ui| {
-            sim.gradient(info.mod_dec()).draw(ui);
-            sim.gradient(info.mod_inc()).draw(ui);
+            sim.gradient(info.mod_dec(selection)).draw(ui);
+            sim.gradient(info.mod_inc(selection)).draw(ui);
         });
     }
 }
@@ -67,15 +76,21 @@ pub trait ValueSlider: Sized {
         *self.inner_mut() = new;
     }
 
-    fn draw(&mut self, info: impl DrawInfo<Self>, sim: &mut Simulator, ui: &mut egui::Ui) {
+    fn draw(
+        &mut self,
+        info: impl DrawInfo<Self>,
+        selection: app::CharSelection,
+        sim: &mut Simulator,
+        ui: &mut egui::Ui,
+    ) {
         ui.label(info.as_str());
 
         let slider = egui::Slider::new(self.inner_mut(), Self::min()..=Self::max());
         ui.add(slider);
 
         ui.horizontal(|ui| {
-            sim.gradient(info.mod_dec()).draw(ui);
-            sim.gradient(info.mod_inc()).draw(ui);
+            sim.gradient(info.mod_dec(selection)).draw(ui);
+            sim.gradient(info.mod_inc(selection)).draw(ui);
         });
     }
 }
@@ -131,16 +146,23 @@ impl BoolStat {
         Self(!self.0)
     }
 
-    pub fn draw(&mut self, info: impl DrawInfo<Self>, sim: &mut Simulator, ui: &mut egui::Ui) {
+    pub fn draw(
+        &mut self,
+        info: impl DrawInfo<Self>,
+        selection: app::CharSelection,
+        sim: &mut Simulator,
+        ui: &mut egui::Ui,
+    ) {
         ui.checkbox(&mut self.0, info.as_str()).on_hover_ui(|ui| {
             ui.horizontal(|ui| {
-                sim.gradient(info.mod_set(self.toggled())).draw(ui);
+                sim.gradient(info.mod_set(selection, self.toggled()))
+                    .draw(ui);
             });
         });
 
         ui.horizontal(|ui| {
-            sim.gradient(info.mod_dec()).draw(ui);
-            sim.gradient(info.mod_inc()).draw(ui);
+            sim.gradient(info.mod_dec(selection)).draw(ui);
+            sim.gradient(info.mod_inc(selection)).draw(ui);
         });
     }
 }

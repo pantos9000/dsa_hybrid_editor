@@ -1,5 +1,6 @@
 use crate::app::widgets::{self, BoolStat, DrawInfo, ValueSelector};
 use crate::simulator::{CharModification, Simulator};
+use crate::{app, simulator};
 
 use super::Drawable;
 
@@ -52,17 +53,17 @@ impl Edges {
 }
 
 impl Drawable for Edges {
-    fn draw(&mut self, sim: &mut Simulator, ui: &mut egui::Ui) {
+    fn draw(&mut self, selection: app::CharSelection, sim: &mut Simulator, ui: &mut egui::Ui) {
         let grid = widgets::create_grid("Edges");
 
         ui.heading("Edges");
         grid.show(ui, |ui| {
             for (edge, info) in self.edge3_iter() {
-                edge.draw(info, sim, ui);
+                edge.draw(info, selection, sim, ui);
                 ui.end_row();
             }
             for (edge, info) in self.edge2_iter() {
-                edge.draw(info, sim, ui);
+                edge.draw(info, selection, sim, ui);
                 ui.end_row();
             }
         });
@@ -97,8 +98,8 @@ impl DrawInfo<BoolStat> for Edge2Info {
         }
     }
 
-    fn mod_dec(&self) -> CharModification {
-        match self {
+    fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.decrement()),
             Self::Erbarmungslos => Box::new(|c| c.edges.erbarmungslos.decrement()),
             Self::MächtigerHieb => Box::new(|c| c.edges.machtiger_hieb.decrement()),
@@ -108,11 +109,12 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Kampfreflexe => Box::new(|c| c.edges.kampfreflexe.decrement()),
             Self::Schnell => Box::new(|c| c.edges.schnell.decrement()),
             Self::Kampfkünstler => Box::new(|c| c.edges.kampfkunstler.decrement()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_inc(&self) -> CharModification {
-        match self {
+    fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.increment()),
             Self::Erbarmungslos => Box::new(|c| c.edges.erbarmungslos.increment()),
             Self::MächtigerHieb => Box::new(|c| c.edges.machtiger_hieb.increment()),
@@ -122,11 +124,12 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Kampfreflexe => Box::new(|c| c.edges.kampfreflexe.increment()),
             Self::Schnell => Box::new(|c| c.edges.schnell.increment()),
             Self::Kampfkünstler => Box::new(|c| c.edges.kampfkunstler.increment()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_set(&self, value: BoolStat) -> CharModification {
-        match self {
+    fn mod_set(&self, selection: app::CharSelection, value: BoolStat) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::Übertölpeln => Box::new(move |c| c.edges.ubertolpeln.set(value)),
             Self::Erbarmungslos => Box::new(move |c| c.edges.erbarmungslos.set(value)),
             Self::MächtigerHieb => Box::new(move |c| c.edges.machtiger_hieb.set(value)),
@@ -136,7 +139,8 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Kampfreflexe => Box::new(move |c| c.edges.kampfreflexe.set(value)),
             Self::Schnell => Box::new(move |c| c.edges.schnell.set(value)),
             Self::Kampfkünstler => Box::new(move |c| c.edges.kampfkunstler.set(value)),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 }
 
@@ -162,37 +166,40 @@ impl DrawInfo<Edge3> for Edge3Info {
         }
     }
 
-    fn mod_dec(&self) -> CharModification {
-        match self {
+    fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::Blitzhieb => Box::new(|c| c.edges.blitzhieb.decrement()),
             Self::Berserker => Box::new(|c| c.edges.berserker.decrement()),
             Self::Riposte => Box::new(|c| c.edges.riposte.decrement()),
             Self::Tuchfühlung => Box::new(|c| c.edges.tuchfuhlung.decrement()),
             Self::Lebenskraft => Box::new(|c| c.edges.lebenskraft.decrement()),
             Self::KühlerKopf => Box::new(|c| c.edges.kuhler_kopf.decrement()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_inc(&self) -> CharModification {
-        match self {
+    fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::Blitzhieb => Box::new(|c| c.edges.blitzhieb.increment()),
             Self::Berserker => Box::new(|c| c.edges.berserker.increment()),
             Self::Riposte => Box::new(|c| c.edges.riposte.increment()),
             Self::Tuchfühlung => Box::new(|c| c.edges.tuchfuhlung.increment()),
             Self::Lebenskraft => Box::new(|c| c.edges.lebenskraft.increment()),
             Self::KühlerKopf => Box::new(|c| c.edges.kuhler_kopf.increment()),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 
-    fn mod_set(&self, value: Edge3) -> CharModification {
-        match self {
+    fn mod_set(&self, selection: app::CharSelection, value: Edge3) -> CharModification {
+        let modification: simulator::CharModFunc = match self {
             Self::Blitzhieb => Box::new(move |c| c.edges.blitzhieb = value),
             Self::Berserker => Box::new(move |c| c.edges.berserker = value),
             Self::Riposte => Box::new(move |c| c.edges.riposte = value),
             Self::Tuchfühlung => Box::new(move |c| c.edges.tuchfuhlung = value),
             Self::Lebenskraft => Box::new(move |c| c.edges.lebenskraft = value),
             Self::KühlerKopf => Box::new(move |c| c.edges.kuhler_kopf = value),
-        }
+        };
+        simulator::CharModification::new(selection, modification)
     }
 }
 

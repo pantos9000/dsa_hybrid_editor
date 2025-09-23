@@ -135,11 +135,14 @@ fn get_char_dir() -> Result<PathBuf> {
     path.push("chars");
 
     if !path.exists() {
-        bail!("char dir '{path:?}' does not exist");
+        bail!("char dir '{}' does not exist", path.display());
     }
 
     if !path.is_dir() {
-        bail!("char dir path '{path:?}' exists, but is not a directory");
+        bail!(
+            "char dir path '{}' exists, but is not a directory",
+            path.display()
+        );
     }
 
     Ok(path)

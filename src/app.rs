@@ -85,7 +85,7 @@ impl eframe::App for App {
             self.handle_dnd(dnd);
         }
 
-        self.simulator.update_characters(
+        self.simulator.update(
             self.chars_left.clone().into_vec(),
             self.chars_right.clone().into_vec(),
         );

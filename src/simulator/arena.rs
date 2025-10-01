@@ -1,11 +1,11 @@
 use std::rc::Rc;
 
-use super::CharData;
+use super::GroupData;
 use super::cards::{Card, CardDeck};
 use super::fight_report::{FightOutcome, FightReport, ReportBuilder};
 use super::fighter::{Distance, Fighter};
 
-pub fn simulate_fights(char_data: &CharData, count_fights: u32, max_rounds: u32) -> FightReport {
+pub fn simulate_fights(char_data: &GroupData, count_fights: u32, max_rounds: u32) -> FightReport {
     let mut report = ReportBuilder::new();
     for _ in 0..count_fights {
         let outcome = calc_fight(char_data, max_rounds);
@@ -14,7 +14,7 @@ pub fn simulate_fights(char_data: &CharData, count_fights: u32, max_rounds: u32)
     report.build()
 }
 
-fn calc_fight(char_data: &CharData, max_rounds: u32) -> FightOutcome {
+fn calc_fight(char_data: &GroupData, max_rounds: u32) -> FightOutcome {
     let mut arena = Arena::new(char_data);
     'fight: for _ in 0..max_rounds {
         if matches!(arena.round(), Err(FightIsOver)) {
@@ -30,14 +30,27 @@ type FightResult = Result<(), FightIsOver>;
 #[derive(Debug)]
 struct Arena {
     cards: CardDeck,
-    fighter: Fighter,
-    opponent: Fighter,
+    group_left: Vec<Fighter>,
+    group_right: Vec<Fighter>,
 }
 
 impl Arena {
-    fn new(char_data: &CharData) -> Self {
+    fn new(group_data: &GroupData) -> Self {
         let cards = CardDeck::new();
-        let distance = Rc::new(Distance::new());
+        let distance_from_left = Rc::new(Distance::new());
+        let distance_from_right = Rc::new(Distance::new());
+        let group_left = group_data
+            .group_left
+            .iter()
+            .cloned()
+            .map(|char| Fighter::new(char, Rc::clone(&distance_from_right)))
+            .collect();
+        let group_right = group_data
+            .group_right
+            .iter()
+            .cloned()
+            .map(|char| Fighter::new(char, Rc::clone(&distance_from_left)))
+            .collect();
         let fighter = Fighter::new(char_data.character.clone(), Rc::clone(&distance));
         let opponent = Fighter::new(char_data.opponent.clone(), distance);
         Self {
@@ -127,11 +140,11 @@ mod tests {
 
         let char1 = Character::default();
         let char2 = Character::default();
-        let data1 = CharData {
+        let data1 = GroupData {
             character: char1.clone(),
             opponent: char2.clone(),
         };
-        let data2 = CharData {
+        let data2 = GroupData {
             character: char2,
             opponent: char1,
         };

@@ -1,7 +1,4 @@
-use crate::{
-    app::{character::Character, dnd, widgets},
-    simulator::Simulator,
-};
+use crate::app::{character::Character, dnd, widgets};
 
 #[derive(Debug, Default, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Group {
@@ -14,12 +11,7 @@ impl Group {
     }
 
     #[must_use]
-    pub fn draw(
-        &mut self,
-        simulator: &mut Simulator,
-        drag_ctx: dnd::DragContext,
-        ui: &mut egui::Ui,
-    ) -> Option<GroupAction> {
+    pub fn draw(&mut self, drag_ctx: dnd::DragContext, ui: &mut egui::Ui) -> Option<GroupAction> {
         // user can only click on one thing each frame, so overwriting the
         // previous action should be ok
         let mut action = None;
@@ -32,7 +24,7 @@ impl Group {
 
                 ui.add_space(15.0);
 
-                if let Some(char_action) = self.draw_chars(simulator, drag_ctx, ui) {
+                if let Some(char_action) = self.draw_chars(drag_ctx, ui) {
                     action = Some(char_action);
                 }
             });
@@ -41,12 +33,7 @@ impl Group {
         action
     }
 
-    fn draw_chars(
-        &mut self,
-        simulator: &mut Simulator,
-        drag_ctx: dnd::DragContext,
-        ui: &mut egui::Ui,
-    ) -> Option<GroupAction> {
+    fn draw_chars(&mut self, drag_ctx: dnd::DragContext, ui: &mut egui::Ui) -> Option<GroupAction> {
         let mut action = None;
 
         if self.chars.is_empty() {
@@ -60,7 +47,7 @@ impl Group {
                 ui.horizontal(|ui| {
                     drag_ctx.draw_drag_button(util_button_size, index, ui);
 
-                    let char_button = char.draw_as_button(simulator, ui);
+                    let char_button = char.draw_as_button(ui);
                     if char_button.clicked() {
                         action = Some(GroupAction::Select(index));
                     }

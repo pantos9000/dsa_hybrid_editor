@@ -224,7 +224,7 @@ impl App {
         let draw_ctx = self.dnd.create_context(group_id);
 
         ui.add_space(4.0);
-        let Some(action) = group.draw(&mut self.simulator, draw_ctx, ui) else {
+        let Some(action) = group.draw(draw_ctx, ui) else {
             return;
         };
 

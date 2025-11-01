@@ -247,7 +247,7 @@ impl Fighter {
     }
 
     fn apply_wound_penalty(&self, roll: &mut Roll) {
-        if self.berserker {
+        if self.berserker || self.character.passive_modifiers.no_wound_penalty.is_set() {
             return;
         }
         let wound_penalty: i8 = match self.passive_stats.life {

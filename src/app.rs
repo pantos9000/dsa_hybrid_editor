@@ -233,6 +233,7 @@ impl App {
             GroupAction::Load => self.io.request(IoRequest::Load(group_id)),
             GroupAction::Clear => group.clear(),
             GroupAction::Select(i) => self.selection = Some(CharSelection::new(group_id, i)),
+            GroupAction::Copy(i) => group.copy_char(i),
             GroupAction::Delete(i) => group.delete_char(i),
         }
 

@@ -9,18 +9,22 @@ pub struct PassiveModifiers {
     pub(crate) parry: IntStat<-4, 4>,
     pub(crate) robustness: IntStat<-4, 4>,
     pub(crate) attack: IntStat<-4, 4>,
+    #[serde(default)] // backward compatibility to v1
+    pub(crate) no_wound_penalty: BoolStat,
     pub(crate) attack_wild: BoolStat,
     pub(crate) attack_head: BoolStat,
 }
 
-enum StrategyInfo {
+enum PassiveInfo {
+    NoWoundPenalty,
     AttackWild,
     AttackHead,
 }
 
-impl DrawInfo<BoolStat> for StrategyInfo {
+impl DrawInfo<BoolStat> for PassiveInfo {
     fn as_str(&self) -> &'static str {
         match self {
+            Self::NoWoundPenalty => "Keine Wundabzüge",
             Self::AttackWild => "Wild angreifen",
             Self::AttackHead => "Auf Kopf zielen",
         }
@@ -28,6 +32,7 @@ impl DrawInfo<BoolStat> for StrategyInfo {
 
     fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
         let modification: simulator::CharModFunc = match self {
+            Self::NoWoundPenalty => Box::new(|c| c.passive_modifiers.no_wound_penalty.decrement()),
             Self::AttackWild => Box::new(|c| c.passive_modifiers.attack_wild.decrement()),
             Self::AttackHead => Box::new(|c| c.passive_modifiers.attack_head.decrement()),
         };
@@ -36,6 +41,7 @@ impl DrawInfo<BoolStat> for StrategyInfo {
 
     fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
         let modification: simulator::CharModFunc = match self {
+            Self::NoWoundPenalty => Box::new(|c| c.passive_modifiers.no_wound_penalty.increment()),
             Self::AttackWild => Box::new(|c| c.passive_modifiers.attack_wild.increment()),
             Self::AttackHead => Box::new(|c| c.passive_modifiers.attack_head.increment()),
         };
@@ -44,6 +50,9 @@ impl DrawInfo<BoolStat> for StrategyInfo {
 
     fn mod_set(&self, selection: app::CharSelection, value: BoolStat) -> CharModification {
         let modification: simulator::CharModFunc = match self {
+            Self::NoWoundPenalty => {
+                Box::new(move |c| c.passive_modifiers.no_wound_penalty.set(value))
+            }
             Self::AttackWild => Box::new(move |c| c.passive_modifiers.attack_wild.set(value)),
             Self::AttackHead => Box::new(move |c| c.passive_modifiers.attack_head.set(value)),
         };
@@ -67,11 +76,14 @@ impl Drawable for PassiveModifiers {
             self.attack
                 .draw(PassiveModifier::Attack, selection, sim, ui);
             ui.end_row();
+            self.no_wound_penalty
+                .draw(PassiveInfo::NoWoundPenalty, selection, sim, ui);
+            ui.end_row();
             self.attack_wild
-                .draw(StrategyInfo::AttackWild, selection, sim, ui);
+                .draw(PassiveInfo::AttackWild, selection, sim, ui);
             ui.end_row();
             self.attack_head
-                .draw(StrategyInfo::AttackHead, selection, sim, ui);
+                .draw(PassiveInfo::AttackHead, selection, sim, ui);
             ui.end_row();
         });
     }

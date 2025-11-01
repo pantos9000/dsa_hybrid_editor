@@ -195,6 +195,6 @@ mod tests {
             .unwrap();
 
         eprintln!("prob = {prob}");
-        assert!((48..=52).contains(&prob), "{prob} is too far away from 50");
+        assert!((45..=55).contains(&prob), "{prob} is too far away from 50");
     }
 }

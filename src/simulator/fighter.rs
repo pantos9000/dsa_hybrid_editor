@@ -259,6 +259,12 @@ impl Fighter {
     }
 
     fn apply_gangup(opponent: &Self, roll: &mut Roll) {
+        let opponent_has_two_weapons = opponent.character.edges.kampfkunstler.is_set()
+            || (opponent.character.weapon.active && opponent.character.secondary_weapon.active);
+        if opponent.character.edges.fechten_m2w.is_set() && opponent_has_two_weapons {
+            return;
+        }
+
         let distance_map = opponent.distance_map.borrow();
         let count_attackers = distance_map.all_base_contacts(opponent).count();
         let gangup: u8 = (count_attackers - 1).min(4).try_into().unwrap();

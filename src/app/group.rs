@@ -54,21 +54,21 @@ impl Group {
         }
 
         for (index, char) in self.chars.iter_mut().enumerate() {
+            let util_button_size = 20.0;
             let index = CharIndex::from_usize(index);
             drag_ctx.create_drop_area(index, ui, |ui| {
                 ui.horizontal(|ui| {
-                    let drag_size = 15.0;
-                    drag_ctx.draw_drag_button(drag_size, index, ui);
+                    drag_ctx.draw_drag_button(util_button_size, index, ui);
 
                     let char_button = char.draw_as_button(simulator, ui);
                     if char_button.clicked() {
                         action = Some(GroupAction::Select(index));
                     }
 
-                    let rm_size = 15.0;
                     let rm_help = "Diesen Char von der Gruppe entfernen";
                     let rm_text = "❌";
-                    let rm_button = widgets::create_menu_button(rm_text, rm_help, rm_size, ui);
+                    let rm_button =
+                        widgets::create_menu_button(rm_text, rm_help, util_button_size, ui);
                     if rm_button.clicked() {
                         action = Some(GroupAction::Delete(index));
                     }

@@ -65,6 +65,14 @@ impl Group {
                         action = Some(GroupAction::Select(index));
                     }
 
+                    let copy_help = "Eine Kopie dieses Chars hinzufügen";
+                    let copy_text = "🗐";
+                    let copy_button =
+                        widgets::create_menu_button(copy_text, copy_help, util_button_size, ui);
+                    if copy_button.clicked() {
+                        action = Some(GroupAction::Copy(index));
+                    }
+
                     let rm_help = "Diesen Char von der Gruppe entfernen";
                     let rm_text = "❌";
                     let rm_button =
@@ -115,12 +123,23 @@ impl Group {
         self.chars.remove(index.into_usize())
     }
 
+    pub fn copy_char(&mut self, index: CharIndex) {
+        let Some(new_char) = self.get_char(index).cloned() else {
+            return;
+        };
+        self.add_char(new_char);
+    }
+
     pub fn delete_char(&mut self, index: CharIndex) {
         self.chars.remove(index.into_usize());
     }
 
     pub fn clear(&mut self) {
         self.chars.clear();
+    }
+
+    pub fn get_char(&self, index: CharIndex) -> Option<&Character> {
+        self.chars.get(index.into_usize())
     }
 
     pub fn get_char_mut(&mut self, index: CharIndex) -> Option<&mut Character> {
@@ -134,6 +153,7 @@ pub enum GroupAction {
     Load,
     Clear,
     Select(CharIndex),
+    Copy(CharIndex),
     Delete(CharIndex),
 }
 

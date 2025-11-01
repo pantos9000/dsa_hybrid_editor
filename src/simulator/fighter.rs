@@ -258,6 +258,13 @@ impl Fighter {
         *roll -= wound_penalty;
     }
 
+    fn apply_gangup(opponent: &Self, roll: &mut Roll) {
+        let distance_map = opponent.distance_map.borrow();
+        let count_attackers = distance_map.all_base_contacts(opponent).count();
+        let gangup: u8 = (count_attackers - 1).min(4).try_into().unwrap();
+        *roll += gangup;
+    }
+
     fn apply_joker(&self, roll: &mut Roll) {
         if self.joker {
             *roll += 2_u8;
@@ -465,6 +472,10 @@ impl Fighter {
             self.apply_wound_penalty(&mut roll);
             roll
         };
+        let apply_gangup = |mut roll| {
+            Self::apply_gangup(opponent, &mut roll);
+            roll
+        };
         let apply_joker = |mut roll| {
             self.apply_joker(&mut roll);
             roll
@@ -513,6 +524,7 @@ impl Fighter {
             .map(apply_modifier)
             .map(apply_passive_modifiers)
             .map(apply_wound_penalty)
+            .map(apply_gangup)
             .map(apply_joker)
             .map(apply_berserker_attack)
             .map(apply_wild_attack)
@@ -751,5 +763,12 @@ impl DistanceMap {
             .map
             .get(&key)
             .expect("distance map entry should exist if fighter was registered")
+    }
+
+    fn all_base_contacts(&self, fighter: &Fighter) -> impl Iterator<Item = bool> {
+        self.map
+            .iter()
+            .filter(|(key, _val)| key.0 == fighter.distance_id || key.1 == fighter.distance_id)
+            .map(|(_key, val)| *val)
     }
 }

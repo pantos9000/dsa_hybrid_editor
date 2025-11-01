@@ -66,7 +66,7 @@ impl IoThread {
                 Err(_) => break 'thread_loop,
                 Ok(IoRequest::Save(character)) => {
                     if let Err(err) = Self::save(character) {
-                        log::error!("failed to save character: {err}");
+                        log::error!("failed to save character: {err:?}");
                     } else {
                         log::debug!("character saved");
                     }
@@ -76,7 +76,7 @@ impl IoThread {
                         Ok(Some(new_char)) => new_char,
                         Ok(None) => continue 'thread_loop,
                         Err(err) => {
-                            log::error!("failed to load character: {err}");
+                            log::error!("failed to load character: {err:?}");
                             continue 'thread_loop;
                         }
                     };
@@ -152,7 +152,7 @@ fn create_file_dialog() -> rfd::FileDialog {
     let mut dialog = rfd::FileDialog::new();
     match get_char_dir() {
         Ok(char_dir) => dialog = dialog.set_directory(char_dir),
-        Err(err) => log::warn!("failed to retrieve char dir: {err}"),
+        Err(err) => log::warn!("failed to retrieve char dir: {err:?}"),
     }
     dialog.add_filter("json", &["json"]).add_filter("*", &["*"])
 }

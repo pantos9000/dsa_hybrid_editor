@@ -130,11 +130,7 @@ impl Character {
         });
     }
 
-    pub fn draw_as_button(
-        &mut self,
-        simulator: &mut Simulator,
-        ui: &mut egui::Ui,
-    ) -> egui::Response {
+    pub fn draw_as_button(&mut self, ui: &mut egui::Ui) -> egui::Response {
         // TODO: use sim
         let char_help = "Diesen Char auswählen";
         let char_text = self.name.as_str();

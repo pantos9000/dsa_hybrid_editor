@@ -145,48 +145,54 @@ impl Fighter {
 
     fn do_full_attack(&mut self, opponent: &mut Fighter) {
         if self.character.weapon.active {
-            if self.character.passive_modifiers.attack_wild.is_set() {
-                self.attacked_wild = true;
-            }
-
-            let (num_rolls, mut modifier) = match self.character.edges.blitzhieb {
+            let mut dmg_modifier = 0;
+            let (num_rolls, mut attack_modifier) = match self.character.edges.blitzhieb {
                 Edge3::None => (1, 0),
                 Edge3::Normal => (2, -2),
                 Edge3::Improved => (2, 0),
             };
+            if self.character.passive_modifiers.attack_wild.is_set() {
+                self.attacked_wild = true;
+                attack_modifier += 2;
+                dmg_modifier += 2;
+            }
+
             if self.character.secondary_weapon.active
                 && !self.character.edges.beidhandiger_kampf.is_set()
             {
-                modifier -= 2;
+                attack_modifier -= 2;
             }
-            let Some(attacks) = self.try_to_hit(opponent, num_rolls, modifier) else {
+            let Some(attacks) = self.try_to_hit(opponent, num_rolls, attack_modifier) else {
                 self.critical_fail(true);
                 return;
             };
             for attack in attacks {
-                self.do_damage(true, opponent, attack);
+                self.do_damage(true, opponent, attack, dmg_modifier, false);
             }
         }
 
         if self.character.secondary_weapon.active {
+            let mut attack_modifier = 0;
+            let mut dmg_modifier = 0;
             if self.character.passive_modifiers.attack_wild.is_set() {
                 self.attacked_wild = true;
+                attack_modifier += 2;
+                dmg_modifier += 2;
             }
 
-            let mut modifier = 0;
             if !self.character.edges.beidhandig.is_set() {
-                modifier -= 2;
+                attack_modifier -= 2;
             }
             if self.character.weapon.active && !self.character.edges.beidhandiger_kampf.is_set() {
-                modifier -= 2;
+                attack_modifier -= 2;
             }
-            let Some(attacks) = self.try_to_hit(opponent, 1, modifier) else {
+            let Some(attacks) = self.try_to_hit(opponent, 1, attack_modifier) else {
                 self.critical_fail(false);
                 return;
             };
             let mut attacks = attacks.into_iter();
             if let Some(attack) = attacks.next() {
-                self.do_damage(false, opponent, attack);
+                self.do_damage(false, opponent, attack, dmg_modifier, false);
             }
             debug_assert!(
                 attacks.next().is_none(),
@@ -199,19 +205,23 @@ impl Fighter {
         if !self.character.weapon.active {
             return;
         }
+        let mut attack_modifier = 0;
+        let mut dmg_modifier = 0;
         if self.character.edges.erbarmungslos.is_set()
             && self.character.passive_modifiers.attack_wild.is_set()
         {
             self.attacked_wild = true;
+            attack_modifier += 2;
+            dmg_modifier += 2;
         }
 
-        let Some(attacks) = self.try_to_hit(opponent, 1, 0) else {
+        let Some(attacks) = self.try_to_hit(opponent, 1, attack_modifier) else {
             self.critical_fail(true);
             return;
         };
         let mut attacks = attacks.into_iter();
         if let Some(attack) = attacks.next() {
-            self.do_damage(true, opponent, attack);
+            self.do_damage(true, opponent, attack, dmg_modifier, false);
         }
         debug_assert!(
             attacks.next().is_none(),
@@ -302,12 +312,6 @@ impl Fighter {
 
     fn apply_berserker_damage(&self, roll: &mut Roll) {
         if self.berserker {
-            *roll += 2_u8;
-        }
-    }
-
-    fn apply_wild(&self, roll: &mut Roll) {
-        if self.attacked_wild {
             *roll += 2_u8;
         }
     }
@@ -490,10 +494,6 @@ impl Fighter {
             self.apply_berserker_attack(&mut roll);
             roll
         };
-        let apply_wild_attack = |mut roll| {
-            self.apply_wild(&mut roll);
-            roll
-        };
         let apply_attack_head = |roll| {
             if self.character.passive_modifiers.attack_head.is_set() {
                 roll - 4_u8
@@ -533,7 +533,6 @@ impl Fighter {
             .map(apply_gangup)
             .map(apply_joker)
             .map(apply_berserker_attack)
-            .map(apply_wild_attack)
             .map(apply_attack_head)
             .map(apply_tuchfühlung)
             .map(check_hit)
@@ -568,6 +567,8 @@ impl Fighter {
         primary_weapon: bool,
         opponent: &mut Self,
         attack_result: AttackResult,
+        modifier: i8,
+        self_damage: bool,
     ) {
         // might have gone shaken in between due to riposte
         if self.shaken {
@@ -607,15 +608,21 @@ impl Fighter {
         if self.character.edges.ubertolpeln.is_set() && opponent.shaken {
             damage += 4_u8;
         }
-        self.apply_wild(&mut damage);
+        damage += modifier;
         if self.character.passive_modifiers.attack_head.is_set() {
             damage += 6_u8;
         }
         self.apply_joker_to_damage(&mut damage);
         if u8::from(damage) < opponent.passive_stats.robustness {
-            if self.character.bennies.use_for_damage.is_set() && self.bennies > 0 {
+            if !self_damage && self.character.bennies.use_for_damage.is_set() && self.bennies > 0 {
                 self.bennies -= 1;
-                self.do_damage(primary_weapon, opponent, attack_result);
+                self.do_damage(
+                    primary_weapon,
+                    opponent,
+                    attack_result,
+                    modifier,
+                    self_damage,
+                );
             }
             return;
         }
@@ -666,11 +673,13 @@ impl Fighter {
             }
             CriticalFailResult::Injured => {
                 let mut tmp = self.clone();
-                tmp.do_damage(primary_weapon, self, AttackResult::Hit);
+                let modifier = if self.attacked_wild { 2 } else { 0 };
+                tmp.do_damage(primary_weapon, self, AttackResult::Hit, modifier, true);
             }
             CriticalFailResult::HeavilyInjured => {
                 let mut tmp = self.clone();
-                tmp.do_damage(primary_weapon, self, AttackResult::Raise);
+                let modifier = if self.attacked_wild { 2 } else { 0 };
+                tmp.do_damage(primary_weapon, self, AttackResult::Raise, modifier, true);
             }
         }
     }

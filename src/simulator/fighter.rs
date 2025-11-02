@@ -562,6 +562,13 @@ impl Fighter {
         *damage -= i8::from(armor);
     }
 
+    fn apply_opponent_berserker_rob(&self, opponent: &Self, damage: &mut Roll) {
+        if !opponent.berserker {
+            return;
+        }
+        *damage -= 2i8;
+    }
+
     fn do_damage(
         &mut self,
         primary_weapon: bool,
@@ -629,6 +636,7 @@ impl Fighter {
 
         damage -= opponent.passive_stats.robustness;
         self.apply_opponents_armor(opponent, &mut damage);
+        self.apply_opponent_berserker_rob(opponent, &mut damage);
         opponent.passive_stats.life -= damage;
         opponent.shaken = true;
         opponent.enable_berserker();

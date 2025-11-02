@@ -106,13 +106,16 @@ impl Arena {
             fighter.action(&mut punchbag);
         }
 
-        // filter out dead fighters
+        self.filter_out_dead_fighters();
+
+        Ok(())
+    }
+
+    fn filter_out_dead_fighters(&mut self) {
         self.group_left
             .retain(|fighter| !fighter.borrow().is_dead());
         self.group_right
             .retain(|fighter| !fighter.borrow().is_dead());
-
-        Ok(())
     }
 
     fn initiative(&mut self) -> Vec<Rc<RefCell<Fighter>>> {
@@ -155,7 +158,8 @@ impl Arena {
         }
     }
 
-    fn finish(self) -> FightOutcome {
+    fn finish(mut self) -> FightOutcome {
+        self.filter_out_dead_fighters();
         let left_dead = self.group_left.is_empty();
         let right_dead = self.group_right.is_empty();
         drop(self.group_left);

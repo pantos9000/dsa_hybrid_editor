@@ -10,6 +10,9 @@ use super::{
     roller::{Roll, RollResult, roller},
 };
 
+struct NoOpponentLeft;
+type ActionResult<T> = Result<T, NoOpponentLeft>;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Group {
     Left,
@@ -110,37 +113,41 @@ impl Fighter {
     }
 
     /// take a step forward, but only toward our target
-    fn step_forward(&mut self, opponent: &mut Fighter) {
+    fn step_forward(&mut self, opponents: &[Rc<RefCell<Fighter>>]) -> ActionResult<()> {
+        let mut opponent = self.pick_opponent(opponents)?;
         let mut distance_map = self.distance_map.borrow_mut();
-        let base_contact_to_target = distance_map.base_contact_mut(self, opponent);
+        let base_contact_to_target = distance_map.base_contact_mut(self, &opponent);
         if self.weapon_has_reach() || *base_contact_to_target {
             // don't step forward if not needed
-            return;
+            return Ok(());
         }
         *base_contact_to_target = true;
         drop(distance_map);
         opponent.trigger_erstschlag(self);
+        Ok(())
     }
 
     /// take a step back from everybody
-    fn step_back(&mut self, opponent: &mut Fighter) {
+    fn step_back(&mut self, opponents: &[Rc<RefCell<Fighter>>]) -> ActionResult<()> {
+        let mut opponent = self.pick_opponent(opponents)?;
         let mut distance_map = self.distance_map.borrow_mut();
-        let base_contact_to_target = distance_map.base_contact_mut(self, opponent);
+        let base_contact_to_target = distance_map.base_contact_mut(self, &opponent);
         if !self.character.edges.erstschlag.is_set() {
             // if we don't have erstschlag, don't step back
-            return;
+            return Ok(());
         }
         if self.weapon_has_reach() {
             // always step back if opponent can't hit us
             *base_contact_to_target = false;
-            return;
+            return Ok(());
         }
         opponent.unshake_against_step_back();
         if !opponent.shaken {
             // don't step back if opponent could hit us
-            return;
+            return Ok(());
         }
         *base_contact_to_target = false;
+        Ok(())
     }
 
     fn attack_with_primary_weapon(&mut self, opponent: &mut Fighter) {
@@ -197,13 +204,16 @@ impl Fighter {
         );
     }
 
-    fn do_full_attack(&mut self, opponent: &mut Fighter) {
+    fn do_full_attack(&mut self, opponents: &[Rc<RefCell<Fighter>>]) -> ActionResult<()> {
+        let mut opponent = self.pick_opponent(opponents)?;
         if self.character.weapon.active {
-            self.attack_with_primary_weapon(opponent);
+            self.attack_with_primary_weapon(&mut opponent);
         }
         if self.character.secondary_weapon.active {
-            self.attack_with_second_weapon(opponent);
+            self.attack_with_second_weapon(&mut opponent);
         }
+
+        Ok(())
     }
 
     fn do_special_attack(&mut self, opponent: &mut Fighter) {
@@ -234,16 +244,18 @@ impl Fighter {
         );
     }
 
-    pub fn pick_opponent<'o>(&self, opponents: &'o [Rc<RefCell<Fighter>>]) -> RefMut<'o, Fighter> {
+    fn pick_opponent<'o>(
+        &self,
+        opponents: &'o [Rc<RefCell<Fighter>>],
+    ) -> ActionResult<RefMut<'o, Fighter>> {
         let opponent = opponents
             .first()
             .expect("fight should be over if opponent list is empty")
             .borrow_mut();
-        assert!(
-            !opponent.is_dead(),
-            "dead fighters should have been filtered out"
-        );
-        opponent
+        if opponent.is_dead() {
+            return Err(NoOpponentLeft);
+        }
+        Ok(opponent)
     }
 
     pub fn action(&mut self, opponents: &[Rc<RefCell<Fighter>>]) {
@@ -258,10 +270,10 @@ impl Fighter {
             return;
         }
 
-        let mut opponent = self.pick_opponent(opponents);
-
         // take a step forward
-        self.step_forward(&mut opponent);
+        if let Err(NoOpponentLeft) = self.step_forward(opponents) {
+            return;
+        }
         if self.character.bennies.use_against_step_back.is_set() {
             self.unshake_with_bennie();
         }
@@ -270,10 +282,15 @@ impl Fighter {
             return;
         }
 
-        self.do_full_attack(&mut opponent);
+        if let Err(NoOpponentLeft) = self.do_full_attack(opponents) {
+            return;
+        }
 
         // take a step back to ready erstschlag
-        self.step_back(&mut opponent);
+        if let Err(NoOpponentLeft) = self.step_back(opponents) {
+            #[allow(clippy::needless_return, reason = "more consistant")]
+            return;
+        }
     }
 
     fn apply_wound_penalty(&self, roll: &mut Roll) {

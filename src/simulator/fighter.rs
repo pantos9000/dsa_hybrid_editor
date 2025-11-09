@@ -361,14 +361,15 @@ impl Fighter {
             self.unshake_with_bennie();
         }
 
-        if self.shaken || self.riposte_done {
+        if self.shaken {
             return;
         }
-        match self.character.edges.riposte {
-            Edge3::None => return,
-            Edge3::Normal => self.riposte_done = true,
-            Edge3::Improved => (),
+
+        if self.riposte_done && self.character.edges.riposte != Edge3::Improved {
+            return;
         }
+
+        self.riposte_done = true;
 
         self.do_special_attack(opponent);
     }

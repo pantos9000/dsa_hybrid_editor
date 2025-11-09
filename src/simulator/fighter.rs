@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -234,6 +234,18 @@ impl Fighter {
         );
     }
 
+    pub fn pick_opponent<'o>(&self, opponents: &'o [Rc<RefCell<Fighter>>]) -> RefMut<'o, Fighter> {
+        let opponent = opponents
+            .first()
+            .expect("fight should be over if opponent list is empty")
+            .borrow_mut();
+        assert!(
+            !opponent.is_dead(),
+            "dead fighters should have been filtered out"
+        );
+        opponent
+    }
+
     pub fn action(&mut self, opponents: &[Rc<RefCell<Fighter>>]) {
         self.fell = false;
         self.attacked_wild = false;
@@ -246,15 +258,7 @@ impl Fighter {
             return;
         }
 
-        // pick opponent
-        let mut opponent = opponents
-            .first()
-            .expect("fight should be over if opponent list is empty")
-            .borrow_mut();
-        assert!(
-            !opponent.is_dead(),
-            "dead fighters should have been filtered out"
-        );
+        let mut opponent = self.pick_opponent(opponents);
 
         // take a step forward
         self.step_forward(&mut opponent);

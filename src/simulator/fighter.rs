@@ -356,6 +356,11 @@ impl Fighter {
     }
 
     fn trigger_riposte(&mut self, opponent: &mut Self) {
+        if self.character.bennies.use_for_special_attacks.is_set() {
+            // if we would be able to do riposte, try to unshake if necessary
+            self.unshake_with_bennie();
+        }
+
         if self.shaken || self.riposte_done {
             return;
         }
@@ -380,7 +385,7 @@ impl Fighter {
             return;
         }
 
-        if self.character.bennies.use_for_erstschlag.is_set() {
+        if self.character.bennies.use_for_special_attacks.is_set() {
             // if we would be able to do erstschlag, try to unshake if necessary
             self.unshake_with_bennie();
         }

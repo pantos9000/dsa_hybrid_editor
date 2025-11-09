@@ -143,61 +143,66 @@ impl Fighter {
         *base_contact_to_target = false;
     }
 
+    fn attack_with_primary_weapon(&mut self, opponent: &mut Fighter) {
+        let mut dmg_modifier = 0;
+        let (num_rolls, mut attack_modifier) = match self.character.edges.blitzhieb {
+            Edge3::None => (1, 0),
+            Edge3::Normal => (2, -2),
+            Edge3::Improved => (2, 0),
+        };
+        if self.character.passive_modifiers.attack_wild.is_set() {
+            self.attacked_wild = true;
+            attack_modifier += 2;
+            dmg_modifier += 2;
+        }
+        if self.character.secondary_weapon.active
+            && !self.character.edges.beidhandiger_kampf.is_set()
+        {
+            attack_modifier -= 2;
+        }
+        let Some(attacks) = self.try_to_hit(opponent, num_rolls, attack_modifier) else {
+            self.critical_fail(true);
+            return;
+        };
+        for attack in attacks {
+            self.do_damage(true, opponent, attack, dmg_modifier, false);
+        }
+    }
+
+    fn attack_with_second_weapon(&mut self, opponent: &mut Fighter) {
+        let mut attack_modifier = 0;
+        let mut dmg_modifier = 0;
+        if self.character.passive_modifiers.attack_wild.is_set() {
+            self.attacked_wild = true;
+            attack_modifier += 2;
+            dmg_modifier += 2;
+        }
+        if !self.character.edges.beidhandig.is_set() {
+            attack_modifier -= 2;
+        }
+        if self.character.weapon.active && !self.character.edges.beidhandiger_kampf.is_set() {
+            attack_modifier -= 2;
+        }
+        let Some(attacks) = self.try_to_hit(opponent, 1, attack_modifier) else {
+            self.critical_fail(false);
+            return;
+        };
+        let mut attacks = attacks.into_iter();
+        if let Some(attack) = attacks.next() {
+            self.do_damage(false, opponent, attack, dmg_modifier, false);
+        }
+        debug_assert!(
+            attacks.next().is_none(),
+            "attacks should only contain single attack"
+        );
+    }
+
     fn do_full_attack(&mut self, opponent: &mut Fighter) {
         if self.character.weapon.active {
-            let mut dmg_modifier = 0;
-            let (num_rolls, mut attack_modifier) = match self.character.edges.blitzhieb {
-                Edge3::None => (1, 0),
-                Edge3::Normal => (2, -2),
-                Edge3::Improved => (2, 0),
-            };
-            if self.character.passive_modifiers.attack_wild.is_set() {
-                self.attacked_wild = true;
-                attack_modifier += 2;
-                dmg_modifier += 2;
-            }
-
-            if self.character.secondary_weapon.active
-                && !self.character.edges.beidhandiger_kampf.is_set()
-            {
-                attack_modifier -= 2;
-            }
-            let Some(attacks) = self.try_to_hit(opponent, num_rolls, attack_modifier) else {
-                self.critical_fail(true);
-                return;
-            };
-            for attack in attacks {
-                self.do_damage(true, opponent, attack, dmg_modifier, false);
-            }
+            self.attack_with_primary_weapon(opponent);
         }
-
         if self.character.secondary_weapon.active {
-            let mut attack_modifier = 0;
-            let mut dmg_modifier = 0;
-            if self.character.passive_modifiers.attack_wild.is_set() {
-                self.attacked_wild = true;
-                attack_modifier += 2;
-                dmg_modifier += 2;
-            }
-
-            if !self.character.edges.beidhandig.is_set() {
-                attack_modifier -= 2;
-            }
-            if self.character.weapon.active && !self.character.edges.beidhandiger_kampf.is_set() {
-                attack_modifier -= 2;
-            }
-            let Some(attacks) = self.try_to_hit(opponent, 1, attack_modifier) else {
-                self.critical_fail(false);
-                return;
-            };
-            let mut attacks = attacks.into_iter();
-            if let Some(attack) = attacks.next() {
-                self.do_damage(false, opponent, attack, dmg_modifier, false);
-            }
-            debug_assert!(
-                attacks.next().is_none(),
-                "attacks should only contain single attack"
-            );
+            self.attack_with_second_weapon(opponent);
         }
     }
 

@@ -73,16 +73,19 @@ impl Arena {
         }
     }
 
-    fn get_punchbag(&self, fighter: &Rc<RefCell<Fighter>>) -> Option<Rc<RefCell<Fighter>>> {
-        let fighter = fighter.borrow();
-        let other_group = match fighter.group() {
-            Group::Left => &self.group_right,
-            Group::Right => &self.group_left,
+    fn do_fighter_action(&mut self, fighter: &Rc<RefCell<Fighter>>) -> FightResult {
+        let mut fighter = fighter.borrow_mut();
+        let opponents = match fighter.group() {
+            Group::Left => &mut self.group_right,
+            Group::Right => &mut self.group_left,
         };
-        other_group
-            .iter()
-            .find(|fighter| !fighter.borrow().is_dead())
-            .cloned()
+        if opponents.is_empty() {
+            return Err(FightIsOver);
+        }
+
+        fighter.action(opponents);
+
+        Ok(())
     }
 
     fn round(&mut self) -> FightResult {
@@ -96,17 +99,14 @@ impl Arena {
         let initiative_list = self.initiative();
 
         for fighter in initiative_list {
+            // groups don't contain dead fighters, but initiative list is not updated
             if fighter.borrow().is_dead() {
                 continue;
             }
-            let punchbag = self.get_punchbag(&fighter).ok_or(FightIsOver)?;
 
-            let mut punchbag = punchbag.borrow_mut();
-            let mut fighter = fighter.borrow_mut();
-            fighter.action(&mut punchbag);
+            self.do_fighter_action(&fighter)?;
+            self.filter_out_dead_fighters();
         }
-
-        self.filter_out_dead_fighters();
 
         Ok(())
     }

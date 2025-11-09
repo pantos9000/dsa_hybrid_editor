@@ -229,7 +229,7 @@ impl Fighter {
         );
     }
 
-    pub fn action(&mut self, opponent: &mut Fighter) {
+    pub fn action(&mut self, opponents: &[Rc<RefCell<Fighter>>]) {
         self.fell = false;
         self.attacked_wild = false;
         if !self.unshake() {
@@ -241,7 +241,18 @@ impl Fighter {
             return;
         }
 
-        self.step_forward(opponent);
+        // pick opponent
+        let mut opponent = opponents
+            .first()
+            .expect("fight should be over if opponent list is empty")
+            .borrow_mut();
+        assert!(
+            !opponent.is_dead(),
+            "dead fighters should have been filtered out"
+        );
+
+        // take a step forward
+        self.step_forward(&mut opponent);
         if self.character.bennies.use_against_erstschlag.is_set() {
             self.unshake_with_bennie();
         }
@@ -250,10 +261,10 @@ impl Fighter {
             return;
         }
 
-        self.do_full_attack(opponent);
+        self.do_full_attack(&mut opponent);
 
         // take a step back to ready erstschlag
-        self.step_back(opponent);
+        self.step_back(&mut opponent);
     }
 
     fn apply_wound_penalty(&self, roll: &mut Roll) {

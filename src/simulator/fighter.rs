@@ -128,26 +128,38 @@ impl Fighter {
     }
 
     /// take a step back from everybody
-    fn step_back(&mut self, opponents: &[Rc<RefCell<Fighter>>]) -> ActionResult<()> {
-        let mut opponent = self.pick_opponent(opponents)?;
-        let mut distance_map = self.distance_map.borrow_mut();
-        let base_contact_to_target = distance_map.base_contact_mut(self, &opponent);
+    fn step_back(&mut self, opponents: &[Rc<RefCell<Fighter>>]) {
         if !self.character.edges.erstschlag.is_set() {
             // if we don't have erstschlag, don't step back
-            return Ok(());
+            return;
         }
-        if self.weapon_has_reach() {
-            // always step back if opponent can't hit us
-            *base_contact_to_target = false;
-            return Ok(());
+
+        let opponents_cant_attack = self.weapon_has_reach()
+            || opponents
+                .iter()
+                .filter(|opponent| !opponent.borrow().is_dead())
+                .map(|opponent| opponent.borrow_mut())
+                .map(|mut opponent| {
+                    opponent.unshake_against_step_back();
+                    opponent
+                })
+                .all(|opponent| opponent.shaken);
+
+        if !opponents_cant_attack {
+            // don't step back if an opponent could hit us
+            return;
         }
-        opponent.unshake_against_step_back();
-        if !opponent.shaken {
-            // don't step back if opponent could hit us
-            return Ok(());
+
+        // step back from all opponents
+        for opponent in opponents
+            .iter()
+            .filter(|opponent| !opponent.borrow().is_dead())
+            .map(|opponent| opponent.borrow_mut())
+        {
+            let mut distance_map = self.distance_map.borrow_mut();
+            let base_contact_to_opponent = distance_map.base_contact_mut(self, &opponent);
+            *base_contact_to_opponent = false;
         }
-        *base_contact_to_target = false;
-        Ok(())
     }
 
     fn attack_with_primary_weapon(&mut self, opponent: &mut Fighter) {
@@ -286,11 +298,8 @@ impl Fighter {
             return;
         }
 
-        // take a step back to ready erstschlag
-        if let Err(NoOpponentLeft) = self.step_back(opponents) {
-            #[allow(clippy::needless_return, reason = "more consistant")]
-            return;
-        }
+        // take a step back from all opponents to ready erstschlag
+        self.step_back(opponents);
     }
 
     fn apply_wound_penalty(&self, roll: &mut Roll) {

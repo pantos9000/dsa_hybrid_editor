@@ -135,7 +135,7 @@ impl Fighter {
             *base_contact_to_target = false;
             return;
         }
-        opponent.unshake_against_erstschlag();
+        opponent.unshake_against_step_back();
         if !opponent.shaken {
             // don't step back if opponent could hit us
             return;
@@ -253,7 +253,7 @@ impl Fighter {
 
         // take a step forward
         self.step_forward(&mut opponent);
-        if self.character.bennies.use_against_erstschlag.is_set() {
+        if self.character.bennies.use_against_step_back.is_set() {
             self.unshake_with_bennie();
         }
         if self.shaken {
@@ -456,8 +456,8 @@ impl Fighter {
         }
     }
 
-    fn unshake_against_erstschlag(&mut self) {
-        if !self.character.bennies.use_against_erstschlag.is_set() {
+    fn unshake_against_step_back(&mut self) {
+        if !self.character.bennies.use_against_step_back.is_set() {
             return;
         }
         self.unshake_with_bennie();

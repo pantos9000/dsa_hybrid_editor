@@ -179,7 +179,8 @@ impl Fighter {
         {
             attack_modifier -= 2;
         }
-        let Some(attacks) = self.try_to_hit(opponent, num_rolls, attack_modifier) else {
+        let Some(attacks) = self.try_to_hit_with_bennie(opponent, num_rolls, attack_modifier)
+        else {
             self.critical_fail(true);
             return;
         };
@@ -202,7 +203,7 @@ impl Fighter {
         if self.character.weapon.active && !self.character.edges.beidhandiger_kampf.is_set() {
             attack_modifier -= 2;
         }
-        let Some(attacks) = self.try_to_hit(opponent, 1, attack_modifier) else {
+        let Some(attacks) = self.try_to_hit_with_bennie(opponent, 1, attack_modifier) else {
             self.critical_fail(false);
             return;
         };
@@ -248,7 +249,7 @@ impl Fighter {
             dmg_modifier += 2;
         }
 
-        let Some(attacks) = self.try_to_hit(opponent, 1, attack_modifier) else {
+        let Some(attacks) = self.try_to_hit_with_bennie(opponent, 1, attack_modifier) else {
             self.critical_fail(true);
             return;
         };
@@ -516,12 +517,15 @@ impl Fighter {
             && !opponent.weapon_lost
     }
 
-    fn try_to_hit(
-        &mut self,
-        opponent: &Fighter,
-        num_skill_dice: usize,
-        modifier: i8,
-    ) -> Option<Vec<AttackResult>> {
+    fn roll_attack_dice(&self, num_skill_dice: usize) -> Option<Vec<Roll>> {
+        roller().roll_skill_with_n_dice(
+            self.character.skills.kampfen,
+            num_skill_dice,
+            self.berserker,
+        )
+    }
+
+    fn try_to_hit_without_bennie(&self, opponent: &Self, roll: Roll, modifier: i8) -> AttackResult {
         let opponent_fell_modifier: u8 = if opponent.fell { 2 } else { 0 };
         let opponent_berserker_modifier: u8 = if opponent.berserker { 2 } else { 0 };
         let opponent_wild_modifier: u8 = if opponent.attacked_wild { 2 } else { 0 };
@@ -533,81 +537,55 @@ impl Fighter {
         opponent_parry = opponent_parry.saturating_sub(opponent_weapon_lost_modifier);
         opponent.apply_tuchfühlung_to_parry(self, &mut opponent_parry);
 
-        let apply_modifier = |roll| roll + modifier;
-        let apply_passive_modifiers =
-            |roll| roll + i8::from(self.character.passive_modifiers.attack);
-        let apply_wound_penalty = |mut roll| {
-            self.apply_wound_penalty(&mut roll);
-            roll
-        };
-        let apply_gangup = |mut roll| {
-            Self::apply_gangup(opponent, &mut roll);
-            roll
-        };
-        let apply_joker = |mut roll| {
-            self.apply_joker(&mut roll);
-            roll
-        };
-        let apply_berserker_attack = |mut roll| {
-            self.apply_berserker_attack(&mut roll);
-            roll
-        };
-        let apply_attack_head = |roll| {
-            if self.character.passive_modifiers.attack_head.is_set() {
-                roll - 4_u8
-            } else {
-                roll
-            }
-        };
-        let apply_tuchfühlung = |mut roll| {
-            self.apply_tuchfühlung_to_attack(opponent, &mut roll);
-            roll
-        };
-        let check_hit = |mut roll: Roll| -> AttackResult {
-            roll -= opponent_parry;
-            match roll.as_i8() {
-                ..0 => AttackResult::Miss,
-                0..4 => AttackResult::Hit,
-                4.. => AttackResult::Raise,
-            }
-        };
-        let mut num_hits: u8 = 0;
-        let check_fails = |hit| -> AttackResult {
-            if hit != AttackResult::Miss {
-                num_hits += 1;
-            }
-            hit
-        };
-        let rolls = roller().roll_skill_with_n_dice(
-            self.character.skills.kampfen,
-            num_skill_dice,
-            self.berserker,
-        )?;
-        let hits = rolls
+        let mut roll = roll;
+        roll += modifier;
+        roll += i8::from(self.character.passive_modifiers.attack);
+        self.apply_wound_penalty(&mut roll);
+        Self::apply_gangup(opponent, &mut roll);
+        self.apply_joker(&mut roll);
+        self.apply_berserker_attack(&mut roll);
+        if self.character.passive_modifiers.attack_head.is_set() {
+            roll -= 4_u8;
+        }
+        self.apply_tuchfühlung_to_attack(opponent, &mut roll);
+        roll -= opponent_parry;
+
+        match roll.as_i8() {
+            ..0 => AttackResult::Miss,
+            0..4 => AttackResult::Hit,
+            4.. => AttackResult::Raise,
+        }
+    }
+
+    fn try_to_hit_with_bennie(
+        &mut self,
+        opponent: &Fighter,
+        num_skill_dice: usize,
+        modifier: i8,
+    ) -> Option<Vec<AttackResult>> {
+        let rolls = self.roll_attack_dice(num_skill_dice)?;
+        let attacks: Vec<_> = rolls
             .into_iter()
-            .map(apply_modifier)
-            .map(apply_passive_modifiers)
-            .map(apply_wound_penalty)
-            .map(apply_gangup)
-            .map(apply_joker)
-            .map(apply_berserker_attack)
-            .map(apply_attack_head)
-            .map(apply_tuchfühlung)
-            .map(check_hit)
-            .map(check_fails)
+            .map(|roll| self.try_to_hit_without_bennie(opponent, roll, modifier))
             .collect();
 
-        if num_hits == 0 && self.character.bennies.use_for_attack.is_set() && self.bennies > 0 {
+        let count_hits = attacks
+            .iter()
+            .filter(|attack| attack != &&AttackResult::Miss)
+            .count()
+            .try_into()
+            .unwrap_or(u8::MAX);
+        if count_hits == 0 && self.character.bennies.use_for_attack.is_set() && self.bennies > 0 {
             self.bennies -= 1;
-            self.try_to_hit(opponent, num_skill_dice, modifier)
+            self.try_to_hit_with_bennie(opponent, num_skill_dice, modifier)
         } else {
             if let Some(stats) = self.fight_stats.as_ref() {
-                stats.borrow_mut().add_hits_dealt(num_hits);
+                stats.borrow_mut().add_hits_dealt(count_hits);
             }
             if let Some(stats) = opponent.fight_stats.as_ref() {
-                stats.borrow_mut().add_hits_received(num_hits);
+                stats.borrow_mut().add_hits_received(count_hits);
             }
-            Some(hits)
+            Some(attacks)
         }
     }
 

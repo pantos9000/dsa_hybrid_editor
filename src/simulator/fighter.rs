@@ -217,10 +217,93 @@ impl Fighter {
         );
     }
 
+    fn wanna_do_rundumschlag(&self, opponents: &[Rc<RefCell<Fighter>>]) -> bool {
+        // don't do rundumschlag if we don't have it, duh
+        if !self.character.edges.rundumschlag.is_set() {
+            return false;
+        }
+
+        // only use rundumschlag if we can at least hit two opponents
+        let distance_map = self.distance_map.borrow();
+        let count_attackable = opponents
+            .iter()
+            .map(|opponent| opponent.borrow())
+            .filter(|opponent| distance_map.base_contact(self, opponent))
+            .count();
+        count_attackable >= 2
+    }
+
+    fn do_rundumschlag(&mut self, opponents: &[Rc<RefCell<Fighter>>]) {
+        let mut attack_modifier = 0;
+        let mut dmg_modifier = 0;
+        if self.character.passive_modifiers.attack_wild.is_set() {
+            self.attacked_wild = true;
+            attack_modifier += 2;
+            dmg_modifier += 2;
+        }
+        // only attack with primary weapon
+        if self.character.secondary_weapon.active
+            && !self.character.edges.beidhandiger_kampf.is_set()
+        {
+            attack_modifier -= 2;
+        }
+
+        let attack_rolls = loop {
+            let Some(mut rolls) = self.roll_attack_dice(1) else {
+                self.critical_fail(true);
+                return;
+            };
+            let roll = rolls.pop().unwrap();
+
+            let attacks: Vec<_> = opponents
+                .iter()
+                .map(|opponent| opponent.borrow_mut())
+                .map(|opponent| {
+                    let result = self.try_to_hit_without_bennie(&opponent, roll, attack_modifier);
+                    (opponent, result)
+                })
+                .collect();
+
+            let count_hits = attacks
+                .iter()
+                .filter(|(_opponent, attack)| attack != &AttackResult::Miss)
+                .count()
+                .try_into()
+                .unwrap_or(u8::MAX);
+            if count_hits == 0 && self.character.bennies.use_for_attack.is_set() && self.bennies > 0
+            {
+                // use a benny and reroll if we can...
+                self.bennies -= 1;
+                continue;
+            }
+
+            // ...else take the result and adjust the stats
+            if let Some(stats) = self.fight_stats.as_ref() {
+                stats.borrow_mut().add_hits_dealt(count_hits);
+            }
+            for (opponent, attack) in &attacks {
+                if attack != &AttackResult::Miss
+                    && let Some(stats) = opponent.fight_stats.as_ref()
+                {
+                    stats.borrow_mut().add_hits_received(1);
+                }
+            }
+            break attacks;
+        };
+
+        for (mut opponent, attack_result) in attack_rolls {
+            self.do_damage(false, &mut opponent, attack_result, dmg_modifier, false);
+        }
+    }
+
     fn do_full_attack(&mut self, opponents: &[Rc<RefCell<Fighter>>]) -> ActionResult<()> {
-        let mut opponent = self.pick_opponent(opponents)?;
         if self.character.weapon.active {
-            self.attack_with_primary_weapon(&mut opponent);
+            if self.wanna_do_rundumschlag(opponents) {
+                self.do_rundumschlag(opponents);
+            } else {
+                let mut opponent = self.pick_opponent(opponents)?;
+                self.attack_with_primary_weapon(&mut opponent);
+            }
         }
         if self.character.bennies.use_for_unshake.is_set() {
             self.unshake_with_bennie();
@@ -229,6 +312,7 @@ impl Fighter {
             return Ok(());
         }
         if self.character.secondary_weapon.active {
+            let mut opponent = self.pick_opponent(opponents)?;
             self.attack_with_second_weapon(&mut opponent);
         }
 

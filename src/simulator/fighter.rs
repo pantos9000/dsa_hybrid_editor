@@ -221,6 +221,12 @@ impl Fighter {
         if self.character.weapon.active {
             self.attack_with_primary_weapon(&mut opponent);
         }
+        if self.character.bennies.use_for_unshake.is_set() {
+            self.unshake_with_bennie();
+        }
+        if self.shaken {
+            return Ok(());
+        }
         if self.character.secondary_weapon.active {
             self.attack_with_second_weapon(&mut opponent);
         }

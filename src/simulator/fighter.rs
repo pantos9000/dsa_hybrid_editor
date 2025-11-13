@@ -579,12 +579,12 @@ impl Fighter {
     /// return true if action is still available
     #[must_use]
     fn unshake_without_bennie(&mut self) -> bool {
+        if !self.shaken {
+            return true;
+        }
         if self.interrupted {
             self.interrupted = false;
             return false;
-        }
-        if !self.shaken {
-            return true;
         }
         let mut roll = match roller().roll_attribute(self.character.attributes.wil) {
             Ok(roll) => roll,

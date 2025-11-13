@@ -106,6 +106,7 @@ impl Roller {
         n: usize,
         fail_on_one: bool,
     ) -> Option<Vec<Roll>> {
+        assert!(n > 0);
         let (sides, modifier) = match skill {
             Skill::W4m2 => (4, -2),
             Skill::W4 => (4, 0),
@@ -117,23 +118,13 @@ impl Roller {
             Skill::W12p2 => (12, 2),
             Skill::Master => (12, 2),
         };
-        let mut ret = Vec::with_capacity(n);
-        let mut index_minimum = 0;
-        let mut minimum = Roll(i8::MAX);
-        for i in 0..n {
-            let roll = self.roll_die(sides, modifier);
-            if fail_on_one && (roll.as_u8() == 1) {
-                return Some(Vec::new());
-            }
-            if roll < minimum {
-                minimum = roll;
-                index_minimum = i;
-            }
-            ret.push(roll);
+        let mut rolls: Vec<_> = (0..n).map(|_| self.roll_die(sides, modifier)).collect();
+        if fail_on_one && rolls.iter().any(|roll| roll.as_u8() == 1) {
+            return Some(Vec::new());
         }
-        let minimum = &mut ret[index_minimum];
+        let minimum = rolls.iter_mut().min().unwrap();
         *minimum = self.roll_additional_wild_die(*minimum, skill.wild_die_sides())?;
-        Some(ret)
+        Some(rolls)
     }
 
     /// roll weapon damage, but cap die sides by strength die

@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 use crate::app::character::{Character, Edge3, PassiveStats};
 use crate::simulator::fight_report::FightStats;
+use crate::simulator::roller::RollError;
 
 use super::{
     cards::{Card, CardDeck, Suit},
@@ -12,6 +13,9 @@ use super::{
 
 struct NoOpponentLeft;
 type ActionResult<T> = Result<T, NoOpponentLeft>;
+
+#[derive(Debug, Clone, Copy)]
+struct CriticalMiss;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Group {
@@ -180,10 +184,13 @@ impl Fighter {
         {
             attack_modifier -= 2;
         }
-        let Some(attacks) = self.try_to_hit_with_bennie(opponent, num_rolls, attack_modifier)
-        else {
-            self.critical_fail(true);
-            return;
+        #[allow(clippy::single_match_else, reason = "better readability")]
+        let attacks = match self.try_to_hit_with_bennie(opponent, num_rolls, attack_modifier) {
+            Ok(results) => results,
+            Err(CriticalMiss) => {
+                self.critical_fail(true);
+                return;
+            }
         };
         for attack in attacks {
             self.do_damage(true, opponent, attack, dmg_modifier, false);
@@ -204,9 +211,14 @@ impl Fighter {
         if self.character.weapon.active && !self.character.edges.beidhandiger_kampf.is_set() {
             attack_modifier -= 2;
         }
-        let Some(attacks) = self.try_to_hit_with_bennie(opponent, 1, attack_modifier) else {
-            self.critical_fail(false);
-            return;
+
+        #[allow(clippy::single_match_else, reason = "better readability")]
+        let attacks = match self.try_to_hit_with_bennie(opponent, 1, attack_modifier) {
+            Ok(results) => results,
+            Err(CriticalMiss) => {
+                self.critical_fail(false);
+                return;
+            }
         };
         let mut attacks = attacks.into_iter();
         if let Some(attack) = attacks.next() {
@@ -250,20 +262,28 @@ impl Fighter {
         }
 
         let attack_rolls = loop {
-            let Some(mut rolls) = self.roll_attack_dice(1) else {
-                self.critical_fail(true);
-                return;
+            let roll = match self.roll_attack_dice(1) {
+                Ok(mut rolls) => rolls.pop(), // we rolled with 1
+                Err(RollError::CriticalFail) => {
+                    self.critical_fail(true);
+                    return;
+                }
+                Err(RollError::Fail) => None,
             };
-            let roll = rolls.pop().unwrap();
 
-            let attacks: Vec<_> = opponents
-                .iter()
-                .map(|opponent| opponent.borrow_mut())
-                .map(|opponent| {
-                    let result = self.try_to_hit_without_bennie(&opponent, roll, attack_modifier);
-                    (opponent, result)
-                })
-                .collect();
+            let attacks = if let Some(roll) = roll {
+                opponents
+                    .iter()
+                    .map(|opponent| opponent.borrow_mut())
+                    .map(|opponent| {
+                        let result =
+                            self.try_to_hit_without_bennie(&opponent, roll, attack_modifier);
+                        (opponent, result)
+                    })
+                    .collect()
+            } else {
+                Vec::new()
+            };
 
             let count_hits = attacks
                 .iter()
@@ -334,9 +354,13 @@ impl Fighter {
             dmg_modifier += 2;
         }
 
-        let Some(attacks) = self.try_to_hit_with_bennie(opponent, 1, attack_modifier) else {
-            self.critical_fail(true);
-            return;
+        #[allow(clippy::single_match_else, reason = "better readability")]
+        let attacks = match self.try_to_hit_with_bennie(opponent, 1, attack_modifier) {
+            Ok(results) => results,
+            Err(CriticalMiss) => {
+                self.critical_fail(true);
+                return;
+            }
         };
         let mut attacks = attacks.into_iter();
         if let Some(attack) = attacks.next() {
@@ -524,11 +548,11 @@ impl Fighter {
         self.do_special_attack(opponent);
     }
 
-    pub fn dex_roll(&self) -> Option<Roll> {
+    pub fn dex_roll(&self) -> Result<Roll, RollError> {
         let mut roll = roller().roll_attribute(self.character.attributes.ges)?;
         self.apply_joker(&mut roll);
         self.apply_wound_penalty(&mut roll);
-        Some(roll)
+        Ok(roll)
     }
 
     /// returns `true` if char still has an action this round
@@ -562,8 +586,10 @@ impl Fighter {
         if !self.shaken {
             return true;
         }
-        let Some(mut roll) = roller().roll_attribute(self.character.attributes.wil) else {
-            return false;
+        let mut roll = match roller().roll_attribute(self.character.attributes.wil) {
+            Ok(roll) => roll,
+            Err(RollError::CriticalFail) => return false,
+            Err(RollError::Fail) => return false,
         };
         self.apply_wound_penalty(&mut roll);
         self.apply_joker(&mut roll);
@@ -600,7 +626,7 @@ impl Fighter {
             && !opponent.weapon_lost
     }
 
-    fn roll_attack_dice(&self, num_skill_dice: usize) -> Option<Vec<Roll>> {
+    fn roll_attack_dice(&self, num_skill_dice: usize) -> Result<Vec<Roll>, RollError> {
         roller().roll_skill_with_n_dice(
             self.character.skills.kampfen,
             num_skill_dice,
@@ -645,8 +671,13 @@ impl Fighter {
         opponent: &Fighter,
         num_skill_dice: usize,
         modifier: i8,
-    ) -> Option<Vec<AttackResult>> {
-        let rolls = self.roll_attack_dice(num_skill_dice)?;
+    ) -> Result<Vec<AttackResult>, CriticalMiss> {
+        let all_fail = (0..num_skill_dice).map(|_| AttackResult::Miss).collect();
+        let rolls = match self.roll_attack_dice(num_skill_dice) {
+            Ok(rolls) => rolls,
+            Err(RollError::CriticalFail) => return Err(CriticalMiss),
+            Err(RollError::Fail) => return Ok(all_fail),
+        };
         let attacks: Vec<_> = rolls
             .into_iter()
             .map(|roll| self.try_to_hit_without_bennie(opponent, roll, modifier))
@@ -668,7 +699,7 @@ impl Fighter {
             if let Some(stats) = opponent.fight_stats.as_ref() {
                 stats.borrow_mut().add_hits_received(count_hits);
             }
-            Some(attacks)
+            Ok(attacks)
         }
     }
 

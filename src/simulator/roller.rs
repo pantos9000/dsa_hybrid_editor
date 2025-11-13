@@ -58,12 +58,12 @@ impl Roller {
     }
 
     /// return `None` on crit fail
-    fn roll_additional_wild_die(&self, old_result: Roll, sides: u8) -> Option<Roll> {
+    fn roll_additional_wild_die(&self, old_result: Roll, sides: u8) -> Result<Roll, RollError> {
         let wild_die = self.roll_die(sides, 0);
         if old_result.as_u8() < 2 && wild_die.as_u8() < 2 {
-            return None;
+            return Err(RollError::CriticalFail);
         }
-        Some(wild_die.max(old_result))
+        Ok(wild_die.max(old_result))
     }
 
     pub fn roll_raise(&self) -> Roll {
@@ -93,11 +93,9 @@ impl Roller {
         self.roll_die(sides, modifier)
     }
 
-    /// returns `None` on crit fail
-    pub fn roll_attribute(&self, attribute: Attribute) -> Option<Roll> {
-        let mut roll = self.roll_attribute_without_wild_die(attribute);
-        roll = self.roll_additional_wild_die(roll, attribute.wild_die_sides())?;
-        Some(roll)
+    pub fn roll_attribute(&self, attribute: Attribute) -> Result<Roll, RollError> {
+        let roll = self.roll_attribute_without_wild_die(attribute);
+        self.roll_additional_wild_die(roll, attribute.wild_die_sides())
     }
 
     pub fn roll_skill_with_n_dice(
@@ -105,7 +103,7 @@ impl Roller {
         skill: Skill,
         n: usize,
         fail_on_one: bool,
-    ) -> Option<Vec<Roll>> {
+    ) -> Result<Vec<Roll>, RollError> {
         assert!(n > 0);
         let (sides, modifier) = match skill {
             Skill::W4m2 => (4, -2),
@@ -120,11 +118,11 @@ impl Roller {
         };
         let mut rolls: Vec<_> = (0..n).map(|_| self.roll_die(sides, modifier)).collect();
         if fail_on_one && rolls.iter().any(|roll| roll.as_u8() == 1) {
-            return Some(Vec::new());
+            return Err(RollError::Fail);
         }
         let minimum = rolls.iter_mut().min().unwrap();
         *minimum = self.roll_additional_wild_die(*minimum, skill.wild_die_sides())?;
-        Some(rolls)
+        Ok(rolls)
     }
 
     /// roll weapon damage, but cap die sides by strength die
@@ -297,6 +295,12 @@ impl std::ops::SubAssign<Roll> for u8 {
     fn sub_assign(&mut self, rhs: Roll) {
         *self = *self - rhs;
     }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum RollError {
+    CriticalFail,
+    Fail,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

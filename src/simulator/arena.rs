@@ -147,7 +147,12 @@ impl Arena {
             return;
         }
         let swap = 'dex_roll_loop: loop {
-            match first.borrow().dex_roll().cmp(&second.borrow().dex_roll()) {
+            match first
+                .borrow()
+                .dex_roll()
+                .ok()
+                .cmp(&second.borrow().dex_roll().ok())
+            {
                 std::cmp::Ordering::Less => break 'dex_roll_loop true,
                 std::cmp::Ordering::Greater => break 'dex_roll_loop false,
                 std::cmp::Ordering::Equal => continue 'dex_roll_loop,

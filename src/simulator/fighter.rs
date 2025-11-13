@@ -122,8 +122,9 @@ impl Fighter {
             return Ok(());
         }
         *base_contact_to_target = true;
+        let base_contact = *base_contact_to_target;
         drop(distance_map);
-        opponent.trigger_erstschlag(self);
+        opponent.trigger_erstschlag(self, base_contact);
         Ok(())
     }
 
@@ -500,15 +501,12 @@ impl Fighter {
         self.do_special_attack(opponent);
     }
 
-    fn trigger_erstschlag(&mut self, opponent: &mut Self) {
-        let distance_map = self.distance_map.borrow_mut();
-        let base_contact_to_target = distance_map.base_contact(self, opponent);
-        drop(distance_map);
+    fn trigger_erstschlag(&mut self, opponent: &mut Self, base_contact_to_target: bool) {
+        if !self.character.edges.erstschlag.is_set() {
+            return;
+        }
 
-        if !self.character.edges.erstschlag.is_set()
-            || i8::from(opponent.character.weapon.reach) > 0
-            || !base_contact_to_target
-        {
+        if i8::from(opponent.character.weapon.reach) == 0 && !base_contact_to_target {
             return;
         }
 

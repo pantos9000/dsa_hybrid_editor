@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -9,6 +9,9 @@ use super::{
     cards::{Card, CardDeck, Suit},
     roller::{Roll, RollResult, roller},
 };
+
+struct NoOpponentLeft;
+type ActionResult<T> = Result<T, NoOpponentLeft>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Group {
@@ -110,95 +113,210 @@ impl Fighter {
     }
 
     /// take a step forward, but only toward our target
-    fn step_forward(&mut self, opponent: &mut Fighter) {
+    fn step_forward(&mut self, opponents: &[Rc<RefCell<Fighter>>]) -> ActionResult<()> {
+        let mut opponent = self.pick_opponent(opponents)?;
         let mut distance_map = self.distance_map.borrow_mut();
-        let base_contact_to_target = distance_map.base_contact_mut(self, opponent);
+        let base_contact_to_target = distance_map.base_contact_mut(self, &opponent);
         if self.weapon_has_reach() || *base_contact_to_target {
             // don't step forward if not needed
-            return;
+            return Ok(());
         }
         *base_contact_to_target = true;
         drop(distance_map);
         opponent.trigger_erstschlag(self);
+        Ok(())
     }
 
     /// take a step back from everybody
-    fn step_back(&mut self, opponent: &mut Fighter) {
-        let mut distance_map = self.distance_map.borrow_mut();
-        let base_contact_to_target = distance_map.base_contact_mut(self, opponent);
+    fn step_back(&mut self, opponents: &[Rc<RefCell<Fighter>>]) {
         if !self.character.edges.erstschlag.is_set() {
             // if we don't have erstschlag, don't step back
             return;
         }
-        if self.weapon_has_reach() {
-            // always step back if opponent can't hit us
-            *base_contact_to_target = false;
+
+        let opponents_cant_attack = self.weapon_has_reach()
+            || opponents
+                .iter()
+                .filter(|opponent| !opponent.borrow().is_dead())
+                .map(|opponent| opponent.borrow_mut())
+                .map(|mut opponent| {
+                    opponent.unshake_against_step_back();
+                    opponent
+                })
+                .all(|opponent| opponent.shaken);
+
+        if !opponents_cant_attack {
+            // don't step back if an opponent could hit us
             return;
         }
-        opponent.unshake_against_erstschlag();
-        if !opponent.shaken {
-            // don't step back if opponent could hit us
-            return;
+
+        // step back from all opponents
+        for opponent in opponents
+            .iter()
+            .filter(|opponent| !opponent.borrow().is_dead())
+            .map(|opponent| opponent.borrow_mut())
+        {
+            let mut distance_map = self.distance_map.borrow_mut();
+            let base_contact_to_opponent = distance_map.base_contact_mut(self, &opponent);
+            *base_contact_to_opponent = false;
         }
-        *base_contact_to_target = false;
     }
 
-    fn do_full_attack(&mut self, opponent: &mut Fighter) {
-        if self.character.weapon.active {
-            let mut dmg_modifier = 0;
-            let (num_rolls, mut attack_modifier) = match self.character.edges.blitzhieb {
-                Edge3::None => (1, 0),
-                Edge3::Normal => (2, -2),
-                Edge3::Improved => (2, 0),
-            };
-            if self.character.passive_modifiers.attack_wild.is_set() {
-                self.attacked_wild = true;
-                attack_modifier += 2;
-                dmg_modifier += 2;
-            }
+    fn attack_with_primary_weapon(&mut self, opponent: &mut Fighter) {
+        let mut dmg_modifier = 0;
+        let (num_rolls, mut attack_modifier) = match self.character.edges.blitzhieb {
+            Edge3::None => (1, 0),
+            Edge3::Normal => (2, -2),
+            Edge3::Improved => (2, 0),
+        };
+        if self.character.passive_modifiers.attack_wild.is_set() {
+            self.attacked_wild = true;
+            attack_modifier += 2;
+            dmg_modifier += 2;
+        }
+        if self.character.secondary_weapon.active
+            && !self.character.edges.beidhandiger_kampf.is_set()
+        {
+            attack_modifier -= 2;
+        }
+        let Some(attacks) = self.try_to_hit_with_bennie(opponent, num_rolls, attack_modifier)
+        else {
+            self.critical_fail(true);
+            return;
+        };
+        for attack in attacks {
+            self.do_damage(true, opponent, attack, dmg_modifier, false);
+        }
+    }
 
-            if self.character.secondary_weapon.active
-                && !self.character.edges.beidhandiger_kampf.is_set()
-            {
-                attack_modifier -= 2;
-            }
-            let Some(attacks) = self.try_to_hit(opponent, num_rolls, attack_modifier) else {
+    fn attack_with_second_weapon(&mut self, opponent: &mut Fighter) {
+        let mut attack_modifier = 0;
+        let mut dmg_modifier = 0;
+        if self.character.passive_modifiers.attack_wild.is_set() {
+            self.attacked_wild = true;
+            attack_modifier += 2;
+            dmg_modifier += 2;
+        }
+        if !self.character.edges.beidhandig.is_set() {
+            attack_modifier -= 2;
+        }
+        if self.character.weapon.active && !self.character.edges.beidhandiger_kampf.is_set() {
+            attack_modifier -= 2;
+        }
+        let Some(attacks) = self.try_to_hit_with_bennie(opponent, 1, attack_modifier) else {
+            self.critical_fail(false);
+            return;
+        };
+        let mut attacks = attacks.into_iter();
+        if let Some(attack) = attacks.next() {
+            self.do_damage(false, opponent, attack, dmg_modifier, false);
+        }
+        debug_assert!(
+            attacks.next().is_none(),
+            "attacks should only contain single attack"
+        );
+    }
+
+    fn wanna_do_rundumschlag(&self, opponents: &[Rc<RefCell<Fighter>>]) -> bool {
+        // don't do rundumschlag if we don't have it, duh
+        if !self.character.edges.rundumschlag.is_set() {
+            return false;
+        }
+
+        // only use rundumschlag if we can at least hit two opponents
+        let distance_map = self.distance_map.borrow();
+        let count_attackable = opponents
+            .iter()
+            .map(|opponent| opponent.borrow())
+            .filter(|opponent| distance_map.base_contact(self, opponent))
+            .count();
+        count_attackable >= 2
+    }
+
+    fn do_rundumschlag(&mut self, opponents: &[Rc<RefCell<Fighter>>]) {
+        let mut attack_modifier = 0;
+        let mut dmg_modifier = 0;
+        if self.character.passive_modifiers.attack_wild.is_set() {
+            self.attacked_wild = true;
+            attack_modifier += 2;
+            dmg_modifier += 2;
+        }
+        // only attack with primary weapon
+        if self.character.secondary_weapon.active
+            && !self.character.edges.beidhandiger_kampf.is_set()
+        {
+            attack_modifier -= 2;
+        }
+
+        let attack_rolls = loop {
+            let Some(mut rolls) = self.roll_attack_dice(1) else {
                 self.critical_fail(true);
                 return;
             };
-            for attack in attacks {
-                self.do_damage(true, opponent, attack, dmg_modifier, false);
+            let roll = rolls.pop().unwrap();
+
+            let attacks: Vec<_> = opponents
+                .iter()
+                .map(|opponent| opponent.borrow_mut())
+                .map(|opponent| {
+                    let result = self.try_to_hit_without_bennie(&opponent, roll, attack_modifier);
+                    (opponent, result)
+                })
+                .collect();
+
+            let count_hits = attacks
+                .iter()
+                .filter(|(_opponent, attack)| attack != &AttackResult::Miss)
+                .count()
+                .try_into()
+                .unwrap_or(u8::MAX);
+            if count_hits == 0 && self.character.bennies.use_for_attack.is_set() && self.bennies > 0
+            {
+                // use a benny and reroll if we can...
+                self.bennies -= 1;
+                continue;
+            }
+
+            // ...else take the result and adjust the stats
+            if let Some(stats) = self.fight_stats.as_ref() {
+                stats.borrow_mut().add_hits_dealt(count_hits);
+            }
+            for (opponent, attack) in &attacks {
+                if attack != &AttackResult::Miss
+                    && let Some(stats) = opponent.fight_stats.as_ref()
+                {
+                    stats.borrow_mut().add_hits_received(1);
+                }
+            }
+            break attacks;
+        };
+
+        for (mut opponent, attack_result) in attack_rolls {
+            self.do_damage(false, &mut opponent, attack_result, dmg_modifier, false);
+        }
+    }
+
+    fn do_full_attack(&mut self, opponents: &[Rc<RefCell<Fighter>>]) -> ActionResult<()> {
+        if self.character.weapon.active {
+            if self.wanna_do_rundumschlag(opponents) {
+                self.do_rundumschlag(opponents);
+            } else {
+                let mut opponent = self.pick_opponent(opponents)?;
+                self.attack_with_primary_weapon(&mut opponent);
             }
         }
-
+        if self.character.bennies.use_for_unshake.is_set() {
+            self.unshake_with_bennie();
+        }
+        if self.shaken {
+            return Ok(());
+        }
         if self.character.secondary_weapon.active {
-            let mut attack_modifier = 0;
-            let mut dmg_modifier = 0;
-            if self.character.passive_modifiers.attack_wild.is_set() {
-                self.attacked_wild = true;
-                attack_modifier += 2;
-                dmg_modifier += 2;
-            }
-
-            if !self.character.edges.beidhandig.is_set() {
-                attack_modifier -= 2;
-            }
-            if self.character.weapon.active && !self.character.edges.beidhandiger_kampf.is_set() {
-                attack_modifier -= 2;
-            }
-            let Some(attacks) = self.try_to_hit(opponent, 1, attack_modifier) else {
-                self.critical_fail(false);
-                return;
-            };
-            let mut attacks = attacks.into_iter();
-            if let Some(attack) = attacks.next() {
-                self.do_damage(false, opponent, attack, dmg_modifier, false);
-            }
-            debug_assert!(
-                attacks.next().is_none(),
-                "attacks should only contain single attack"
-            );
+            let mut opponent = self.pick_opponent(opponents)?;
+            self.attack_with_second_weapon(&mut opponent);
         }
+
+        Ok(())
     }
 
     fn do_special_attack(&mut self, opponent: &mut Fighter) {
@@ -215,7 +333,7 @@ impl Fighter {
             dmg_modifier += 2;
         }
 
-        let Some(attacks) = self.try_to_hit(opponent, 1, attack_modifier) else {
+        let Some(attacks) = self.try_to_hit_with_bennie(opponent, 1, attack_modifier) else {
             self.critical_fail(true);
             return;
         };
@@ -229,7 +347,21 @@ impl Fighter {
         );
     }
 
-    pub fn action(&mut self, opponent: &mut Fighter) {
+    fn pick_opponent<'o>(
+        &self,
+        opponents: &'o [Rc<RefCell<Fighter>>],
+    ) -> ActionResult<RefMut<'o, Fighter>> {
+        let opponent = opponents
+            .first()
+            .expect("fight should be over if opponent list is empty")
+            .borrow_mut();
+        if opponent.is_dead() {
+            return Err(NoOpponentLeft);
+        }
+        Ok(opponent)
+    }
+
+    pub fn action(&mut self, opponents: &[Rc<RefCell<Fighter>>]) {
         self.fell = false;
         self.attacked_wild = false;
         if !self.unshake() {
@@ -241,8 +373,11 @@ impl Fighter {
             return;
         }
 
-        self.step_forward(opponent);
-        if self.character.bennies.use_against_erstschlag.is_set() {
+        // take a step forward
+        if let Err(NoOpponentLeft) = self.step_forward(opponents) {
+            return;
+        }
+        if self.character.bennies.use_against_step_back.is_set() {
             self.unshake_with_bennie();
         }
         if self.shaken {
@@ -250,10 +385,12 @@ impl Fighter {
             return;
         }
 
-        self.do_full_attack(opponent);
+        if let Err(NoOpponentLeft) = self.do_full_attack(opponents) {
+            return;
+        }
 
-        // take a step back to ready erstschlag
-        self.step_back(opponent);
+        // take a step back from all opponents to ready erstschlag
+        self.step_back(opponents);
     }
 
     fn apply_wound_penalty(&self, roll: &mut Roll) {
@@ -345,14 +482,20 @@ impl Fighter {
     }
 
     fn trigger_riposte(&mut self, opponent: &mut Self) {
-        if self.shaken || self.riposte_done {
+        if self.character.bennies.use_for_special_attacks.is_set() {
+            // if we would be able to do riposte, try to unshake if necessary
+            self.unshake_with_bennie();
+        }
+
+        if self.shaken {
             return;
         }
-        match self.character.edges.riposte {
-            Edge3::None => return,
-            Edge3::Normal => self.riposte_done = true,
-            Edge3::Improved => (),
+
+        if self.riposte_done && self.character.edges.riposte != Edge3::Improved {
+            return;
         }
+
+        self.riposte_done = true;
 
         self.do_special_attack(opponent);
     }
@@ -369,7 +512,7 @@ impl Fighter {
             return;
         }
 
-        if self.character.bennies.use_for_erstschlag.is_set() {
+        if self.character.bennies.use_for_special_attacks.is_set() {
             // if we would be able to do erstschlag, try to unshake if necessary
             self.unshake_with_bennie();
         }
@@ -439,8 +582,8 @@ impl Fighter {
         }
     }
 
-    fn unshake_against_erstschlag(&mut self) {
-        if !self.character.bennies.use_against_erstschlag.is_set() {
+    fn unshake_against_step_back(&mut self) {
+        if !self.character.bennies.use_against_step_back.is_set() {
             return;
         }
         self.unshake_with_bennie();
@@ -458,12 +601,15 @@ impl Fighter {
             && !opponent.weapon_lost
     }
 
-    fn try_to_hit(
-        &mut self,
-        opponent: &Fighter,
-        num_skill_dice: usize,
-        modifier: i8,
-    ) -> Option<Vec<AttackResult>> {
+    fn roll_attack_dice(&self, num_skill_dice: usize) -> Option<Vec<Roll>> {
+        roller().roll_skill_with_n_dice(
+            self.character.skills.kampfen,
+            num_skill_dice,
+            self.berserker,
+        )
+    }
+
+    fn try_to_hit_without_bennie(&self, opponent: &Self, roll: Roll, modifier: i8) -> AttackResult {
         let opponent_fell_modifier: u8 = if opponent.fell { 2 } else { 0 };
         let opponent_berserker_modifier: u8 = if opponent.berserker { 2 } else { 0 };
         let opponent_wild_modifier: u8 = if opponent.attacked_wild { 2 } else { 0 };
@@ -475,81 +621,55 @@ impl Fighter {
         opponent_parry = opponent_parry.saturating_sub(opponent_weapon_lost_modifier);
         opponent.apply_tuchfühlung_to_parry(self, &mut opponent_parry);
 
-        let apply_modifier = |roll| roll + modifier;
-        let apply_passive_modifiers =
-            |roll| roll + i8::from(self.character.passive_modifiers.attack);
-        let apply_wound_penalty = |mut roll| {
-            self.apply_wound_penalty(&mut roll);
-            roll
-        };
-        let apply_gangup = |mut roll| {
-            Self::apply_gangup(opponent, &mut roll);
-            roll
-        };
-        let apply_joker = |mut roll| {
-            self.apply_joker(&mut roll);
-            roll
-        };
-        let apply_berserker_attack = |mut roll| {
-            self.apply_berserker_attack(&mut roll);
-            roll
-        };
-        let apply_attack_head = |roll| {
-            if self.character.passive_modifiers.attack_head.is_set() {
-                roll - 4_u8
-            } else {
-                roll
-            }
-        };
-        let apply_tuchfühlung = |mut roll| {
-            self.apply_tuchfühlung_to_attack(opponent, &mut roll);
-            roll
-        };
-        let check_hit = |mut roll: Roll| -> AttackResult {
-            roll -= opponent_parry;
-            match roll.as_i8() {
-                ..0 => AttackResult::Miss,
-                0..4 => AttackResult::Hit,
-                4.. => AttackResult::Raise,
-            }
-        };
-        let mut num_hits: u8 = 0;
-        let check_fails = |hit| -> AttackResult {
-            if hit != AttackResult::Miss {
-                num_hits += 1;
-            }
-            hit
-        };
-        let rolls = roller().roll_skill_with_n_dice(
-            self.character.skills.kampfen,
-            num_skill_dice,
-            self.berserker,
-        )?;
-        let hits = rolls
+        let mut roll = roll;
+        roll += modifier;
+        roll += i8::from(self.character.passive_modifiers.attack);
+        self.apply_wound_penalty(&mut roll);
+        Self::apply_gangup(opponent, &mut roll);
+        self.apply_joker(&mut roll);
+        self.apply_berserker_attack(&mut roll);
+        if self.character.passive_modifiers.attack_head.is_set() {
+            roll -= 4_u8;
+        }
+        self.apply_tuchfühlung_to_attack(opponent, &mut roll);
+        roll -= opponent_parry;
+
+        match roll.as_i8() {
+            ..0 => AttackResult::Miss,
+            0..4 => AttackResult::Hit,
+            4.. => AttackResult::Raise,
+        }
+    }
+
+    fn try_to_hit_with_bennie(
+        &mut self,
+        opponent: &Fighter,
+        num_skill_dice: usize,
+        modifier: i8,
+    ) -> Option<Vec<AttackResult>> {
+        let rolls = self.roll_attack_dice(num_skill_dice)?;
+        let attacks: Vec<_> = rolls
             .into_iter()
-            .map(apply_modifier)
-            .map(apply_passive_modifiers)
-            .map(apply_wound_penalty)
-            .map(apply_gangup)
-            .map(apply_joker)
-            .map(apply_berserker_attack)
-            .map(apply_attack_head)
-            .map(apply_tuchfühlung)
-            .map(check_hit)
-            .map(check_fails)
+            .map(|roll| self.try_to_hit_without_bennie(opponent, roll, modifier))
             .collect();
 
-        if num_hits == 0 && self.character.bennies.use_for_attack.is_set() && self.bennies > 0 {
+        let count_hits = attacks
+            .iter()
+            .filter(|attack| attack != &&AttackResult::Miss)
+            .count()
+            .try_into()
+            .unwrap_or(u8::MAX);
+        if count_hits == 0 && self.character.bennies.use_for_attack.is_set() && self.bennies > 0 {
             self.bennies -= 1;
-            self.try_to_hit(opponent, num_skill_dice, modifier)
+            self.try_to_hit_with_bennie(opponent, num_skill_dice, modifier)
         } else {
             if let Some(stats) = self.fight_stats.as_ref() {
-                stats.borrow_mut().add_hits_dealt(num_hits);
+                stats.borrow_mut().add_hits_dealt(count_hits);
             }
             if let Some(stats) = opponent.fight_stats.as_ref() {
-                stats.borrow_mut().add_hits_received(num_hits);
+                stats.borrow_mut().add_hits_received(count_hits);
             }
-            Some(hits)
+            Some(attacks)
         }
     }
 

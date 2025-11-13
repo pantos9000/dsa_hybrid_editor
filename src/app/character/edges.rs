@@ -23,6 +23,8 @@ pub struct Edges {
     pub(crate) schnell: BoolStat,
     pub(crate) kampfkunstler: BoolStat,
     pub(crate) kuhler_kopf: Edge3,
+    #[serde(default)]
+    pub(crate) rundumschlag: BoolStat,
 }
 
 impl Edges {
@@ -41,6 +43,7 @@ impl Edges {
     fn edge2_iter(&mut self) -> impl Iterator<Item = (&mut BoolStat, Edge2Info)> {
         [
             (&mut self.schnell, Edge2Info::Schnell),
+            (&mut self.rundumschlag, Edge2Info::Rundumschlag),
             (&mut self.beidhandig, Edge2Info::Beidhändig),
             (&mut self.beidhandiger_kampf, Edge2Info::BeidhändigerKampf),
             (&mut self.fechten_m2w, Edge2Info::FechtenMit2Waffen),
@@ -85,6 +88,7 @@ enum Edge2Info {
     Beidhändig,
     FechtenMit2Waffen,
     Kampfkünstler,
+    Rundumschlag,
 }
 
 impl DrawInfo<BoolStat> for Edge2Info {
@@ -100,6 +104,7 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Kampfreflexe => "Kampfreflexe",
             Self::Schnell => "Schnell (Hintergrund)",
             Self::Kampfkünstler => "Kampfkünstler",
+            Self::Rundumschlag => "Rundumschlag",
         }
     }
 
@@ -115,6 +120,7 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Kampfreflexe => Box::new(|c| c.edges.kampfreflexe.decrement()),
             Self::Schnell => Box::new(|c| c.edges.schnell.decrement()),
             Self::Kampfkünstler => Box::new(|c| c.edges.kampfkunstler.decrement()),
+            Self::Rundumschlag => Box::new(|c| c.edges.rundumschlag.decrement()),
         };
         simulator::CharModification::new(selection, modification)
     }
@@ -131,6 +137,7 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Kampfreflexe => Box::new(|c| c.edges.kampfreflexe.increment()),
             Self::Schnell => Box::new(|c| c.edges.schnell.increment()),
             Self::Kampfkünstler => Box::new(|c| c.edges.kampfkunstler.increment()),
+            Self::Rundumschlag => Box::new(|c| c.edges.rundumschlag.increment()),
         };
         simulator::CharModification::new(selection, modification)
     }
@@ -147,6 +154,7 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Kampfreflexe => Box::new(move |c| c.edges.kampfreflexe.set(value)),
             Self::Schnell => Box::new(move |c| c.edges.schnell.set(value)),
             Self::Kampfkünstler => Box::new(move |c| c.edges.kampfkunstler.set(value)),
+            Self::Rundumschlag => Box::new(move |c| c.edges.rundumschlag.set(value)),
         };
         simulator::CharModification::new(selection, modification)
     }

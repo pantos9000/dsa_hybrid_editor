@@ -9,8 +9,8 @@ pub struct Bennies {
     pub(crate) count: IntStat<0, 10>,
     pub(crate) use_for_unshake: BoolStat,
     #[serde(default)]
-    pub(crate) use_for_erstschlag: BoolStat,
-    pub(crate) use_against_erstschlag: BoolStat,
+    pub(crate) use_for_special_attacks: BoolStat,
+    pub(crate) use_against_step_back: BoolStat,
     pub(crate) use_for_attack: BoolStat,
     pub(crate) use_for_damage: BoolStat,
 }
@@ -26,11 +26,11 @@ impl Drawable for Bennies {
             self.use_for_unshake
                 .draw(UsageInfo::Unshake, selection, sim, ui);
             ui.end_row();
-            self.use_for_erstschlag
+            self.use_for_special_attacks
                 .draw(UsageInfo::ForErstschlag, selection, sim, ui);
             ui.end_row();
-            self.use_against_erstschlag
-                .draw(UsageInfo::AgainstErstschlag, selection, sim, ui);
+            self.use_against_step_back
+                .draw(UsageInfo::AgainstStepBack, selection, sim, ui);
             ui.end_row();
             self.use_for_attack
                 .draw(UsageInfo::Attack, selection, sim, ui);
@@ -71,7 +71,7 @@ impl<const MIN: i8, const MAX: i8> DrawInfo<IntStat<MIN, MAX>> for NumBennies {
 enum UsageInfo {
     Unshake,
     ForErstschlag,
-    AgainstErstschlag,
+    AgainstStepBack,
     Attack,
     Damage,
 }
@@ -81,7 +81,7 @@ impl DrawInfo<BoolStat> for UsageInfo {
         match self {
             Self::Unshake => "Nutzen für Entschütteln",
             Self::ForErstschlag => "Nutzen für Entschütteln um Erstschlag zu ermöglichen",
-            Self::AgainstErstschlag => "Nutzen für Entschütteln um Erstschlag zu verhindern",
+            Self::AgainstStepBack => "Nutzen für Entschütteln um Schritte zurück zu verhindern",
             Self::Attack => "Nutzen für Angriffe",
             Self::Damage => "Nutzen für Schaden",
         }
@@ -90,8 +90,8 @@ impl DrawInfo<BoolStat> for UsageInfo {
     fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
         let modification: simulator::CharModFunc = match self {
             Self::Unshake => Box::new(|c| c.bennies.use_for_unshake.decrement()),
-            Self::ForErstschlag => Box::new(|c| c.bennies.use_for_erstschlag.decrement()),
-            Self::AgainstErstschlag => Box::new(|c| c.bennies.use_against_erstschlag.decrement()),
+            Self::ForErstschlag => Box::new(|c| c.bennies.use_for_special_attacks.decrement()),
+            Self::AgainstStepBack => Box::new(|c| c.bennies.use_against_step_back.decrement()),
             Self::Attack => Box::new(|c| c.bennies.use_for_attack.decrement()),
             Self::Damage => Box::new(|c| c.bennies.use_for_damage.decrement()),
         };
@@ -101,8 +101,8 @@ impl DrawInfo<BoolStat> for UsageInfo {
     fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
         let modification: simulator::CharModFunc = match self {
             Self::Unshake => Box::new(|c| c.bennies.use_for_unshake.increment()),
-            Self::ForErstschlag => Box::new(|c| c.bennies.use_for_erstschlag.increment()),
-            Self::AgainstErstschlag => Box::new(|c| c.bennies.use_against_erstschlag.increment()),
+            Self::ForErstschlag => Box::new(|c| c.bennies.use_for_special_attacks.increment()),
+            Self::AgainstStepBack => Box::new(|c| c.bennies.use_against_step_back.increment()),
             Self::Attack => Box::new(|c| c.bennies.use_for_attack.increment()),
             Self::Damage => Box::new(|c| c.bennies.use_for_damage.increment()),
         };
@@ -112,10 +112,8 @@ impl DrawInfo<BoolStat> for UsageInfo {
     fn mod_set(&self, selection: app::CharSelection, value: BoolStat) -> CharModification {
         let modification: simulator::CharModFunc = match self {
             Self::Unshake => Box::new(move |c| c.bennies.use_for_unshake.set(value)),
-            Self::ForErstschlag => Box::new(move |c| c.bennies.use_for_erstschlag.set(value)),
-            Self::AgainstErstschlag => {
-                Box::new(move |c| c.bennies.use_against_erstschlag.set(value))
-            }
+            Self::ForErstschlag => Box::new(move |c| c.bennies.use_for_special_attacks.set(value)),
+            Self::AgainstStepBack => Box::new(move |c| c.bennies.use_against_step_back.set(value)),
             Self::Attack => Box::new(move |c| c.bennies.use_for_attack.set(value)),
             Self::Damage => Box::new(move |c| c.bennies.use_for_damage.set(value)),
         };

@@ -536,7 +536,7 @@ impl Fighter {
             (Edge3::Improved, _) => (),
         }
 
-        if i8::from(opponent.character.weapon.reach) == 0 && !base_contact_to_target {
+        if !base_contact_to_target {
             return;
         }
 

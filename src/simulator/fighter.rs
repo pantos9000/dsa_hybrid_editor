@@ -562,18 +562,19 @@ impl Fighter {
             return true;
         }
         if self.character.bennies.use_for_unshake.is_set() {
-            self.unshake_with_bennie();
-            return !self.shaken;
+            return self.unshake_with_bennie();
         }
         false
     }
 
-    fn unshake_with_bennie(&mut self) {
+    /// return `true` if bennie was used to unshake
+    fn unshake_with_bennie(&mut self) -> bool {
         if !self.shaken || self.bennies == 0 {
-            return;
+            return false;
         }
         self.bennies -= 1;
         self.shaken = false;
+        true
     }
 
     /// return true if action is still available

@@ -1,3 +1,5 @@
+use serde::Deserializer;
+
 use crate::app::widgets::{self, BoolStat, DrawInfo, ValueSelector};
 use crate::simulator::{CharModification, Simulator};
 use crate::{app, simulator};
@@ -12,7 +14,8 @@ pub struct Edges {
     pub(crate) riposte: Edge3,
     pub(crate) tuchfuhlung: Edge3,
     pub(crate) kampfreflexe: BoolStat,
-    pub(crate) erstschlag: BoolStat,
+    #[serde(deserialize_with = "deserialize_edge3_or_edge2")]
+    pub(crate) erstschlag: Edge3,
     pub(crate) beidhandiger_kampf: BoolStat,
     pub(crate) beidhandig: BoolStat,
     #[serde(default)] // backwards compatibility to v1
@@ -36,6 +39,7 @@ impl Edges {
             (&mut self.blitzhieb, Edge3Info::Blitzhieb),
             (&mut self.riposte, Edge3Info::Riposte),
             (&mut self.kuhler_kopf, Edge3Info::KühlerKopf),
+            (&mut self.erstschlag, Edge3Info::Erstschlag),
         ]
         .into_iter()
     }
@@ -47,7 +51,6 @@ impl Edges {
             (&mut self.beidhandig, Edge2Info::Beidhändig),
             (&mut self.beidhandiger_kampf, Edge2Info::BeidhändigerKampf),
             (&mut self.fechten_m2w, Edge2Info::FechtenMit2Waffen),
-            (&mut self.erstschlag, Edge2Info::Erstschlag),
             (&mut self.ubertolpeln, Edge2Info::Übertölpeln),
             (&mut self.machtiger_hieb, Edge2Info::MächtigerHieb),
             (&mut self.erbarmungslos, Edge2Info::Erbarmungslos),
@@ -81,7 +84,6 @@ enum Edge2Info {
     Übertölpeln,
     Erbarmungslos,
     MächtigerHieb,
-    Erstschlag,
     Kampfreflexe,
     Schnell,
     BeidhändigerKampf,
@@ -97,7 +99,6 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Übertölpeln => "Übertölpeln",
             Self::Erbarmungslos => "Erbarmungslos",
             Self::MächtigerHieb => "Mächtiger Hieb",
-            Self::Erstschlag => "Erstschlag",
             Self::BeidhändigerKampf => "Beidhändiger Kampf",
             Self::Beidhändig => "Beidhändig (Hintergrund)",
             Self::FechtenMit2Waffen => "Fechten mit zwei Waffen",
@@ -113,7 +114,6 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.decrement()),
             Self::Erbarmungslos => Box::new(|c| c.edges.erbarmungslos.decrement()),
             Self::MächtigerHieb => Box::new(|c| c.edges.machtiger_hieb.decrement()),
-            Self::Erstschlag => Box::new(|c| c.edges.erstschlag.decrement()),
             Self::BeidhändigerKampf => Box::new(|c| c.edges.beidhandiger_kampf.decrement()),
             Self::Beidhändig => Box::new(|c| c.edges.beidhandig.decrement()),
             Self::FechtenMit2Waffen => Box::new(|c| c.edges.fechten_m2w.decrement()),
@@ -130,7 +130,6 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Übertölpeln => Box::new(|c| c.edges.ubertolpeln.increment()),
             Self::Erbarmungslos => Box::new(|c| c.edges.erbarmungslos.increment()),
             Self::MächtigerHieb => Box::new(|c| c.edges.machtiger_hieb.increment()),
-            Self::Erstschlag => Box::new(|c| c.edges.erstschlag.increment()),
             Self::BeidhändigerKampf => Box::new(|c| c.edges.beidhandiger_kampf.increment()),
             Self::Beidhändig => Box::new(|c| c.edges.beidhandig.increment()),
             Self::FechtenMit2Waffen => Box::new(|c| c.edges.fechten_m2w.increment()),
@@ -147,7 +146,6 @@ impl DrawInfo<BoolStat> for Edge2Info {
             Self::Übertölpeln => Box::new(move |c| c.edges.ubertolpeln.set(value)),
             Self::Erbarmungslos => Box::new(move |c| c.edges.erbarmungslos.set(value)),
             Self::MächtigerHieb => Box::new(move |c| c.edges.machtiger_hieb.set(value)),
-            Self::Erstschlag => Box::new(move |c| c.edges.erstschlag.set(value)),
             Self::BeidhändigerKampf => Box::new(move |c| c.edges.beidhandiger_kampf.set(value)),
             Self::Beidhändig => Box::new(move |c| c.edges.beidhandig.set(value)),
             Self::FechtenMit2Waffen => Box::new(move |c| c.edges.fechten_m2w.set(value)),
@@ -163,6 +161,7 @@ impl DrawInfo<BoolStat> for Edge2Info {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Edge3Info {
     Blitzhieb,
+    Erstschlag,
     Berserker,
     Riposte,
     Tuchfühlung,
@@ -174,6 +173,7 @@ impl DrawInfo<Edge3> for Edge3Info {
     fn as_str(&self) -> &'static str {
         match self {
             Self::Blitzhieb => "Blitzhieb",
+            Self::Erstschlag => "Erstschlag",
             Self::Berserker => "Berserker (Hintergrund)",
             Self::Riposte => "Riposte",
             Self::Tuchfühlung => "Tuchfühlung",
@@ -185,6 +185,7 @@ impl DrawInfo<Edge3> for Edge3Info {
     fn mod_dec(&self, selection: app::CharSelection) -> CharModification {
         let modification: simulator::CharModFunc = match self {
             Self::Blitzhieb => Box::new(|c| c.edges.blitzhieb.decrement()),
+            Self::Erstschlag => Box::new(|c| c.edges.erstschlag.decrement()),
             Self::Berserker => Box::new(|c| c.edges.berserker.decrement()),
             Self::Riposte => Box::new(|c| c.edges.riposte.decrement()),
             Self::Tuchfühlung => Box::new(|c| c.edges.tuchfuhlung.decrement()),
@@ -197,6 +198,7 @@ impl DrawInfo<Edge3> for Edge3Info {
     fn mod_inc(&self, selection: app::CharSelection) -> CharModification {
         let modification: simulator::CharModFunc = match self {
             Self::Blitzhieb => Box::new(|c| c.edges.blitzhieb.increment()),
+            Self::Erstschlag => Box::new(|c| c.edges.erstschlag.increment()),
             Self::Berserker => Box::new(|c| c.edges.berserker.increment()),
             Self::Riposte => Box::new(|c| c.edges.riposte.increment()),
             Self::Tuchfühlung => Box::new(|c| c.edges.tuchfuhlung.increment()),
@@ -209,6 +211,7 @@ impl DrawInfo<Edge3> for Edge3Info {
     fn mod_set(&self, selection: app::CharSelection, value: Edge3) -> CharModification {
         let modification: simulator::CharModFunc = match self {
             Self::Blitzhieb => Box::new(move |c| c.edges.blitzhieb = value),
+            Self::Erstschlag => Box::new(move |c| c.edges.erstschlag = value),
             Self::Berserker => Box::new(move |c| c.edges.berserker = value),
             Self::Riposte => Box::new(move |c| c.edges.riposte = value),
             Self::Tuchfühlung => Box::new(move |c| c.edges.tuchfuhlung = value),
@@ -252,6 +255,8 @@ impl ValueSelector for Edge3 {
             (Self::None, _) => "Nein",
             (Self::Normal, Edge3Info::Blitzhieb) => "Blitzhieb",
             (Self::Improved, Edge3Info::Blitzhieb) => "Verb. Blitzhieb",
+            (Self::Normal, Edge3Info::Erstschlag) => "Erstschlag",
+            (Self::Improved, Edge3Info::Erstschlag) => "Verb. Erstschlag",
             (Self::Normal, Edge3Info::Berserker) => "Berserker",
             (Self::Improved, Edge3Info::Berserker) => "Berserker Sofort",
             (Self::Normal, Edge3Info::Riposte) => "Riposte",
@@ -284,4 +289,34 @@ impl Edge3 {
         };
         *self = new;
     }
+}
+
+impl From<BoolStat> for Edge3 {
+    fn from(value: BoolStat) -> Self {
+        if value.is_set() {
+            Edge3::Normal
+        } else {
+            Edge3::None
+        }
+    }
+}
+
+fn deserialize_edge3_or_edge2<'de, D>(deserializer: D) -> Result<Edge3, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::Deserialize as _;
+
+    #[derive(Debug, serde::Deserialize)]
+    #[serde(untagged)]
+    enum Blubb {
+        Edge3(Edge3),
+        Edge2(BoolStat),
+    }
+
+    let edge3 = match Blubb::deserialize(deserializer)? {
+        Blubb::Edge2(bool_stat) => bool_stat.into(),
+        Blubb::Edge3(edge3) => edge3,
+    };
+    Ok(edge3)
 }

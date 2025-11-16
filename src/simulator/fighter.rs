@@ -39,6 +39,7 @@ pub struct Fighter {
     weapon_lost: bool,
     berserker: bool,
     riposte_done: bool,
+    erstschlag_done: bool,
     attacked_wild: bool,
     distance_map: Rc<RefCell<DistanceMap>>,
     distance_id: u16,
@@ -69,6 +70,7 @@ impl Fighter {
             weapon_lost: false,
             berserker,
             riposte_done: false,
+            erstschlag_done: false,
             attacked_wild: false,
             distance_map,
             distance_id,
@@ -109,6 +111,7 @@ impl Fighter {
         self.draw_card(cards);
         self.joker = self.drawn_card.unwrap().is_joker();
         self.riposte_done = false;
+        self.erstschlag_done = false;
     }
 
     pub fn is_dead(&self) -> bool {
@@ -134,7 +137,7 @@ impl Fighter {
 
     /// take a step back from everybody
     fn step_back(&mut self, opponents: &[Rc<RefCell<Fighter>>]) {
-        if !self.character.edges.erstschlag.is_set() {
+        if self.character.edges.erstschlag == Edge3::None {
             // if we don't have erstschlag, don't step back
             return;
         }
@@ -526,8 +529,11 @@ impl Fighter {
     }
 
     fn trigger_erstschlag(&mut self, opponent: &mut Self, base_contact_to_target: bool) {
-        if !self.character.edges.erstschlag.is_set() {
-            return;
+        match (self.character.edges.erstschlag, self.erstschlag_done) {
+            (Edge3::None, _) => return,
+            (Edge3::Normal, true) => return,
+            (Edge3::Normal, false) => (),
+            (Edge3::Improved, _) => (),
         }
 
         if i8::from(opponent.character.weapon.reach) == 0 && !base_contact_to_target {
@@ -546,6 +552,7 @@ impl Fighter {
 
         // do erstschlag
         self.do_special_attack(opponent);
+        self.erstschlag_done = true;
     }
 
     pub fn dex_roll(&self) -> Result<Roll, RollError> {

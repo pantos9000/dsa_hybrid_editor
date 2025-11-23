@@ -510,7 +510,7 @@ impl Fighter {
     }
 
     fn trigger_riposte(&mut self, opponent: &mut Self) {
-        if self.riposte_done || self.character.edges.riposte != Edge3::Improved {
+        if self.riposte_done && self.character.edges.riposte != Edge3::Improved {
             return;
         }
 

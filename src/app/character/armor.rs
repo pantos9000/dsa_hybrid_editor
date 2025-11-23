@@ -11,7 +11,6 @@ use super::Drawable;
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Armor {
     pub(crate) torso: IntStat<0, 5>,
-    #[serde(default)]
     pub(crate) head: IntStat<0, 5>,
 }
 

@@ -5,6 +5,7 @@
     "parry": 0,
     "robustness": 2,
     "attack": 0,
+    "no_wound_penalty": false,
     "attack_wild": false,
     "attack_head": false
   },
@@ -25,7 +26,7 @@
   "weapon": {
     "active": true,
     "damage": "W8",
-    "bonus_damage": -2,
+    "bonus_damage": 0,
     "piercing": 0,
     "reach": 0,
     "more_crit": false
@@ -45,21 +46,23 @@
     "riposte": "None",
     "tuchfuhlung": "None",
     "kampfreflexe": false,
-    "erstschlag": false,
+    "erstschlag": "None",
     "beidhandiger_kampf": true,
     "beidhandig": true,
+    "fechten_m2w": false,
     "ubertolpeln": false,
     "erbarmungslos": false,
     "machtiger_hieb": false,
     "schnell": false,
     "kampfkunstler": false,
-    "kuhler_kopf": "None"
+    "kuhler_kopf": "None",
+    "rundumschlag": false
   },
   "bennies": {
     "count": 0,
     "use_for_unshake": false,
-    "use_for_erstschlag": false,
-    "use_against_erstschlag": false,
+    "use_for_special_attacks": false,
+    "use_against_step_back": false,
     "use_for_attack": false,
     "use_for_damage": false
   }

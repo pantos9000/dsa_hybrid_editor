@@ -316,7 +316,7 @@ impl Fighter {
         };
 
         for (mut opponent, attack_result) in attack_rolls {
-            self.do_damage(false, &mut opponent, attack_result, dmg_modifier, false);
+            self.do_damage(true, &mut opponent, attack_result, dmg_modifier, false);
         }
     }
 

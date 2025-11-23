@@ -1,5 +1,3 @@
-use serde::Deserializer;
-
 use crate::app::widgets::{self, BoolStat, DrawInfo, ValueSelector};
 use crate::simulator::{CharModification, Simulator};
 use crate::{app, simulator};
@@ -14,11 +12,9 @@ pub struct Edges {
     pub(crate) riposte: Edge3,
     pub(crate) tuchfuhlung: Edge3,
     pub(crate) kampfreflexe: BoolStat,
-    #[serde(deserialize_with = "deserialize_edge3_or_edge2")]
     pub(crate) erstschlag: Edge3,
     pub(crate) beidhandiger_kampf: BoolStat,
     pub(crate) beidhandig: BoolStat,
-    #[serde(default)] // backwards compatibility to v1
     pub(crate) fechten_m2w: BoolStat,
     pub(crate) ubertolpeln: BoolStat,
     pub(crate) erbarmungslos: BoolStat,
@@ -26,7 +22,6 @@ pub struct Edges {
     pub(crate) schnell: BoolStat,
     pub(crate) kampfkunstler: BoolStat,
     pub(crate) kuhler_kopf: Edge3,
-    #[serde(default)]
     pub(crate) rundumschlag: BoolStat,
 }
 
@@ -289,34 +284,4 @@ impl Edge3 {
         };
         *self = new;
     }
-}
-
-impl From<BoolStat> for Edge3 {
-    fn from(value: BoolStat) -> Self {
-        if value.is_set() {
-            Edge3::Normal
-        } else {
-            Edge3::None
-        }
-    }
-}
-
-fn deserialize_edge3_or_edge2<'de, D>(deserializer: D) -> Result<Edge3, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    use serde::Deserialize as _;
-
-    #[derive(Debug, serde::Deserialize)]
-    #[serde(untagged)]
-    enum Blubb {
-        Edge3(Edge3),
-        Edge2(BoolStat),
-    }
-
-    let edge3 = match Blubb::deserialize(deserializer)? {
-        Blubb::Edge2(bool_stat) => bool_stat.into(),
-        Blubb::Edge3(edge3) => edge3,
-    };
-    Ok(edge3)
 }

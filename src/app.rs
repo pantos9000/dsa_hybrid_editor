@@ -23,9 +23,7 @@ use crate::{
 pub const EDITOR_WIDTH: f32 = 650.0;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(default)] // if we add new fields, give them default values when deserializing old state
-#[derive(Default)]
+#[derive(serde::Deserialize, serde::Serialize, Default)]
 pub struct App {
     chars_left: Group,
     chars_right: Group,

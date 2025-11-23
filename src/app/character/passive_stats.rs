@@ -9,7 +9,6 @@ pub struct PassiveModifiers {
     pub(crate) parry: IntStat<-4, 4>,
     pub(crate) robustness: IntStat<-4, 4>,
     pub(crate) attack: IntStat<-4, 4>,
-    #[serde(default)] // backward compatibility to v1
     pub(crate) no_wound_penalty: BoolStat,
     pub(crate) attack_wild: BoolStat,
     pub(crate) attack_head: BoolStat,

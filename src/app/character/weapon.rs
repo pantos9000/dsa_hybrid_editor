@@ -13,7 +13,6 @@ pub struct Weapon<const SECONDARY: bool> {
     pub(crate) bonus_damage: IntStat<-2, 2>,
     pub(crate) piercing: IntStat<0, 3>,
     pub(crate) reach: IntStat<0, 2>,
-    #[serde(default)]
     pub(crate) more_crit: BoolStat,
 }
 

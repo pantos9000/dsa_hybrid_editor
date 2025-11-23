@@ -8,9 +8,7 @@ use super::Drawable;
 pub struct Bennies {
     pub(crate) count: IntStat<0, 10>,
     pub(crate) use_for_unshake: BoolStat,
-    #[serde(default)]
     pub(crate) use_for_special_attacks: BoolStat,
-    #[serde(alias = "use_against_erstschlag")]
     pub(crate) use_against_step_back: BoolStat,
     pub(crate) use_for_attack: BoolStat,
     pub(crate) use_for_damage: BoolStat,

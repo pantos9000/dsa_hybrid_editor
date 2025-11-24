@@ -8,7 +8,7 @@ use std::time;
 
 use crossbeam::channel as mpsc;
 use crossbeam::channel::unbounded as channel;
-use fxhash::FxBuildHasher;
+use rustc_hash::FxBuildHasher;
 use threadpool::ThreadPool;
 
 use fight_report::FightReport;

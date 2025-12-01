@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Rust Toolchain Setup
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Run Tests
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Rust Toolchain Setup
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Rust Toolchain Setup
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Audit Rust Dependencies
         uses: actions-rust-lang/audit@v1
         # with:
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Unused Dependencies Check
         uses: bnjbvr/cargo-machete@main
 
@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Rust Toolchain Setup
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build Docs
@@ -91,7 +91,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Rust Toolchain Setup
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:

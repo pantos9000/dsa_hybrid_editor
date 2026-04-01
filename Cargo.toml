@@ -28,7 +28,7 @@ log = "0.4"
 anyhow = "1.0"
 better-panic = "0.3.0"
 
-strum = "0.27"
+strum = "0.28"
 strum_macros = "0.27"
 
 threadpool = "1.8.1"

@@ -62,7 +62,7 @@ impl eframe::App for App {
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
 
@@ -88,20 +88,20 @@ impl eframe::App for App {
             self.chars_right.clone().into_vec(),
         );
 
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+        egui::Panel::top("top_panel").show_inside(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.vertical_centered(|ui| {
                     ui.heading("DSA Hybrid Char Editor");
                 });
                 ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
-                    Self::quit_button(ui, ctx);
+                    Self::quit_button(ui);
                     self.help_button(ui);
                 });
             });
             ui.add_space(2.0);
         });
 
-        egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+        egui::Panel::bottom("bottom_panel").show_inside(ui, |ui| {
             ui.vertical(|ui| {
                 ui.add_space(8.0);
                 self.progress_bar(ui);
@@ -110,20 +110,20 @@ impl eframe::App for App {
             });
         });
 
-        egui::SidePanel::left("left_panel")
+        egui::Panel::left("left_panel")
             .resizable(false)
-            .show(ctx, |ui| {
+            .show_inside(ui, |ui| {
                 self.draw_group(GroupId::Left, ui);
             });
 
-        egui::SidePanel::right("right_panel")
+        egui::Panel::right("right_panel")
             .resizable(false)
-            .show(ctx, |ui| {
+            .show_inside(ui, |ui| {
                 self.draw_group(GroupId::Right, ui);
             });
 
         // The central panel the region left after adding other panels - has to come last
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::CentralPanel::default().show_inside(ui, |ui| {
             ui.vertical_centered(|ui| {
                 self.simulator.report().draw(ui);
                 ui.add_space(8.0);
@@ -281,7 +281,7 @@ impl App {
         });
     }
 
-    fn quit_button(ui: &mut egui::Ui, ctx: &egui::Context) {
+    fn quit_button(ui: &mut egui::Ui) {
         let is_web = cfg!(target_arch = "wasm32"); // no File->Quit on web pages
         if is_web {
             return;
@@ -296,7 +296,7 @@ impl App {
         });
         if response.clicked() {
             log::info!("quit button clicked, exiting...");
-            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
         }
     }
 }

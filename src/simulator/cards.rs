@@ -1,10 +1,10 @@
-use biski64::Biski64Rng as Rng;
+use crate::simulator::rand::Rand;
 
 #[derive(Debug)]
 pub struct CardDeck {
     cards: Vec<Card>,
     last_drawn: Vec<Card>,
-    rng: Rng,
+    rand: Rand,
 }
 
 impl Default for CardDeck {
@@ -15,27 +15,22 @@ impl Default for CardDeck {
 
 impl CardDeck {
     pub fn new() -> Self {
-        use rand::SeedableRng as _; // for seed_from_u64()
-        use rand::seq::SliceRandom as _; // for shuffle()
-
         let last_drawn = Vec::new();
-        let mut rng = Rng::seed_from_u64(rand::random());
+        let mut rand = Rand::new();
         let mut cards: Vec<_> = Card::deck_iter().collect();
-        cards.shuffle(&mut rng);
+        rand.shuffle(&mut cards);
         Self {
             cards,
             last_drawn,
-            rng,
+            rand,
         }
     }
 
     fn refill(&mut self) {
-        use rand::seq::SliceRandom as _; // for shuffle()
-
         let mut cards: Vec<_> = Card::deck_iter()
             .filter(|card| !self.last_drawn.contains(card))
             .collect();
-        cards.shuffle(&mut self.rng);
+        self.rand.shuffle(&mut cards);
         self.cards = cards;
     }
 

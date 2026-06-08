@@ -2,6 +2,7 @@ mod arena;
 mod cards;
 mod fight_report;
 mod fighter;
+mod rand;
 mod roller;
 
 use std::time;

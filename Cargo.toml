@@ -34,8 +34,8 @@ strum_macros = "0.27"
 threadpool = "1.8.1"
 crossbeam = "0.8.4"
 rustc-hash = "2.1.1"
-rand = "0.9.3"
-biski64 = "0.3.2"
+rand = { version="0.10.1", default-features=false, features=["thread_rng"] }
+rand_xoshiro = "0.8.1"
 
 #
 # web

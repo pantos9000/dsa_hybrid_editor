@@ -1,8 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
-use biski64::Biski64Rng as Rng;
-
 use crate::app::character::{Attribute, Skill, Weapon};
+use crate::simulator::rand::Rand;
 
 std::thread_local! {
     static ROLLER: Rc<Roller> = Rc::new(Roller::new());
@@ -13,7 +12,7 @@ pub fn roller() -> Rc<Roller> {
 }
 
 pub struct Roller {
-    rng: RefCell<Rng>,
+    rand: RefCell<Rand>,
 }
 
 impl Default for Roller {
@@ -24,19 +23,15 @@ impl Default for Roller {
 
 impl Roller {
     pub fn new() -> Self {
-        use rand::SeedableRng as _;
-        let rng = Rng::seed_from_u64(rand::random());
-        Self {
-            rng: RefCell::new(rng),
-        }
+        let rand = RefCell::new(Rand::new());
+        Self { rand }
     }
 
     fn roll_die_nonexploding(&self, sides: u8) -> Roll {
-        use rand::Rng as _; // for random_range()
         if sides == 0 {
             return Roll(0);
         }
-        let result = self.rng.borrow_mut().random_range(1..=sides);
+        let result = self.rand.borrow_mut().random_range(1..=sides);
         let result = result.try_into().unwrap_or(i8::MAX);
         Roll(result)
     }

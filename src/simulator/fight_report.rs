@@ -61,21 +61,34 @@ impl ReportBuilder {
         let prob_win = calc_prob(self.count_wins);
         let prob_draw = calc_prob(self.count_draws);
 
-        let avg_rounds = self.accumulated_rounds / self.count_fights;
-        let avg_hits_dealt = self.accumulated_hits_dealt / self.count_fights;
-        let avg_dmg_hits_dealt = self.accumulated_damaging_hits_dealt / self.count_fights;
-        let avg_damage_dealt = if self.accumulated_damaging_hits_dealt == 0 {
-            0
-        } else {
-            self.accumulated_damage_dealt / self.accumulated_damaging_hits_dealt
-        };
-        let avg_hits_received = self.accumulated_hits_received / self.count_fights;
-        let avg_dmg_hits_received = self.accumulated_damaging_hits_received / self.count_fights;
-        let avg_damage_received = if self.accumulated_damaging_hits_received == 0 {
-            0
-        } else {
-            self.accumulated_damage_received / self.accumulated_damaging_hits_received
-        };
+        let avg_rounds = self
+            .accumulated_rounds
+            .checked_div(self.count_fights)
+            .unwrap_or(0);
+        let avg_hits_dealt = self
+            .accumulated_hits_dealt
+            .checked_div(self.count_fights)
+            .unwrap_or(0);
+        let avg_dmg_hits_dealt = self
+            .accumulated_damaging_hits_dealt
+            .checked_div(self.count_fights)
+            .unwrap_or(0);
+        let avg_damage_dealt = self
+            .accumulated_damage_dealt
+            .checked_div(self.accumulated_damaging_hits_dealt)
+            .unwrap_or(0);
+        let avg_hits_received = self
+            .accumulated_hits_received
+            .checked_div(self.count_fights)
+            .unwrap_or(0);
+        let avg_dmg_hits_received = self
+            .accumulated_damaging_hits_received
+            .checked_div(self.count_fights)
+            .unwrap_or(0);
+        let avg_damage_received = self
+            .accumulated_damage_received
+            .checked_div(self.accumulated_damaging_hits_received)
+            .unwrap_or(0);
 
         FightReport {
             prob_win,
@@ -116,7 +129,7 @@ impl Stat {
         } else {
             Color32::LIGHT_GRAY
         };
-        let text = format!("{value}",);
+        let text = format!("{value}");
         ui.add_enabled_ui(false, |ui| {
             ui.add_sized(max_size, Button::new(text).frame(false).fill(color));
         });

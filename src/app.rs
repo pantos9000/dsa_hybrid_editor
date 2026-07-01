@@ -88,7 +88,7 @@ impl eframe::App for App {
             self.chars_right.clone().into_vec(),
         );
 
-        egui::Panel::top("top_panel").show_inside(ui, |ui| {
+        egui::Panel::top("top_panel").show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.vertical_centered(|ui| {
                     ui.heading("DSA Hybrid Char Editor");
@@ -101,7 +101,7 @@ impl eframe::App for App {
             ui.add_space(2.0);
         });
 
-        egui::Panel::bottom("bottom_panel").show_inside(ui, |ui| {
+        egui::Panel::bottom("bottom_panel").show(ui, |ui| {
             ui.vertical(|ui| {
                 ui.add_space(8.0);
                 self.progress_bar(ui);
@@ -112,18 +112,18 @@ impl eframe::App for App {
 
         egui::Panel::left("left_panel")
             .resizable(false)
-            .show_inside(ui, |ui| {
+            .show(ui, |ui| {
                 self.draw_group(GroupId::Left, ui);
             });
 
         egui::Panel::right("right_panel")
             .resizable(false)
-            .show_inside(ui, |ui| {
+            .show(ui, |ui| {
                 self.draw_group(GroupId::Right, ui);
             });
 
         // The central panel the region left after adding other panels - has to come last
-        egui::CentralPanel::default().show_inside(ui, |ui| {
+        egui::CentralPanel::default().show(ui, |ui| {
             ui.vertical_centered(|ui| {
                 self.simulator.report().draw(ui);
                 ui.add_space(8.0);

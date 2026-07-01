@@ -167,7 +167,7 @@ impl BoolStat {
     }
 }
 
-pub fn create_grid(id_salt: impl std::hash::Hash) -> egui::Grid {
+pub fn create_grid(id_salt: &str) -> egui::Grid {
     egui::Grid::new(id_salt)
         .num_columns(2)
         .min_col_width(80.0)

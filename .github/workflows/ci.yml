@@ -14,7 +14,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Rust Toolchain Setup
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@v2
       - name: Run Tests
         run: cargo test --all-features
 
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Rust Toolchain Setup
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           components: rustfmt
       - name: Rustfmt Check
@@ -38,7 +38,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Rust Toolchain Setup
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           components: clippy
       - name: Clippy Lints
@@ -73,7 +73,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Rust Toolchain Setup
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@v2
       - name: Build Docs
         run: RUSTDOCFLAGS="-D warnings" cargo doc --all-features --no-deps --document-private-items
 
@@ -93,7 +93,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Rust Toolchain Setup
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           target: ${{ matrix.target }}
       - name: Rust debug build

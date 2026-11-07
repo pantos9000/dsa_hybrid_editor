@@ -147,7 +147,7 @@ impl DragContext {
         let text = self.drag_symbol(location);
         let help = "Drag&Drop Char";
         let button = app::widgets::create_menu_button(text, help, size, ui);
-        let id = egui::Id::new(("drag_char", location));
+        let id = egui::Id::unique(("drag_char", location));
         let button = ui.interact(button.rect, id, egui::Sense::drag());
 
         // if the button is dragged, store the payload
